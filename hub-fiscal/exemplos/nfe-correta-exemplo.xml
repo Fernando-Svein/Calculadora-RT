@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe Id="NFe35260311222333000181550010000010011000010010" versao="4.00">
+      <ide>
+        <cUF>35</cUF><natOp>VENDA DE MERCADORIA</natOp><mod>55</mod><serie>1</serie><nNF>1001</nNF>
+        <dhEmi>2026-03-10T10:00:00-03:00</dhEmi><tpNF>1</tpNF><cMunFG>3550308</cMunFG>
+      </ide>
+      <emit>
+        <CNPJ>11222333000181</CNPJ><xNome>EMPRESA EXEMPLO COMERCIO LTDA</xNome>
+        <enderEmit><cMun>3550308</cMun><UF>SP</UF></enderEmit><CRT>3</CRT>
+      </emit>
+      <dest><CNPJ>44555666000199</CNPJ><xNome>CLIENTE EXEMPLO LTDA</xNome><enderDest><UF>SP</UF></enderDest></dest>
+      <det nItem="1">
+        <prod><cProd>001</cProd><xProd>ARROZ BRANCO TIPO 1 5KG</xProd><NCM>10063021</NCM><CFOP>5102</CFOP>
+          <uCom>UN</uCom><qCom>10.0000</qCom><vProd>250.00</vProd></prod>
+        <imposto>
+          <ICMS><ICMS40><orig>0</orig><CST>40</CST></ICMS40></ICMS>
+          <PIS><PISNT><CST>06</CST></PISNT></PIS>
+          <COFINS><COFINSNT><CST>06</CST></COFINSNT></COFINS>
+          <IBSCBS>
+            <CST>200</CST><cClassTrib>200003</cClassTrib>
+            <gIBSCBS>
+              <vBC>250.00</vBC>
+              <gIBSUF><pIBSUF>0.1000</pIBSUF><gRed><pRedAliq>100.0000</pRedAliq><pAliqEfet>0.0000</pAliqEfet></gRed><vIBSUF>0.00</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0000</pIBSMun><gRed><pRedAliq>100.0000</pRedAliq><pAliqEfet>0.0000</pAliqEfet></gRed><vIBSMun>0.00</vIBSMun></gIBSMun>
+              <vIBS>0.00</vIBS>
+              <gCBS><pCBS>0.9000</pCBS><gRed><pRedAliq>100.0000</pRedAliq><pAliqEfet>0.0000</pAliqEfet></gRed><vCBS>0.00</vCBS></gCBS>
+            </gIBSCBS>
+          </IBSCBS>
+        </imposto>
+      </det>
+      <det nItem="2">
+        <prod><cProd>002</cProd><xProd>PARAFUSO ACO SEXTAVADO 10MM</xProd><NCM>73181500</NCM><CFOP>5102</CFOP>
+          <uCom>UN</uCom><qCom>5.0000</qCom><vProd>500.00</vProd></prod>
+        <imposto>
+          <ICMS><ICMS00><orig>0</orig><CST>00</CST><modBC>3</modBC><vBC>500.00</vBC><pICMS>18.00</pICMS><vICMS>90.00</vICMS></ICMS00></ICMS>
+          <PIS><PISAliq><CST>01</CST><vBC>500.00</vBC><pPIS>1.65</pPIS><vPIS>8.25</vPIS></PISAliq></PIS>
+          <COFINS><COFINSAliq><CST>01</CST><vBC>500.00</vBC><pCOFINS>7.60</pCOFINS><vCOFINS>38.00</vCOFINS></COFINSAliq></COFINS>
+          <IBSCBS>
+            <CST>000</CST><cClassTrib>000001</cClassTrib>
+            <gIBSCBS>
+              <vBC>363.75</vBC>
+              <gIBSUF><pIBSUF>0.1000</pIBSUF><vIBSUF>0.36</vIBSUF></gIBSUF>
+              <gIBSMun><pIBSMun>0.0000</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun>
+              <vIBS>0.36</vIBS>
+              <gCBS><pCBS>0.9000</pCBS><vCBS>3.27</vCBS></gCBS>
+            </gIBSCBS>
+          </IBSCBS>
+        </imposto>
+      </det>
+      <total>
+        <IBSCBSTot><vBCIBSCBS>613.75</vBCIBSCBS><gIBS><vIBS>0.36</vIBS></gIBS><gCBS><vCBS>3.27</vCBS></gCBS></IBSCBSTot>
+      </total>
+    </infNFe>
+  </NFe>
+  <protNFe versao="4.00"><infProt><chNFe>35260311222333000181550010000010011000010010</chNFe><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>
+</nfeProc>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hub Fiscal – Reforma Tributária</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='Segoe UI,Arial' font-weight='700'>RT</text></svg>">
+  <link rel="stylesheet" href="css/app.css?v=5">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-cab">
+      <a class="marca" href="#/">
+        <span class="marca-logo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v6h6"/><path d="m8 15 2.5 2.5L16 12"/></svg></span>
+        <span class="marca-texto"><strong>Hub Fiscal</strong><small>Reforma Tributária do Consumo</small></span>
+      </a>
+      <button class="btn-recolher" id="btnRecolher" type="button" title="Recolher menu" aria-label="Recolher menu"></button>
+    </div>
+    <label class="menu-busca">
+      <span class="menu-busca-ico"></span>
+      <input id="menuBusca" type="search" placeholder="Buscar ferramenta" autocomplete="off" aria-label="Buscar ferramenta">
+      <kbd>/</kbd>
+    </label>
+    <nav id="menu" aria-label="Menu principal"></nav>
+    <div class="sidebar-rodape">
+      <span class="rodape-texto">Calculadoras oficiais Receita Federal/Serpro · LC 214/2025</span>
+    </div>
+  </aside>
+
+  <div class="area-principal">
+    <header class="topo">
+      <button class="btn-menu" id="btnMenu" aria-label="Abrir menu"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="topo-titulo" id="tituloPagina"><strong>Início</strong></div>
+      <div class="topo-status" id="statusTopo" title="Situação das calculadoras oficiais">
+        <span class="pilula" id="pilRG"><i></i>Regime Geral</span>
+        <span class="pilula" id="pilSN"><i></i>Simples Nacional</span>
+        <span class="pilula pilula-info" id="pilBase">Base –</span>
+      </div>
+    </header>
+    <main id="conteudo" class="conteudo" tabindex="-1"></main>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+  <div id="modal" class="modal" hidden>
+    <div class="modal-fundo" data-fechar></div>
+    <div class="modal-caixa" role="dialog" aria-modal="true">
+      <button class="modal-fechar" data-fechar aria-label="Fechar">×</button>
+      <div id="modalConteudo"></div>
+    </div>
+  </div>
+
+  <script src="js/app.js?v=5"></script>
+  <script src="js/icones.js?v=5"></script>
+  <script src="js/componentes.js?v=5"></script>
+  <script src="js/modulos/inicio.js?v=5"></script>
+  <script src="js/modulos/consulta-nomenclatura.js?v=5"></script>
+  <script src="js/modulos/tabelas-classificacao.js?v=5"></script>
+  <script src="js/modulos/aliquotas.js?v=5"></script>
+  <script src="js/modulos/atividades-simples.js?v=5"></script>
+  <script src="js/modulos/nfse.js?v=5"></script>
+  <script src="js/modulos/dados-abertos.js?v=5"></script>
+  <script src="js/modulos/erros.js?v=5"></script>
+  <script src="js/modulos/calc-regime-geral.js?v=5"></script>
+  <script src="js/modulos/calc-simples.js?v=5"></script>
+  <script src="js/modulos/comparador.js?v=5"></script>
+  <script src="js/modulos/bases-calculo.js?v=5"></script>
+  <script src="js/modulos/pedagio.js?v=5"></script>
+  <script src="js/modulos/lote-classificacao.js?v=5"></script>
+  <script src="js/modulos/lote-auditoria.js?v=5"></script>
+  <script src="js/modulos/xml.js?v=5"></script>
+  <script src="js/modulos/sistema.js?v=5"></script>
+  <script>Hub.iniciar();</script>
+</body>
+</html>

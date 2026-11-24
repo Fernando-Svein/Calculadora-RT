@@ -1,0 +1,35 @@
+server:
+  port: 8090
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: hub-fiscal
+  web:
+    resources:
+      cache:
+        # o navegador revalida telas/scripts a cada acesso (evita versão antiga após atualizar o hub)
+        cachecontrol:
+          no-cache: true
+  servlet:
+    multipart:
+      max-file-size: 300MB
+      max-request-size: 600MB
+
+hub:
+  # Endereços das calculadoras oficiais da Receita Federal (rodando localmente)
+  api-regime-geral: http://localhost:8080/api
+  api-simples-nacional: http://localhost:8082/api
+  # Banco oficial gerado pelo Flyway no repositório calculadora-rtc-regime-regular (somente leitura)
+  banco-oficial: ../calculadora-rtc-regime-regular/calculadora/db/calculadora-pro.db
+  # Quantas chamadas simultâneas às calculadoras durante processamentos em lote
+  paralelismo: 8
+  # Por quanto tempo (minutos) um resultado de processamento fica disponível para download
+  retencao-resultados-minutos: 240
+
+logging:
+  level:
+    root: INFO

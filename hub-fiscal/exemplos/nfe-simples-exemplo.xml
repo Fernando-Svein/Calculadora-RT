@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
+  <NFe>
+    <infNFe Id="NFe35260377888999000155550010000002011000002010" versao="4.00">
+      <ide>
+        <cUF>35</cUF><natOp>VENDA</natOp><mod>55</mod><serie>1</serie><nNF>201</nNF>
+        <dhEmi>2026-03-15T09:00:00-03:00</dhEmi><tpNF>1</tpNF><cMunFG>3509502</cMunFG>
+      </ide>
+      <emit>
+        <CNPJ>77888999000155</CNPJ><xNome>LOJA EXEMPLO DO SIMPLES ME</xNome>
+        <enderEmit><cMun>3509502</cMun><UF>SP</UF></enderEmit><CRT>1</CRT>
+      </emit>
+      <dest><CPF>12345678909</CPF><xNome>CONSUMIDOR EXEMPLO</xNome></dest>
+      <det nItem="1">
+        <prod><cProd>A10</cProd><xProd>CAMISETA ALGODAO</xProd><NCM>61091000</NCM><CFOP>5102</CFOP>
+          <uCom>UN</uCom><qCom>3.0000</qCom><vProd>150.00</vProd></prod>
+        <imposto><ICMS><ICMSSN102><orig>0</orig><CSOSN>102</CSOSN></ICMSSN102></ICMS></imposto>
+      </det>
+    </infNFe>
+  </NFe>
+  <protNFe versao="4.00"><infProt><chNFe>35260377888999000155550010000002011000002010</chNFe><cStat>100</cStat><xMotivo>Autorizado o uso da NF-e</xMotivo></infProt></protNFe>
+</nfeProc>

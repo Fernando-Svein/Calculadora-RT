@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<NFSe xmlns="http://www.sped.fazenda.gov.br/nfse" versao="1.01">
+  <infNFSe Id="NFS35503082211222333000181000000000000126030000000001">
+    <xLocEmi>São Paulo</xLocEmi>
+    <nNFSe>1</nNFSe>
+    <cLocIncid>3550308</cLocIncid>
+    <dhProc>2026-03-20T11:00:00-03:00</dhProc>
+    <emit><CNPJ>11222333000181</CNPJ><xNome>ESCOLA EXEMPLO LTDA</xNome><enderNac><cMun>3550308</cMun><UF>SP</UF></enderNac></emit>
+    <IBSCBS>
+      <cLocalidadeIncid>3550308</cLocalidadeIncid>
+      <valores>
+        <vBC>1200.00</vBC>
+        <uf><pIBSUF>0.10</pIBSUF><pRedAliqUF>60.00</pRedAliqUF><pAliqEfetUF>0.04</pAliqEfetUF></uf>
+        <mun><pIBSMun>0.00</pIBSMun><pRedAliqMun>60.00</pRedAliqMun><pAliqEfetMun>0.00</pAliqEfetMun></mun>
+        <fed><pCBS>0.90</pCBS><pRedAliqCBS>60.00</pRedAliqCBS><pAliqEfetCBS>0.36</pAliqEfetCBS></fed>
+      </valores>
+      <totCIBS>
+        <gIBS><vIBSTot>0.48</vIBSTot><gIBSUFTot><vIBSUF>0.48</vIBSUF></gIBSUFTot><gIBSMunTot><vIBSMun>0.00</vIBSMun></gIBSMunTot></gIBS>
+        <gCBS><vCBS>4.32</vCBS></gCBS>
+      </totCIBS>
+    </IBSCBS>
+    <DPS versao="1.01">
+      <infDPS Id="DPS355030821122233300018100001000000000000001">
+        <dhEmi>2026-03-20T10:55:00-03:00</dhEmi>
+        <prest><CNPJ>11222333000181</CNPJ><regTrib><opSimpNac>1</opSimpNac></regTrib></prest>
+        <toma><CPF>12345678909</CPF><xNome>RESPONSAVEL EXEMPLO</xNome></toma>
+        <serv>
+          <locPrest><cLocPrestacao>3550308</cLocPrestacao></locPrest>
+          <cServ><cTribNac>080101</cTribNac><xDescServ>MENSALIDADE ESCOLAR - EDUCACAO INFANTIL</xDescServ><cNBS>122011200</cNBS></cServ>
+        </serv>
+        <valores><vServPrest><vServ>1200.00</vServ></vServPrest></valores>
+        <IBSCBS>
+          <finNFSe>0</finNFSe><indFinal>1</indFinal><cIndOp>030101</cIndOp>
+          <valores><trib><gIBSCBS><CST>200</CST><cClassTrib>200028</cClassTrib></gIBSCBS></trib></valores>
+        </IBSCBS>
+      </infDPS>
+    </DPS>
+  </infNFSe>
+</NFSe>

@@ -156,6 +156,13 @@ public class SegurancaConfig {
                     json(resp, 403, "Troca de senha obrigatória", "Defina uma nova senha para continuar.", "TROCAR_SENHA");
                     return;
                 }
+                // ferramentas liberadas para o usuário (vale na hora em que o administrador altera)
+                var exigidas = Ferramentas.exigidas(req.getMethod(), caminho);
+                if (exigidas.isPresent() && !u.pode(exigidas.get())) {
+                    json(resp, 403, "Ferramenta não liberada",
+                            "Seu usuário não tem acesso a esta ferramenta. Peça ao administrador do hub para liberar.", "SEM_PERMISSAO");
+                    return;
+                }
             }
             chain.doFilter(req, resp);
         }

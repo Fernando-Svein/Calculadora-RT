@@ -640,3 +640,20 @@ body.pagina-login { display: grid; grid-template-columns: minmax(0, 1.05fr) minm
 .senha-provisoria { font-family: var(--mono); font-size: 22px; letter-spacing: .08em; text-align: center; padding: 14px; border-radius: 12px;
   background: var(--superficie-2); border: 1px dashed var(--borda-forte); margin: 12px 0; user-select: all; }
 @media (max-width: 900px) { .usuario-btn .u-nome { display: none; } .usuario-btn { padding: 3px; } }
+
+/* ---------------------------------------------------------------- permissões por usuário */
+.form-usuario { display: grid; gap: 14px; }
+.form-usuario fieldset.perm { margin: 0; }
+.perm-barra { display: flex; align-items: center; gap: 14px; margin: -2px 0 10px; }
+.perm-grupos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.perm-grupo { background: var(--superficie); border: 1px solid var(--borda); border-radius: 12px; padding: 8px; }
+.perm-grupo-cab { display: flex; align-items: center; gap: 9px; padding: 4px 6px 8px; border-bottom: 1px solid var(--borda); margin-bottom: 4px; cursor: pointer; }
+.perm-grupo-cab .tile { width: 26px; height: 26px; border-radius: 8px; }
+.perm-grupo-cab .tile svg.i { width: 14px; height: 14px; }
+.perm-grupo-cab strong { font-size: 13px; }
+.perm-item { display: flex; align-items: center; gap: 9px; padding: 6px; border-radius: 8px; font-size: 13.5px; cursor: pointer; color: var(--texto); }
+.perm-item:hover { background: var(--superficie-2); }
+.perm-item svg.i { width: 16px; height: 16px; color: var(--texto-3); }
+.perm input[type=checkbox], .perm-grupo-cab input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primaria); margin: 0; flex: 0 0 auto; }
+.acessos { border-bottom: 1px dotted var(--borda-forte); cursor: help; }
+@media (max-width: 900px) { .perm-grupos { grid-template-columns: 1fr; } }

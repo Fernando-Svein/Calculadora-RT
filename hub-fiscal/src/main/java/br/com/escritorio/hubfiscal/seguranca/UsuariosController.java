@@ -27,10 +27,17 @@ public class UsuariosController {
         this.usuarios = usuarios;
     }
 
-    public record NovoUsuario(String login, String nome, Perfil perfil) {
+    /** permissoes: ids das ferramentas liberadas; ausente/null = todas. */
+    public record NovoUsuario(String login, String nome, Perfil perfil, List<String> permissoes) {
     }
 
-    public record Alteracao(String nome, Perfil perfil, boolean ativo) {
+    public record Alteracao(String nome, Perfil perfil, boolean ativo, List<String> permissoes) {
+    }
+
+    /** Ferramentas que podem ser liberadas por usuário (para a tela montar as caixas de seleção). */
+    @GetMapping("/ferramentas")
+    public List<Ferramentas.Ferramenta> ferramentas() {
+        return Ferramentas.TODAS;
     }
 
     @GetMapping
@@ -41,13 +48,13 @@ public class UsuariosController {
     /** Cria com senha provisória, devolvida uma única vez para o administrador repassar. */
     @PostMapping
     public Map<String, Object> criar(@RequestBody NovoUsuario n, @AuthenticationPrincipal UsuarioSessao admin) {
-        String provisoria = usuarios.criar(n.login(), n.nome(), n.perfil(), admin.login());
+        String provisoria = usuarios.criar(n.login(), n.nome(), n.perfil(), n.permissoes(), admin.login());
         return Map.of("login", UsuarioService.normalizarLogin(n.login()), "senhaProvisoria", provisoria);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> alterar(@PathVariable long id, @RequestBody Alteracao a, @AuthenticationPrincipal UsuarioSessao admin) {
-        usuarios.atualizar(id, a.nome(), a.perfil() == null ? Perfil.USUARIO : a.perfil(), a.ativo(), admin.id());
+        usuarios.atualizar(id, a.nome(), a.perfil() == null ? Perfil.USUARIO : a.perfil(), a.ativo(), a.permissoes(), admin.id());
         return ResponseEntity.noContent().build();
     }
 

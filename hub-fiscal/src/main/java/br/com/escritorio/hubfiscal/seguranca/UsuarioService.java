@@ -142,7 +142,7 @@ public class UsuarioService {
         }
         String l = validarLogin(login);
         validarSenha(senha, l);
-        repo.inserir(l, validarNome(nome), encoder.encode(senha), Perfil.ADMIN, false);
+        repo.inserir(l, validarNome(nome), encoder.encode(senha), Perfil.ADMIN, false, null);
         log.info("Administrador inicial criado: {}", l);
         return repo.porLogin(l).orElseThrow();
     }
@@ -158,18 +158,18 @@ public class UsuarioService {
     }
 
     /** Cria o usuário com senha provisória (troca obrigatória no primeiro acesso). Devolve a senha provisória. */
-    public String criar(String login, String nome, Perfil perfil, String admin) {
+    public String criar(String login, String nome, Perfil perfil, java.util.Collection<String> permissoes, String admin) {
         String l = validarLogin(login);
         if (repo.porLogin(l).isPresent()) {
             throw new ErroNegocio("Já existe um usuário com o login '" + l + "'.");
         }
         String provisoria = gerarProvisoria();
-        repo.inserir(l, validarNome(nome), encoder.encode(provisoria), perfil == null ? Perfil.USUARIO : perfil, true);
+        repo.inserir(l, validarNome(nome), encoder.encode(provisoria), perfil == null ? Perfil.USUARIO : perfil, true, validarPermissoes(permissoes));
         log.info("Usuário criado: {} ({}) por {}", l, perfil, admin);
         return provisoria;
     }
 
-    public void atualizar(long id, String nome, Perfil perfil, boolean ativo, long idAdmin) {
+    public void atualizar(long id, String nome, Perfil perfil, boolean ativo, java.util.Collection<String> permissoes, long idAdmin) {
         Usuario u = repo.porId(id).orElseThrow(() -> new ErroNegocio("Usuário não encontrado."));
         if (id == idAdmin && (!ativo || perfil != Perfil.ADMIN)) {
             throw new ErroNegocio("Você não pode desativar nem retirar o perfil de administrador da sua própria conta.");
@@ -178,11 +178,11 @@ public class UsuarioService {
         if (deixaDeSerAdminAtivo && repo.contarAdminsAtivos() <= 1) {
             throw new ErroNegocio("É preciso manter ao menos um administrador ativo.");
         }
-        repo.atualizar(id, validarNome(nome), perfil, ativo);
+        repo.atualizar(id, validarNome(nome), perfil, ativo, validarPermissoes(permissoes));
         if (ativo) {
             falhas.remove(u.login());
         }
-        log.info("Usuário alterado: {} -> perfil {}, ativo {}", u.login(), perfil, ativo);
+        log.info("Usuário alterado: {} -> perfil {}, ativo {}, ferramentas {}", u.login(), perfil, ativo, permissoes == null ? "todas" : permissoes);
     }
 
     public String redefinirSenha(long id, String admin) {
@@ -204,6 +204,24 @@ public class UsuarioService {
         }
         repo.excluir(id);
         log.info("Usuário excluído: {}", u.login());
+    }
+
+    /**
+     * Ferramentas liberadas: null = todas (inclui as que forem criadas no futuro).
+     * Marcar todas também grava "todas". Ids desconhecidos são recusados.
+     */
+    private static java.util.Set<String> validarPermissoes(java.util.Collection<String> permissoes) {
+        if (permissoes == null) {
+            return null;
+        }
+        java.util.Set<String> s = new java.util.LinkedHashSet<>();
+        for (String p : permissoes) {
+            if (!Ferramentas.IDS.contains(p)) {
+                throw new ErroNegocio("Ferramenta desconhecida: " + p);
+            }
+            s.add(p);
+        }
+        return s.containsAll(Ferramentas.IDS) ? null : s;
     }
 
     private static String validarLogin(String login) {

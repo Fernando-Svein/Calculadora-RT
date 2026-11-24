@@ -12,6 +12,7 @@ package br.com.escritorio.hubfiscal.seguranca;
  * @param trocarSenha  obriga a trocar a senha no próximo acesso (senha provisória)
  * @param criadoEm     data/hora de criação (ISO)
  * @param ultimoAcesso data/hora do último login (ISO) ou null
+ * @param permissoes   ferramentas liberadas (ids de {@link Ferramentas}); null = todas
  */
 public record Usuario(
         long id,
@@ -22,7 +23,23 @@ public record Usuario(
         boolean ativo,
         boolean trocarSenha,
         String criadoEm,
-        String ultimoAcesso) {
+        String ultimoAcesso,
+        java.util.Set<String> permissoes) {
+
+    /** Ferramentas efetivamente liberadas (administrador e "null" = todas). */
+    public java.util.Set<String> ferramentas() {
+        if (perfil == Perfil.ADMIN || permissoes == null) {
+            return Ferramentas.IDS;
+        }
+        var s = new java.util.LinkedHashSet<String>();
+        Ferramentas.IDS.stream().filter(permissoes::contains).forEach(s::add);
+        return s;
+    }
+
+    public boolean pode(java.util.Set<String> algumaDestas) {
+        var f = ferramentas();
+        return algumaDestas.stream().anyMatch(f::contains);
+    }
 
     public enum Perfil {
         ADMIN("Administrador"),
@@ -51,6 +68,8 @@ public record Usuario(
         m.put("trocarSenha", trocarSenha);
         m.put("criadoEm", criadoEm);
         m.put("ultimoAcesso", ultimoAcesso);
+        m.put("permissoes", java.util.List.copyOf(ferramentas()));
+        m.put("acessoTotal", ferramentas().size() == Ferramentas.IDS.size());
         return m;
     }
 }

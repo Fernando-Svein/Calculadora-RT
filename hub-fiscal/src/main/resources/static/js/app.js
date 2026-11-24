@@ -501,10 +501,20 @@ window.Hub = (() => {
     location.replace('/login.html');
   }
 
-  /** Telas com `perfil` só aparecem (e só abrem) para quem tem o perfil. */
+  /** Telas liberadas a todos os usuários logados (as demais dependem das permissões do usuário). */
+  const SEMPRE_LIBERADAS = ['', 'status', 'ajuda'];
+
+  /**
+   * Remove as telas que o usuário não pode usar: as com `perfil` diferente do dele e as ferramentas
+   * não liberadas pelo administrador. O servidor também bloqueia as operações dessas ferramentas.
+   */
   function aplicarPerfil(u) {
+    const liberadas = new Set(u.permissoes || []);
     for (let i = modulos.length - 1; i >= 0; i--) {
-      if (modulos[i].perfil && modulos[i].perfil !== u.perfil) modulos.splice(i, 1);
+      const m = modulos[i];
+      const semPerfil = m.perfil && m.perfil !== u.perfil;
+      const semPermissao = !m.perfil && u.perfil !== 'ADMIN' && !SEMPRE_LIBERADAS.includes(m.rota) && !liberadas.has(m.rota);
+      if (semPerfil || semPermissao) modulos.splice(i, 1);
     }
   }
 

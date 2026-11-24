@@ -57,7 +57,7 @@
           </label>
         </section>
 
-        <div class="rapidas">${RAPIDAS.map((a) => `
+        <div class="rapidas">${RAPIDAS.filter((a) => Hub.modulos.some((m) => m.rota === a.rota)).map((a) => `
           <a class="rapida rapida-${a.cor}" href="#/${a.rota}">
             <span class="rapida-ico">${Hub.iconeRota(a.rota)}</span>
             <span><strong>${esc(a.titulo)}</strong><small>${esc(a.texto)}</small></span>
@@ -66,6 +66,8 @@
         ${rec.length ? `<div class="recentes"><span class="recentes-rot">${Hub.icone('relogio')} Usados recentemente</span>
           ${rec.map((m) => `<a class="chip" href="#/${m.rota}">${Hub.iconeRota(m.rota)}${esc(m.titulo)}</a>`).join('')}</div>` : ''}
 
+        ${ferramentas().some((m) => m.grupo !== 'Sistema') ? '' : `<div class="aviso">Nenhuma ferramenta foi liberada para o seu usuário ainda.
+          Peça ao administrador do hub para liberar o acesso em <strong>Sistema → Usuários</strong>.</div>`}
         <div data-lista>${painelGrupos()}</div>
 
         <p class="nota-transicao">${Hub.icone('info')}<span><strong>Transição:</strong> em 2026 valem as alíquotas de teste (CBS 0,9% e IBS 0,1%).

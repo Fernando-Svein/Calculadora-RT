@@ -320,13 +320,17 @@
 
   /** Envia FormData com progresso (XHR). Resolve com {ok, status, data}. */
   function enviarComProgresso(url, formData, aoProgresso) {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
+      const token = await Hub.tokenCsrf();
       const x = new XMLHttpRequest();
       x.open('POST', url);
+      x.setRequestHeader('Accept', 'application/json');
+      x.setRequestHeader('X-XSRF-TOKEN', token);
       x.upload.onprogress = (e) => { if (e.lengthComputable && aoProgresso) aoProgresso(e.loaded / e.total); };
       x.onload = () => {
         let data = x.responseText;
         try { data = JSON.parse(x.responseText); } catch (e) { /* texto */ }
+        if (Hub.tratarAuth(x.status, data)) return; // sessão encerrada: vai para o login
         resolve({ ok: x.status >= 200 && x.status < 300, status: x.status, data });
       };
       x.onerror = () => resolve({ ok: false, status: 0, data: { title: 'Falha de conexão com o hub' } });

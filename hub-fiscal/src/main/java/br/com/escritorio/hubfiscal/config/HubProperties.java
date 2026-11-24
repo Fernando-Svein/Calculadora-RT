@@ -10,6 +10,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param bancoOficial              caminho do arquivo SQLite oficial (somente leitura)
  * @param paralelismo               chamadas simultâneas às calculadoras nos processamentos em lote
  * @param retencaoResultadosMinutos tempo que um resultado de lote fica disponível para download
+ * @param bancoUsuarios             arquivo SQLite com os usuários do hub (criado automaticamente)
  */
 @ConfigurationProperties(prefix = "hub")
 public record HubProperties(
@@ -17,9 +18,13 @@ public record HubProperties(
         String apiSimplesNacional,
         String bancoOficial,
         int paralelismo,
-        int retencaoResultadosMinutos) {
+        int retencaoResultadosMinutos,
+        String bancoUsuarios) {
 
     public HubProperties {
+        if (bancoUsuarios == null || bancoUsuarios.isBlank()) {
+            bancoUsuarios = "../dados/hub-usuarios.db";
+        }
         if (paralelismo <= 0) {
             paralelismo = 8;
         }

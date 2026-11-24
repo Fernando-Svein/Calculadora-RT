@@ -40,10 +40,12 @@ public class ErroHandler {
 
     /** Parâmetro com formato errado (ex.: data inválida) ou obrigatório ausente. */
     @ExceptionHandler({ MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,
-            MissingServletRequestPartException.class })
+            MissingServletRequestPartException.class, org.springframework.http.converter.HttpMessageNotReadableException.class })
     public ProblemDetail parametro(Exception e) {
         String detalhe;
-        if (e instanceof MethodArgumentTypeMismatchException m) {
+        if (e instanceof org.springframework.http.converter.HttpMessageNotReadableException) {
+            detalhe = "Os dados enviados estão em formato inválido.";
+        } else if (e instanceof MethodArgumentTypeMismatchException m) {
             boolean data = m.getRequiredType() != null && java.time.temporal.Temporal.class.isAssignableFrom(m.getRequiredType());
             detalhe = data
                     ? "Data inválida em '" + m.getName() + "': " + m.getValue() + ". Use o formato AAAA-MM-DD (ex.: 2026-11-24)."

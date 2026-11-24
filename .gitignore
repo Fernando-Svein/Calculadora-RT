@@ -9,6 +9,9 @@
 # Logs e resultado das atualizações automáticas
 /logs/
 
+# Usuários e senhas do hub (dados do servidor – nunca versionar)
+/dados/
+
 # Compilação e bancos gerados
 target/
 *.db

@@ -553,3 +553,90 @@ pre.json { background: #0b1220; color: #cfe0ff; padding: 14px 16px; border-radiu
   .conteudo { padding: 0; }
   .card { box-shadow: none; }
 }
+/* ---------------------------------------------------------------- login */
+body.pagina-login { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); min-height: 100vh; background: var(--superficie); }
+.login-marca {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 48px; color: #fff;
+  background:
+    radial-gradient(700px 380px at 100% 0%, rgba(45, 212, 191, .30), transparent 60%),
+    radial-gradient(600px 400px at 0% 100%, rgba(99, 102, 241, .45), transparent 60%),
+    linear-gradient(140deg, #0f1b33 0%, #16264a 45%, #1d47b3 100%);
+}
+.login-marca::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .10;
+  background-image: linear-gradient(rgba(255,255,255,.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.7) 1px, transparent 1px);
+  background-size: 36px 36px; mask-image: linear-gradient(160deg, transparent 35%, #000 100%);
+}
+.login-marca > * { position: relative; z-index: 1; }
+.login-marca-topo { display: flex; align-items: center; gap: 12px; }
+.login-marca-meio { max-width: 520px; }
+.login-marca h1 { color: #fff; font-size: 34px; line-height: 1.15; margin: 0 0 14px; letter-spacing: -.02em; }
+.login-marca p { color: #c9d6f5; font-size: 15px; margin: 0 0 22px; }
+.login-lista { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.login-lista li { display: flex; align-items: center; gap: 10px; color: #e3ebff; font-size: 14px; }
+.login-lista li::before {
+  content: ""; width: 20px; height: 20px; flex: 0 0 auto; border-radius: 6px; background: rgba(52, 211, 153, .18) center / 12px no-repeat;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2334d399' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E");
+}
+.login-marca-rodape { color: #8ea0bf; font-size: 12px; }
+.login-painel { display: grid; place-items: center; padding: 40px 24px; background: var(--fundo); }
+.login-caixa {
+  width: 100%; max-width: 420px; background: var(--superficie); border: 1px solid var(--borda); border-radius: 20px;
+  padding: 34px 34px 28px; box-shadow: 0 24px 60px -24px rgba(15, 23, 42, .25);
+}
+.login-form h2 { font-size: 24px; margin: 0 0 6px; }
+.login-form > p { margin: 0 0 20px; font-size: 13.5px; }
+.login-form .campo { margin-bottom: 14px; }
+.login-form input { height: 44px; font-size: 14.5px; }
+.login-etiqueta { display: inline-block; font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--primaria);
+  background: var(--primaria-suave); border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; }
+.senha-wrap { position: relative; }
+.senha-wrap input { padding-right: 78px; width: 100%; }
+.ver-senha { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--primaria);
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.ver-senha:hover { background: var(--primaria-suave); }
+.caps { display: block; color: var(--ambar); font-size: 12px; margin-top: 4px; }
+.login-msg { border-radius: 10px; padding: 10px 12px; font-size: 13px; margin: 2px 0 14px; }
+.login-msg.erro { background: var(--vermelho-suave); border: 1px solid var(--vermelho-borda); color: var(--vermelho); }
+.login-msg.info { background: var(--primaria-suave); border: 1px solid var(--primaria-borda); color: var(--primaria-2); }
+.btn-bloco { width: 100%; justify-content: center; height: 46px; font-size: 15px; }
+.carregando-btn { opacity: .75; cursor: progress; }
+.login-ajuda { text-align: center; font-size: 12.5px; margin: 16px 0 0; }
+.login-sair { display: block; margin: 14px auto 0; }
+@media (max-width: 900px) {
+  body.pagina-login { grid-template-columns: 1fr; }
+  .login-marca { padding: 26px 24px; }
+  .login-marca-meio, .login-marca-rodape { display: none; }
+  .login-caixa { padding: 26px 22px; }
+}
+
+/* ---------------------------------------------------------------- menu do usuário (topo) */
+.usuario-menu { position: relative; }
+.usuario-btn {
+  display: flex; align-items: center; gap: 9px; border: 1px solid var(--borda); background: var(--superficie); border-radius: 999px;
+  padding: 3px 12px 3px 3px; cursor: pointer; font: inherit; color: var(--texto); transition: border-color .12s, box-shadow .12s;
+}
+.usuario-btn:hover { border-color: var(--borda-forte); box-shadow: var(--sombra-1); }
+.avatar {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, #3b82f6, #2457d6 60%, #14b8a6 140%);
+}
+.usuario-btn .u-nome { font-size: 13px; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usuario-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); width: 250px; background: var(--superficie); border: 1px solid var(--borda);
+  border-radius: 14px; box-shadow: var(--sombra-3); padding: 8px; z-index: 50;
+}
+.usuario-pop .u-cab { padding: 8px 10px 10px; border-bottom: 1px solid var(--borda); margin-bottom: 6px; }
+.usuario-pop .u-cab strong { display: block; font-size: 14px; }
+.usuario-pop .u-cab small { display: block; font-size: 12px; }
+.usuario-pop button {
+  width: 100%; display: flex; align-items: center; gap: 10px; border: 0; background: none; font: inherit; font-size: 13.5px; color: var(--texto);
+  padding: 9px 10px; border-radius: 8px; cursor: pointer; text-align: left;
+}
+.usuario-pop button:hover { background: var(--superficie-2); }
+.usuario-pop button.perigo { color: var(--vermelho); }
+.usuario-pop svg.i { width: 17px; height: 17px; color: var(--texto-3); }
+.usuario-pop button.perigo svg.i { color: var(--vermelho); }
+.senha-provisoria { font-family: var(--mono); font-size: 22px; letter-spacing: .08em; text-align: center; padding: 14px; border-radius: 12px;
+  background: var(--superficie-2); border: 1px dashed var(--borda-forte); margin: 12px 0; user-select: all; }
+@media (max-width: 900px) { .usuario-btn .u-nome { display: none; } .usuario-btn { padding: 3px; } }

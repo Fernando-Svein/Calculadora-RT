@@ -4,6 +4,13 @@ server:
     encoding:
       charset: UTF-8
       force: true
+    session:
+      # sessão expira após 8 horas sem uso
+      timeout: 8h
+      cookie:
+        http-only: true
+        same-site: lax
+        name: HUBSESSION
 
 spring:
   application:
@@ -29,6 +36,8 @@ hub:
   paralelismo: 8
   # Por quanto tempo (minutos) um resultado de processamento fica disponível para download
   retencao-resultados-minutos: 240
+  # Usuários e senhas do hub (senhas com BCrypt). Faça backup deste arquivo.
+  banco-usuarios: ../dados/hub-usuarios.db
 
 logging:
   level:

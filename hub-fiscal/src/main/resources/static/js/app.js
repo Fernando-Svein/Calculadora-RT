@@ -181,8 +181,34 @@ window.Hub = (() => {
   }
 
   // ------------------------------------------------------------------ chamadas HTTP
+  // ------------------------------------------------------------------ autenticação
+  function cookie(nome) {
+    const c = document.cookie.split('; ').find((x) => x.startsWith(nome + '='));
+    return c ? decodeURIComponent(c.split('=')[1]) : '';
+  }
+
+  /** Token CSRF (cookie XSRF-TOKEN) exigido pelo servidor em POST/PUT/DELETE. */
+  async function tokenCsrf() {
+    if (!cookie('XSRF-TOKEN')) await fetch('/auth/csrf', { headers: { Accept: 'application/json' } });
+    return cookie('XSRF-TOKEN');
+  }
+
+  /** Sessão expirada/encerrada: volta ao login e, depois de entrar, para a mesma tela. */
+  function irParaLogin(motivo) {
+    const voltar = location.hash && location.hash !== '#/' ? '&voltar=' + encodeURIComponent(location.hash) : '';
+    location.replace(`/login.html?${motivo || 'expirou'}=1${voltar}`);
+  }
+
+  /** Trata respostas de autenticação comuns a fetch e XHR. Retorna true se redirecionou. */
+  function tratarAuth(status, data) {
+    if (status === 401) { irParaLogin('expirou'); return true; }
+    if (status === 403 && data && data.codigo === 'TROCAR_SENHA') { irParaLogin('trocar'); return true; }
+    return false;
+  }
+
   async function req(metodo, url, corpo, opcoes = {}) {
-    const init = { method: metodo, headers: {} };
+    const init = { method: metodo, headers: { Accept: 'application/json, */*' } };
+    if (metodo !== 'GET') init.headers['X-XSRF-TOKEN'] = await tokenCsrf();
     if (corpo instanceof FormData) {
       init.body = corpo;
     } else if (corpo !== undefined && corpo !== null) {
@@ -210,12 +236,22 @@ window.Hub = (() => {
     if (ct.includes('json') && texto) {
       try { data = JSON.parse(texto); } catch (e) { /* mantém texto */ }
     }
+    if (!url.startsWith('/auth/') && tratarAuth(resp.status, data)) {
+      return new Promise(() => {}); // a página está sendo trocada pelo login
+    }
+    // token CSRF desatualizado (ex.: cookie apagado): renova e tenta uma vez
+    if (resp.status === 403 && data && data.codigo === 'CSRF' && !opcoes.repetido) {
+      document.cookie = 'XSRF-TOKEN=; Max-Age=0; path=/';
+      return req(metodo, url, corpo, Object.assign({}, opcoes, { repetido: true }));
+    }
     return { ok: resp.ok, status: resp.status, data, texto, aviso, contentType: ct };
   }
 
   const api = {
     get: (url) => req('GET', url),
     post: (url, corpo, opcoes) => req('POST', url, corpo, opcoes),
+    put: (url, corpo) => req('PUT', url, corpo),
+    del: (url) => req('DELETE', url),
     /** Calculadora do Regime Geral (via proxy). */
     rg: (caminho) => '/proxy/rg' + caminho,
     /** Calculadora do Simples Nacional (via proxy). */
@@ -405,7 +441,80 @@ window.Hub = (() => {
     return AVISOS_SIMULADOS[String(codigo).trim()] || `Aviso da calculadora: dados simulados (código ${codigo}).`;
   }
 
-  function iniciar() {
+  // ------------------------------------------------------------------ usuário logado
+  function iniciais(nome) {
+    const p = String(nome || '?').trim().split(/\s+/);
+    return ((p[0] || '')[0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
+  }
+
+  function montarUsuario(u) {
+    const alvo = document.getElementById('usuarioMenu');
+    alvo.innerHTML = `<button class="usuario-btn" type="button" aria-haspopup="true" aria-expanded="false">
+        <span class="avatar">${esc(iniciais(u.nome))}</span><span class="u-nome">${esc(u.nome)}</span></button>
+      <div class="usuario-pop" hidden>
+        <div class="u-cab"><strong>${esc(u.nome)}</strong><small class="sutil">${esc(u.login)} · ${esc(u.perfilRotulo)}</small></div>
+        ${u.perfil === 'ADMIN' ? `<button type="button" data-u="usuarios">${Hub.icone('usuarios')} Gerenciar usuários</button>` : ''}
+        <button type="button" data-u="senha">${Hub.icone('cadeado')} Trocar senha</button>
+        <button type="button" data-u="sair" class="perigo">${Hub.icone('sair')} Sair</button>
+      </div>`;
+    const btn = alvo.querySelector('.usuario-btn');
+    const pop = alvo.querySelector('.usuario-pop');
+    const abrir = (sim) => { pop.hidden = !sim; btn.setAttribute('aria-expanded', sim); };
+    btn.onclick = (e) => { e.stopPropagation(); abrir(pop.hidden); };
+    document.addEventListener('click', (e) => { if (!alvo.contains(e.target)) abrir(false); });
+    alvo.querySelectorAll('[data-u]').forEach((b) => {
+      b.onclick = () => {
+        abrir(false);
+        if (b.dataset.u === 'usuarios') ir('usuarios');
+        if (b.dataset.u === 'senha') trocarSenha();
+        if (b.dataset.u === 'sair') sair();
+      };
+    });
+  }
+
+  function trocarSenha() {
+    const c = modal(`<h2>Trocar senha</h2>
+      <form data-f class="grade" style="gap:12px;max-width:380px">
+        <div class="campo"><label>Senha atual</label><input type="password" name="atual" autocomplete="current-password" required></div>
+        <div class="campo"><label>Nova senha</label><input type="password" name="nova" autocomplete="new-password" required>
+          <span class="ajuda">Mínimo de 8 caracteres, com letras e números.</span></div>
+        <div class="campo"><label>Confirme a nova senha</label><input type="password" name="nova2" autocomplete="new-password" required></div>
+        <div data-erro></div>
+        <div class="acoes"><button class="btn" type="submit">Salvar</button><button class="btn btn-sec" type="button" data-fechar-m>Cancelar</button></div>
+      </form>`);
+    const f = c.querySelector('[data-f]');
+    c.querySelector('[data-fechar-m]').onclick = fecharModal;
+    f.querySelector('[name=atual]').focus();
+    f.onsubmit = async (e) => {
+      e.preventDefault();
+      const erro = f.querySelector('[data-erro]');
+      if (f.nova.value !== f.nova2.value) { erro.innerHTML = '<div class="erro-caixa">As senhas não conferem.</div>'; return; }
+      const r = await api.post('/auth/senha', { senhaAtual: f.atual.value, novaSenha: f.nova.value });
+      if (!r.ok) { erro.innerHTML = problema(r, 'Senha não alterada'); return; }
+      fecharModal();
+      toast('Senha alterada.');
+    };
+  }
+
+  async function sair() {
+    await req('POST', '/auth/logout');
+    location.replace('/login.html');
+  }
+
+  /** Telas com `perfil` só aparecem (e só abrem) para quem tem o perfil. */
+  function aplicarPerfil(u) {
+    for (let i = modulos.length - 1; i >= 0; i--) {
+      if (modulos[i].perfil && modulos[i].perfil !== u.perfil) modulos.splice(i, 1);
+    }
+  }
+
+  async function iniciar() {
+    const eu = await req('GET', '/auth/eu');
+    if (!eu.ok) { irParaLogin(eu.status === 401 ? 'expirou' : 'erro'); return; }
+    if (eu.data.trocarSenha) { irParaLogin('trocar'); return; }
+    Hub.usuario = eu.data;
+    aplicarPerfil(eu.data);
+    montarUsuario(eu.data);
     montarMenu();
     prepararMenu();
     window.addEventListener('hashchange', rotear);
@@ -421,5 +530,6 @@ window.Hub = (() => {
     GRUPOS, modulos, registrar, iniciar, ir, rotear, api, getCache, esc, fmt, hoje, dataHoraComFuso, numero, el,
     debounce, semAcento, toast, modal, fecharModal, carregando, problema, baixarBlob, baixarTexto, baixarUrl,
     exportarExcel, avisoSimulado, statusAtual: null, atual: () => moduloAtual, recentes,
+    usuario: null, tokenCsrf, tratarAuth,
   };
 })();

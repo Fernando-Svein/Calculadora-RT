@@ -13,6 +13,21 @@ Aplicação web interna do departamento fiscal, construída sobre as **calculado
 
 Para que outros computadores acessem, libere a **porta 8090 (TCP, entrada)** no Firewall do Windows desta máquina. As portas 8080 e 8082 (calculadoras) não precisam ser liberadas: o hub repassa as chamadas.
 
+## Acesso (login e senha)
+
+O hub exige login. Na **primeira vez**, abra `http://localhost:8090` **no próprio servidor** e crie a conta de administrador
+(por segurança essa tela não funciona a partir de outros computadores). Depois, em **Sistema → Usuários** (ou no menu do
+usuário, no canto superior direito), o administrador cadastra a equipe:
+
+- cada usuário novo recebe uma **senha provisória**, mostrada uma única vez, que ele troca no primeiro acesso;
+- perfis: **Usuário** (todas as ferramentas) e **Administrador** (também gerencia usuários);
+- **Desativar** bloqueia o acesso na hora (inclusive de quem está logado); **Redefinir senha** gera nova provisória;
+- senhas com no mínimo 8 caracteres, letras e números, guardadas com BCrypt; 5 erros seguidos bloqueiam o usuário por 15 minutos;
+  a sessão expira após 8 horas sem uso.
+
+Os usuários ficam em `dados\hub-usuarios.db` – **inclua esse arquivo no backup** do servidor. Se perder o acesso de todos
+os administradores, pare o hub, renomeie esse arquivo e inicie de novo: o primeiro acesso volta a ser oferecido no servidor.
+
 ## Instalação no servidor (VM Windows)
 
 1. Copie a pasta inteira do projeto para a VM (ex.: `C:\HubFiscal`) — inclui `tools\` com o Java 25 portátil.

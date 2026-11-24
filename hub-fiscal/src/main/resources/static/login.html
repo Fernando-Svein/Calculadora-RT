@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar – Hub Fiscal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='Segoe UI,Arial' font-weight='700'>RT</text></svg>">
+  <link rel="stylesheet" href="css/app.css?v=6">
+</head>
+<body class="pagina-login">
+  <section class="login-marca">
+    <div class="login-marca-topo">
+      <span class="marca-logo"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M14 3v6h6"/><path d="m8 15 2.5 2.5L16 12"/></svg></span>
+      <span class="marca-texto"><strong>Hub Fiscal</strong><small>Reforma Tributária do Consumo</small></span>
+    </div>
+    <div class="login-marca-meio">
+      <h1>CBS, IBS e Imposto Seletivo em um só lugar.</h1>
+      <p>Classificação, simulação e auditoria para clientes do Regime Regular e do Simples Nacional, com as calculadoras oficiais da Receita Federal.</p>
+      <ul class="login-lista">
+        <li>Classificação de cClassTrib a partir de SPED e XML</li>
+        <li>Simuladores do Regime Regular e do Simples Nacional</li>
+        <li>Auditoria de notas fiscais contra a calculadora oficial</li>
+      </ul>
+    </div>
+    <small class="login-marca-rodape">Uso interno do departamento fiscal · LC 214/2025</small>
+  </section>
+
+  <main class="login-painel">
+    <div class="login-caixa">
+      <!-- login -->
+      <form id="fLogin" class="login-form" hidden autocomplete="on">
+        <h2>Entrar</h2>
+        <p class="sutil">Use o usuário e a senha fornecidos pelo administrador do hub.</p>
+        <div class="campo"><label for="lUsuario">Usuário</label>
+          <input id="lUsuario" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>
+        <div class="campo"><label for="lSenha">Senha</label>
+          <div class="senha-wrap"><input id="lSenha" name="password" type="password" autocomplete="current-password" required>
+            <button type="button" class="ver-senha" data-ver="lSenha" aria-label="Mostrar senha">Mostrar</button></div>
+          <span class="caps" hidden>Caps Lock ativado</span></div>
+        <div class="login-msg" role="alert" hidden></div>
+        <button class="btn btn-bloco" type="submit">Entrar</button>
+        <p class="sutil login-ajuda">Esqueceu a senha? Peça ao administrador do hub para redefini-la.</p>
+      </form>
+
+      <!-- primeiro acesso -->
+      <form id="fPrimeiro" class="login-form" hidden autocomplete="off">
+        <span class="login-etiqueta">Primeiro acesso</span>
+        <h2>Criar administrador</h2>
+        <p class="sutil">Nenhum usuário foi cadastrado ainda. Crie a conta de administrador: ela cadastra os demais usuários do departamento.</p>
+        <div class="campo"><label for="pNome">Nome</label><input id="pNome" autocomplete="name" required></div>
+        <div class="campo"><label for="pUsuario">Usuário</label><input id="pUsuario" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="ex.: fernando.silva" required></div>
+        <div class="campo"><label for="pSenha">Senha</label>
+          <div class="senha-wrap"><input id="pSenha" type="password" autocomplete="new-password" required>
+            <button type="button" class="ver-senha" data-ver="pSenha" aria-label="Mostrar senha">Mostrar</button></div>
+          <span class="ajuda">Mínimo de 8 caracteres, com letras e números.</span></div>
+        <div class="campo"><label for="pSenha2">Confirme a senha</label><input id="pSenha2" type="password" autocomplete="new-password" required></div>
+        <div class="login-msg" role="alert" hidden></div>
+        <button class="btn btn-bloco" type="submit">Criar e entrar</button>
+      </form>
+
+      <!-- primeiro acesso fora do servidor -->
+      <div id="fNaoConfigurado" class="login-form" hidden>
+        <span class="login-etiqueta">Instalação pendente</span>
+        <h2>Hub ainda não configurado</h2>
+        <p>Por segurança, a conta de administrador só pode ser criada <strong>no próprio servidor</strong> do hub.</p>
+        <p class="sutil">No servidor, abra <code>http://localhost:8090</code> no navegador e conclua o primeiro acesso.</p>
+      </div>
+
+      <!-- troca obrigatória -->
+      <form id="fTrocar" class="login-form" hidden autocomplete="off">
+        <span class="login-etiqueta">Senha provisória</span>
+        <h2>Defina sua senha</h2>
+        <p class="sutil">Olá, <strong data-nome></strong>. Para continuar, troque a senha provisória por uma senha pessoal.</p>
+        <div class="campo"><label for="tAtual">Senha provisória</label><input id="tAtual" type="password" autocomplete="current-password" required></div>
+        <div class="campo"><label for="tNova">Nova senha</label>
+          <div class="senha-wrap"><input id="tNova" type="password" autocomplete="new-password" required>
+            <button type="button" class="ver-senha" data-ver="tNova" aria-label="Mostrar senha">Mostrar</button></div>
+          <span class="ajuda">Mínimo de 8 caracteres, com letras e números.</span></div>
+        <div class="campo"><label for="tNova2">Confirme a nova senha</label><input id="tNova2" type="password" autocomplete="new-password" required></div>
+        <div class="login-msg" role="alert" hidden></div>
+        <button class="btn btn-bloco" type="submit">Salvar e entrar</button>
+        <button class="btn-link login-sair" type="button" data-sair>Sair</button>
+      </form>
+    </div>
+  </main>
+
+  <script>
+  'use strict';
+  (() => {
+    const $ = (s) => document.querySelector(s);
+    const cookie = (n) => (document.cookie.split('; ').find((c) => c.startsWith(n + '=')) || '').split('=')[1];
+
+    async function csrf() {
+      if (!cookie('XSRF-TOKEN')) await fetch('/auth/csrf', { headers: { Accept: 'application/json' } });
+      return decodeURIComponent(cookie('XSRF-TOKEN') || '');
+    }
+    async function post(url, corpo) {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': await csrf() },
+        body: JSON.stringify(corpo || {}),
+      });
+      let data = null;
+      try { data = await r.json(); } catch (e) { /* sem corpo */ }
+      return { ok: r.ok, status: r.status, data };
+    }
+    function mostrar(id) {
+      ['fLogin', 'fPrimeiro', 'fNaoConfigurado', 'fTrocar'].forEach((f) => { $('#' + f).hidden = f !== id; });
+      const primeiro = $('#' + id).querySelector('input');
+      if (primeiro) primeiro.focus();
+    }
+    function msg(form, texto, tipo) {
+      const m = form.querySelector('.login-msg');
+      m.textContent = texto || '';
+      m.className = 'login-msg ' + (tipo || 'erro');
+      m.hidden = !texto;
+    }
+    function ocupado(form, sim) {
+      const b = form.querySelector('[type=submit]');
+      b.disabled = sim;
+      b.classList.toggle('carregando-btn', sim);
+    }
+    const erroDe = (r) => (r.data && (r.data.detail || r.data.title)) || 'Não foi possível concluir. Tente novamente.';
+    const destino = () => {
+      const v = new URLSearchParams(location.search).get('voltar');
+      return v && v.startsWith('#/') ? '/' + v : '/';
+    };
+
+    // mostrar/ocultar senha e aviso de Caps Lock
+    document.querySelectorAll('[data-ver]').forEach((b) => {
+      b.onclick = () => {
+        const i = document.getElementById(b.dataset.ver);
+        i.type = i.type === 'password' ? 'text' : 'password';
+        b.textContent = i.type === 'password' ? 'Mostrar' : 'Ocultar';
+      };
+    });
+    $('#lSenha').addEventListener('keyup', (e) => { $('.caps').hidden = !(e.getModifierState && e.getModifierState('CapsLock')); });
+
+    $('#fLogin').onsubmit = async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      msg(f, '');
+      ocupado(f, true);
+      const r = await post('/auth/login', { usuario: $('#lUsuario').value, senha: $('#lSenha').value });
+      ocupado(f, false);
+      if (!r.ok) {
+        msg(f, erroDe(r));
+        $('#lSenha').value = '';
+        $('#lSenha').focus();
+        return;
+      }
+      if (r.data.trocarSenha) {
+        $('#fTrocar [data-nome]').textContent = r.data.nome;
+        $('#tAtual').value = $('#lSenha').value;
+        mostrar('fTrocar');
+        $('#tNova').focus();
+        return;
+      }
+      location.replace(destino());
+    };
+
+    $('#fPrimeiro').onsubmit = async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      if ($('#pSenha').value !== $('#pSenha2').value) { msg(f, 'As senhas não conferem.'); return; }
+      ocupado(f, true);
+      const r = await post('/auth/primeiro-acesso', { usuario: $('#pUsuario').value, nome: $('#pNome').value, senha: $('#pSenha').value });
+      ocupado(f, false);
+      if (!r.ok) { msg(f, erroDe(r)); return; }
+      location.replace('/');
+    };
+
+    $('#fTrocar').onsubmit = async (e) => {
+      e.preventDefault();
+      const f = e.target;
+      if ($('#tNova').value !== $('#tNova2').value) { msg(f, 'As senhas não conferem.'); return; }
+      ocupado(f, true);
+      const r = await post('/auth/senha', { senhaAtual: $('#tAtual').value, novaSenha: $('#tNova').value });
+      ocupado(f, false);
+      if (!r.ok) { msg(f, erroDe(r)); return; }
+      location.replace(destino());
+    };
+
+    $('[data-sair]').onclick = async () => { await post('/auth/logout'); location.replace('/login.html'); };
+
+    // estado inicial: já logado? primeiro acesso?
+    (async () => {
+      const eu = await fetch('/auth/eu', { headers: { Accept: 'application/json' } });
+      if (eu.ok) {
+        const u = await eu.json();
+        if (!u.trocarSenha) { location.replace(destino()); return; }
+        $('#fTrocar [data-nome]').textContent = u.nome;
+        mostrar('fTrocar');
+        return;
+      }
+      await csrf();
+      const est = await (await fetch('/auth/estado', { headers: { Accept: 'application/json' } })).json();
+      if (est.primeiroAcesso) mostrar(est.acessoLocal ? 'fPrimeiro' : 'fNaoConfigurado');
+      else {
+        mostrar('fLogin');
+        if (new URLSearchParams(location.search).has('expirou')) msg($('#fLogin'), 'Sua sessão terminou. Entre novamente.', 'info');
+      }
+    })();
+  })();
+  </script>
+</body>
+</html>

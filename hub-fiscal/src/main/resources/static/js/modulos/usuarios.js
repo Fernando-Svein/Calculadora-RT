@@ -150,11 +150,11 @@
             <td>${!u.ativo ? '<span class="etq st-DIVERGENTE">Desativado</span>'
               : u.trocarSenha ? '<span class="etq st-REVISAR">Aguardando 1º acesso</span>' : '<span class="etq st-OK">Ativo</span>'}</td>
             <td>${esc(dataHora(u.ultimoAcesso))}</td>
-            <td style="text-align:right;white-space:nowrap">
-              <button class="btn btn-sec btn-peq" data-acao="editar">Editar</button>
-              <button class="btn btn-sec btn-peq" data-acao="senha">Redefinir senha</button>
-              ${u.id === eu ? '' : '<button class="btn btn-perigo btn-peq" data-acao="excluir">Excluir</button>'}
-            </td></tr>`).join('')}
+            <td><div class="acoes-tab">
+              <button class="btn-link" data-acao="editar">Editar</button>
+              <button class="btn-link" data-acao="senha">Redefinir senha</button>
+              ${u.id === eu ? '' : '<button class="btn-link perigo" data-acao="excluir">Excluir</button>'}
+            </div></td></tr>`).join('')}
           </tbody></table></div>`;
         lista.querySelectorAll('[data-acao]').forEach((b) => {
           const u = r.data.find((x) => String(x.id) === b.closest('tr').dataset.id);

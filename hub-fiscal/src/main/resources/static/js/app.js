@@ -135,7 +135,25 @@ window.Hub = (() => {
     document.querySelector('.menu-busca-ico').innerHTML = Hub.icone('busca');
     recolherMenu(pref.ler('menuRecolhido', false));
     telaLarga.addEventListener('change', () => recolherMenu(pref.ler('menuRecolhido', false)));
-    document.getElementById('btnRecolher').onclick = () => recolherMenu(!document.body.classList.contains('menu-recolhido'));
+    // menu recolhido: abre por cima do conteúdo ao passar o mouse ou ao navegar pelo teclado
+    const lateral = document.querySelector('.sidebar');
+    let segurar = false; // logo após recolher, só reabre quando o mouse sair e voltar
+    const expandir = (sim) => lateral.classList.toggle('expandido', sim && document.body.classList.contains('menu-recolhido'));
+    lateral.addEventListener('mouseenter', () => { if (!segurar) expandir(true); });
+    lateral.addEventListener('mouseleave', () => {
+      segurar = false;
+      if (!lateral.contains(document.activeElement) || !document.activeElement.matches(':focus-visible')) expandir(false);
+    });
+    lateral.addEventListener('focusin', (e) => { if (e.target.matches(':focus-visible')) expandir(true); });
+    lateral.addEventListener('focusout', (e) => { if (!lateral.contains(e.relatedTarget) && !lateral.matches(':hover')) expandir(false); });
+    const btnRecolher = document.getElementById('btnRecolher');
+    btnRecolher.onclick = (e) => {
+      const recolher = !document.body.classList.contains('menu-recolhido');
+      recolherMenu(recolher);
+      expandir(false);
+      segurar = recolher && e.detail > 0; // clique do mouse (não teclado)
+      if (segurar) btnRecolher.blur();
+    };
     const busca = document.getElementById('menuBusca');
     busca.addEventListener('input', () => filtrarMenu(busca.value));
     busca.addEventListener('keydown', (e) => {

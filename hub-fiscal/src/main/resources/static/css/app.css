@@ -155,25 +155,25 @@ kbd {
 /* menu recolhido: trilho de ícones que se expande sobre o conteúdo ao passar o mouse */
 body.menu-recolhido { --menu-ocupado: 68px; }
 .menu-recolhido .sidebar { width: 68px; flex-basis: 68px; }
-.menu-recolhido .sidebar:hover, .menu-recolhido .sidebar:focus-within {
+.menu-recolhido .sidebar.expandido {
   width: var(--menu-largura); flex-basis: var(--menu-largura); margin-right: calc(68px - var(--menu-largura));
   box-shadow: 12px 0 40px -8px rgba(15, 23, 42, .45);
 }
 .menu-recolhido .menu-grupo-itens { grid-template-rows: 1fr; }
 .menu-recolhido .menu-grupo-titulo .chev, .menu-recolhido .menu-grupo-titulo .qtd { display: none; }
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .marca-texto,
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .btn-recolher,
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .menu-item .mtexto,
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .menu-busca input,
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .menu-busca kbd,
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .rodape-texto { opacity: 0; }
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .menu-grupo-titulo {
+.menu-recolhido .sidebar:not(.expandido) .marca-texto,
+.menu-recolhido .sidebar:not(.expandido) .btn-recolher,
+.menu-recolhido .sidebar:not(.expandido) .menu-item .mtexto,
+.menu-recolhido .sidebar:not(.expandido) .menu-busca input,
+.menu-recolhido .sidebar:not(.expandido) .menu-busca kbd,
+.menu-recolhido .sidebar:not(.expandido) .rodape-texto { opacity: 0; }
+.menu-recolhido .sidebar:not(.expandido) .menu-grupo-titulo {
   font-size: 0; padding: 0; height: 13px; margin: 0 6px; pointer-events: none; position: relative;
 }
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .menu-grupo-titulo::after {
+.menu-recolhido .sidebar:not(.expandido) .menu-grupo-titulo::after {
   content: ""; position: absolute; left: 4px; right: 4px; top: 6px; height: 1px; background: rgba(255, 255, 255, .1);
 }
-.menu-recolhido .sidebar:not(:hover):not(:focus-within) .menu-item.ativo::before { left: -12px; }
+.menu-recolhido .sidebar:not(.expandido) .menu-item.ativo::before { left: -12px; }
 .menu-recolhido .btn-recolher { transform: scaleX(-1); }
 
 /* ---------------------------------------------------------------- topo */

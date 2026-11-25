@@ -8,11 +8,11 @@
   const FORMS = [
     {
       id: 'unificada', titulo: 'Unificada NF-e/NFC-e', url: '/calculadora/base-calculo/base-calculo-unificada',
-      desc: 'Calcula de uma vez a base do regime regular (baseRG), do Imposto Seletivo (baseIS) e do Simples (baseSN), aplicando a vigência de cada componente ao ano (ex.: PIS/COFINS deixam de existir em 2027).',
+      desc: 'Calcula de uma vez a base do IBS/CBS no regime regular, a do Imposto Seletivo e a receita do Simples Nacional, aplicando a vigência de cada componente ao ano (ex.: PIS/COFINS deixam de existir em 2027).',
       campos: [
         ['anoFatoGerador', 'Ano do fato gerador *', 'int', anoAtual],
         ['tipoDocumento', 'Documento *', ['55|NF-e (55)', '65|NFC-e (65)'], '55', 'int'],
-        ['natureza', 'Natureza *', ['bem|Bem', 'servico|Serviço'], 'bem'],
+        ['natureza', 'Natureza *', ['bem|Mercadoria (bem)', 'servico|Serviço'], 'bem'],
         ['vProd', 'Valor dos produtos'], ['vFrete', 'Frete'], ['vSeg', 'Seguro'], ['vOutro', 'Outras despesas'], ['vDesc', 'Desconto'],
         ['vII', 'Imposto de Importação'], ['vIS', 'Imposto Seletivo'], ['vICMS', 'ICMS'], ['vICMSUFDest', 'ICMS UF destino'],
         ['vFCP', 'FCP'], ['vFCPUFDest', 'FCP UF destino'], ['vICMSMono', 'ICMS monofásico'], ['vPIS', 'PIS'], ['vCOFINS', 'COFINS'], ['vISSQN', 'ISSQN'],
@@ -46,7 +46,7 @@
       campos: [
         ['anoFatoGerador', 'Ano do fato gerador *', 'int', anoAtual],
         ['valorServico', 'Valor do serviço'], ['descontoIncondicional', 'Desconto incondicional'],
-        ['vCalcReeRepRes', 'Reembolso/repasse/ressarcimento'], ['vCalcDedRedIBSCBS', 'Deduções/reduções da base (locação etc.)'],
+        ['vCalcReeRepRes', 'Reembolsos, repasses e ressarcimentos'], ['vCalcDedRedIBSCBS', 'Deduções/reduções da base (locação etc.)'],
         ['iss', 'ISS'], ['pis', 'PIS'], ['cofins', 'COFINS'],
       ],
     },
@@ -55,9 +55,9 @@
       desc: 'Versão experimental da calculadora oficial: bases da NFS-e considerando a opção pelo Simples, salão-parceiro e locação (9903), com ajustes documentados.',
       campos: [
         ['anoFatoGerador', 'Ano do fato gerador *', 'int', anoAtual],
-        ['opSimpNac', 'Opção pelo Simples *', ['1|1 – Não optante', '2|2 – MEI', '3|3 – ME/EPP', '4|4 – Opção pendente'], '1'],
+        ['opSimpNac', 'Situação do prestador no Simples *', ['1|Não optante', '2|MEI', '3|Optante – ME ou EPP', '4|Opção pelo Simples pendente'], '1'],
         ['situacao', 'Situação *', ['comum|Comum', 'salaoParceiro|Salão-parceiro', 'locacao9903|Locação (9903)'], 'comum'],
-        ['regApIBSCBSSN', 'Regime IBS/CBS no Simples', ['|Não informar', '1|1 – Pelo Simples', '2|2 – CBS Simples, IBS regular', '3|3 – Regime regular'], ''],
+        ['regApIBSCBSSN', 'Como recolhe o IBS e a CBS', ['|Não informar', '1|IBS e CBS dentro do Simples', '2|CBS no Simples e IBS fora', '3|IBS e CBS fora do Simples (regime regular)'], ''],
         ['vServ', 'Valor do serviço'], ['vDescIncond', 'Desconto incondicional'], ['vISSQN', 'ISSQN'], ['vPIS', 'PIS'], ['vCOFINS', 'COFINS'],
       ],
       extra: 'nfseUnificada',
@@ -112,23 +112,23 @@
     d.innerHTML = `<p class="sutil">${esc(f.desc)}</p>
       <div class="grade g4">${f.campos.map(campoHtml).join('')}</div>
       ${f.extra === 'nfseUnificada' ? `<div data-extra>
-        <fieldset style="margin-top:12px"><legend>Locação (situação 9903)</legend><div class="grade g4">
+        <fieldset style="margin-top:12px"><legend>Locação de imóvel (situação 9903)</legend><div class="grade g4">
           ${comp.campo('% copropriedade', '<input data-l="pCopropriedade" value="100">')}
           ${comp.campo('Valor total da operação', '<input data-l="vTotOper">')}
           ${comp.campo('Desconto incondicional total', '<input data-l="vDescIncondTot">')}
           ${comp.campo('Soma dos ajustes', '<input data-l="somaAjustesLocImoveis">')}</div></fieldset>
         <fieldset><legend>Documentos de ajuste da base</legend><div data-docs></div>
           <button class="btn btn-sec btn-peq" data-add-doc type="button">+ Ajuste</button></fieldset></div>` : ''}
-      <div class="acoes" style="margin-top:12px"><button class="btn" data-ok>Calcular</button><button class="btn btn-sec" data-json>Ver JSON</button></div>
+      <div class="acoes" style="margin-top:12px"><button class="btn" data-ok>Calcular</button><button class="btn btn-sec" data-json>Ver dados técnicos</button></div>
       <div data-res style="margin-top:14px"></div>`;
     const res = d.querySelector('[data-res]');
     if (f.extra === 'nfseUnificada') {
       const docs = d.querySelector('[data-docs]');
       d.querySelector('[data-add-doc]').onclick = () => {
         docs.appendChild(Hub.el(`<div class="grade g4" style="margin-bottom:8px">
-          ${comp.campo('Tipo de ajuste (tpAjusteBC)', '<input data-d="tpAjusteBC" placeholder="ex.: 101">')}
+          ${comp.campo('Tipo de ajuste', '<select data-d="tpAjusteBC"><option value="101">Subcontratação</option><option value="102">Consórcio</option><option value="103">Intermediação</option><option value="104">Cessão de mão de obra</option><option value="105">Ressarcimento</option><option value="9">Profissional-parceiro (salão-parceiro)</option><option value="199">Outros (descrever)</option></select>')}
           ${comp.campo('Valor aplicado', '<input data-d="vAjusteAplic">')}
-          ${comp.campo('Descrição', '<input data-d="xTpAjusteBC">')}</div>`));
+          ${comp.campo('Descrição (obrigatória no tipo Outros)', '<input data-d="xTpAjusteBC">')}</div>`));
       };
     }
     const montar = () => {
@@ -163,9 +163,9 @@
       const dados = r.data;
       const numeros = Object.entries(dados).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)));
       const avisos = [].concat(ignorados.length ? [`Não compõem a base em ${corpo.anoFatoGerador} e foram ignorados: ${ignorados.join(', ')}.`] : [], dados.avisos || []);
-      res.innerHTML = `<div class="kpis">${numeros.map(([k, v]) => `<div class="kpi ${/^base/i.test(k) ? 'destaque' : ''}"><small>${esc(k)}</small><strong>${fmt.moeda(v)}</strong></div>`).join('')}</div>
+      res.innerHTML = `<div class="kpis">${numeros.map(([k, v]) => `<div class="kpi ${/^base/i.test(k) ? 'destaque' : ''}"><small>${esc(Hub.rotulos.campo(k))}</small><strong>${fmt.moeda(v)}</strong></div>`).join('')}</div>
         ${avisos.length ? `<div class="aviso"><ul>${avisos.map((a) => `<li>${esc(typeof a === 'object' ? JSON.stringify(a) : a)}</li>`).join('')}</ul></div>` : ''}
-        <details><summary>Resposta completa</summary><pre class="json">${esc(JSON.stringify(dados, null, 2))}</pre></details>`;
+        <details><summary>Resposta técnica completa</summary><pre class="json">${esc(JSON.stringify(dados, null, 2))}</pre></details>`;
     };
   }
 

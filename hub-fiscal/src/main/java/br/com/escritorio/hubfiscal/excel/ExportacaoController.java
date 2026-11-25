@@ -33,6 +33,12 @@ public class ExportacaoController {
 
     @PostMapping("/hub/excel")
     public ResponseEntity<byte[]> exportar(@RequestBody PedidoExportacao pedido) {
+        if (pedido.colunas() == null || pedido.colunas().isEmpty() || pedido.linhas() == null) {
+            throw new IllegalArgumentException("Informe as colunas e as linhas da planilha.");
+        }
+        if (pedido.colunas().size() > 500 || pedido.linhas().size() > 1_000_000) {
+            throw new IllegalArgumentException("Planilha grande demais para exportar (máximo de 500 colunas e 1 milhão de linhas).");
+        }
         try (Planilha p = new Planilha()) {
             if (pedido.resumo() != null && !pedido.resumo().isEmpty()) {
                 List<String[]> pares = new ArrayList<>();
@@ -49,12 +55,13 @@ public class ExportacaoController {
                     case "percentual" -> Planilha.Tipo.PERCENTUAL;
                     default -> Planilha.Tipo.TEXTO;
                 };
-                int largura = c.largura() != null ? c.largura() : Math.max(10, Math.min(60, c.titulo().length() + 4));
-                cols.add(new Coluna(c.titulo(), largura, t));
+                String titulo = c.titulo() == null ? "" : c.titulo();
+                int largura = c.largura() != null ? Math.max(1, Math.min(255, c.largura())) : Math.max(10, Math.min(60, titulo.length() + 4));
+                cols.add(new Coluna(titulo, largura, t));
             }
             List<Object[]> linhas = new ArrayList<>();
             for (List<Object> l : pedido.linhas()) {
-                linhas.add(l.toArray());
+                linhas.add(l == null ? new Object[0] : l.toArray());
             }
             p.abaTabela("Dados", cols, linhas, -1);
             String base = pedido.arquivo() == null ? "hub-fiscal" : pedido.arquivo().replaceAll("[^\\w.-]", "_");

@@ -26,10 +26,12 @@ spring:
       max-file-size: 300MB
       max-request-size: 600MB
 
+# Configuração do hub: URLs das calculadoras e caminhos de arquivos ficam só aqui (ver HubProperties).
+# Caminhos relativos partem da pasta hub-fiscal, onde scripts\hub.ps1 inicia o serviço.
 hub:
-  # Endereços das calculadoras oficiais da Receita Federal (rodando localmente)
-  api-regime-geral: http://localhost:8080/api
-  api-simples-nacional: http://localhost:8082/api
+  # Endereços das calculadoras oficiais da Receita Federal (rodando localmente, só em 127.0.0.1)
+  api-regime-geral: http://127.0.0.1:8080/api
+  api-simples-nacional: http://127.0.0.1:8082/api
   # Banco oficial gerado pelo Flyway no repositório calculadora-rtc-regime-regular (somente leitura)
   banco-oficial: ../calculadora-rtc-regime-regular/calculadora/db/calculadora-pro.db
   # Quantas chamadas simultâneas às calculadoras durante processamentos em lote
@@ -38,6 +40,15 @@ hub:
   retencao-resultados-minutos: 240
   # Usuários e senhas do hub (senhas com BCrypt). Faça backup deste arquivo.
   banco-usuarios: ../dados/hub-usuarios.db
+  # Resultado da última verificação de atualização das calculadoras (gravado por scripts\hub.ps1 verificar)
+  arquivo-ultima-atualizacao: ../logs/ultima-atualizacao.json
+  # Cenário de simulação da CBS (seletor no topo do hub). As simulações de 2026 são calculadas pela calculadora
+  # oficial (alíquota de teste) e o hub reescala só a CBS para esta alíquota; a partir de 2027 ela é enviada
+  # como alíquota nominal. XML gerado e auditoria de notas usam sempre a alíquota oficial.
+  # Para retirar o seletor, apague a linha "aliquota".
+  cenario-cbs:
+    aliquota: 11.3
+    rotulo: Cenário TCU
 
 logging:
   level:

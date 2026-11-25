@@ -25,6 +25,8 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import jakarta.servlet.FilterChain;
@@ -43,8 +45,16 @@ public class SegurancaConfig {
 
     /** Endereços acessíveis sem login. */
     private static final String[] PUBLICOS = {
-            "/login.html", "/css/**", "/favicon.ico", "/error",
+            "/login.html", "/css/**", "/js/tema.js", "/js/login.js", "/favicon.ico", "/error",
             "/auth/csrf", "/auth/estado", "/auth/login", "/auth/primeiro-acesso" };
+
+    /**
+     * Content-Security-Policy. style-src aceita 'unsafe-inline' porque as telas usam atributos style;
+     * scripts e conexões ficam restritos ao próprio hub.
+     */
+    static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+            + "img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; "
+            + "base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -80,8 +90,15 @@ public class SegurancaConfig {
                         .logoutSuccessHandler((req, resp, auth) -> resp.setStatus(204))
                         .deleteCookies("HUBSESSION"))
                 .exceptionHandling(e -> e.authenticationEntryPoint(naoAutenticado()).accessDeniedHandler(acessoNegado()))
-                // impede que outros sites embutam o hub (clickjacking); permite molduras do próprio hub
-                .headers(h -> h.frameOptions(fo -> fo.sameOrigin()))
+                // impede que outros sites embutam o hub (clickjacking); permite molduras do próprio hub.
+                // CSP: só executa scripts dos arquivos do próprio hub (nada inline nem de outros sites),
+                // segunda barreira caso algum texto vindo de XML/SPED escape do tratamento das telas.
+                .headers(h -> h
+                        .frameOptions(fo -> fo.sameOrigin())
+                        .contentSecurityPolicy(csp -> csp.policyDirectives(CSP))
+                        .referrerPolicy(r -> r.policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.SAME_ORIGIN))
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy",
+                                "camera=(), microphone=(), geolocation=(), payment=(), usb=()")))
                 .addFilterBefore(new UsuarioAtivoFilter(repo, contexto), AuthorizationFilter.class);
         return http.build();
     }
@@ -143,6 +160,13 @@ public class SegurancaConfig {
                     return;
                 }
                 Usuario u = atual.get();
+                if (!UsuarioSessao.marcaSenha(u.senhaHash()).equals(s.marcaSenha())) {
+                    // a senha mudou depois deste login (troca pelo próprio usuário em outro computador ou
+                    // redefinição pelo administrador): encerra as demais sessões abertas com a senha antiga
+                    encerrar(req);
+                    json(resp, 401, "Sessão encerrada", "A senha foi alterada. Entre novamente.", null);
+                    return;
+                }
                 if (!u.perfil().name().equals(s.perfil()) || !u.nome().equals(s.nome())) {
                     // perfil/nome alterados pelo administrador: atualiza a sessão
                     SecurityContext ctx = SecurityContextHolder.createEmptyContext();
@@ -150,8 +174,10 @@ public class SegurancaConfig {
                     SecurityContextHolder.setContext(ctx);
                     contexto.saveContext(ctx, req, resp);
                 }
-                String caminho = req.getRequestURI().substring(req.getContextPath().length());
-                boolean api = caminho.startsWith("/hub/") || caminho.startsWith("/proxy/") || caminho.startsWith("/admin/");
+                // mesmo caminho que o proxy repassa (decodificado e normalizado): ver Ferramentas.caminhoCanonico
+                String caminho = Ferramentas.caminhoCanonico(req);
+                String minusculo = caminho.toLowerCase(java.util.Locale.ROOT);
+                boolean api = minusculo.startsWith("/hub/") || minusculo.startsWith("/proxy/") || minusculo.startsWith("/admin/");
                 if (u.trocarSenha() && api) {
                     json(resp, 403, "Troca de senha obrigatória", "Defina uma nova senha para continuar.", "TROCAR_SENHA");
                     return;

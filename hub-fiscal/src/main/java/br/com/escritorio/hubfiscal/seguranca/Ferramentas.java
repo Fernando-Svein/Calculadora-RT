@@ -2,9 +2,15 @@ package br.com.escritorio.hubfiscal.seguranca;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.web.util.UrlPathHelper;
+
+import br.com.escritorio.hubfiscal.infra.Api;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Ferramentas do hub que podem ser liberadas por usuário (os ids são as rotas das telas)
@@ -71,8 +77,41 @@ public final class Ferramentas {
             new Regra(null, RG + "/nfse/base-calculo", false, Set.of("bases")),
             new Regra(null, RG + "/nfse/", false, Set.of("nfse")));
 
-    /** Ferramentas que liberam a operação, ou vazio se a operação é aberta a todo usuário logado. */
+    /**
+     * Ferramentas que liberam a operação, ou vazio se a operação é aberta a todo usuário logado.
+     * {@code caminho} deve ser o {@link #caminhoCanonico canônico}; a comparação ignora maiúsculas.
+     */
     public static Optional<Set<String>> exigidas(String metodo, String caminho) {
-        return REGRAS.stream().filter(r -> r.casa(metodo, caminho)).findFirst().map(Regra::ferramentas);
+        String c = caminho.toLowerCase(Locale.ROOT);
+        String m = metodo == null ? null : metodo.toUpperCase(Locale.ROOT);
+        return REGRAS.stream().filter(r -> r.casa(m, c)).findFirst().map(Regra::ferramentas);
+    }
+
+    private static final UrlPathHelper CAMINHOS = new UrlPathHelper();
+
+    /**
+     * Caminho da requisição na forma usada TANTO na checagem de permissão QUANTO no repasse do proxy:
+     * decodificado ({@code %2D} → {@code -}), sem barras finais e com o apelido da calculadora
+     * normalizado ({@code /proxy/RG}, {@code /proxy/regime-geral} → {@code /proxy/rg}).
+     * Sem isso, variações do mesmo endereço passavam pela checagem sem casar com nenhuma regra
+     * e chegavam à calculadora (que as aceita), liberando ferramentas não autorizadas.
+     */
+    public static String caminhoCanonico(HttpServletRequest req) {
+        String c = CAMINHOS.getPathWithinApplication(req); // decodifica e remove ;parâmetros
+        while (c.length() > 1 && c.endsWith("/")) {
+            c = c.substring(0, c.length() - 1);
+        }
+        if (c.regionMatches(true, 0, "/proxy/", 0, 7)) {
+            String resto = c.substring(7);
+            int barra = resto.indexOf('/');
+            String apelido = barra < 0 ? resto : resto.substring(0, barra);
+            try {
+                String api = Api.of(apelido) == Api.RG ? "rg" : "sn";
+                c = "/proxy/" + api + (barra < 0 ? "" : resto.substring(barra));
+            } catch (IllegalArgumentException e) {
+                // API desconhecida: o proxy responde 404
+            }
+        }
+        return c;
     }
 }

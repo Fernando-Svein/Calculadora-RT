@@ -18,7 +18,7 @@
   --superficie-2: #fafafa;
   --texto: #363636;
   --texto-2: #4a4a4a;
-  --texto-3: #7a7a7a;
+  --texto-3: #6b6b6b; /* 5:1 sobre o fundo: legível em textos pequenos (WCAG AA) */
   --borda: #e6e6e6;
   --borda-forte: #dbdbdb;
 
@@ -42,7 +42,7 @@
   --fonte: "Inter", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --fonte-titulo: var(--fonte);
   --mono: "Cascadia Mono", Consolas, "Courier New", monospace;
-  --menu-largura: 240px;
+  --menu-largura: 256px;
   --topo-altura: 56px;
 }
 
@@ -121,11 +121,12 @@ kbd {
 .menu-grupo { margin-top: 6px; }
 .menu-grupo-titulo {
   width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: none; cursor: pointer; text-align: left;
-  font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: #8a8a8a;
-  padding: 8px 16px 6px 20px; white-space: nowrap; transition: color .15s;
+  font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #6e6e6e;
+  padding: 8px 16px 6px 20px; transition: color .15s;
 }
 .menu-grupo-titulo:hover { color: var(--texto); }
-.menu-grupo-titulo .mtexto { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+/* nome do grupo inteiro (antes "PROCESSAMENTO EM L…"): quebra linha se não couber */
+.menu-grupo-titulo .mtexto { flex: 1; line-height: 1.3; }
 .menu-grupo-titulo .qtd {
   font-size: 10.5px; letter-spacing: 0; background: var(--fundo); border-radius: var(--r-sm); padding: 0 6px; color: var(--texto-3);
   transition: opacity .15s;
@@ -154,8 +155,8 @@ kbd {
 .menu-item.destaque { box-shadow: inset 0 0 0 1px var(--primaria-borda); }
 #menu .oculto { display: none; }
 #menu.sem-resultado::after { content: "Nenhuma ferramenta encontrada"; display: block; padding: 14px 20px; color: var(--texto-3); font-size: 13px; }
-.sidebar-rodape { font-size: 11px; color: #9a9a9a; padding: 12px 20px 16px; border-top: 1px solid #ededed; line-height: 1.5; white-space: nowrap; overflow: hidden; }
-.rodape-texto { display: block; white-space: normal; width: 200px; transition: opacity .18s; }
+.sidebar-rodape { font-size: 11px; color: var(--texto-3); padding: 12px 20px 16px; border-top: 1px solid #ededed; line-height: 1.5; white-space: nowrap; overflow: hidden; }
+.rodape-texto { display: block; white-space: normal; width: 216px; transition: opacity .18s; }
 
 /* menu recolhido: trilho de ícones que se expande sobre o conteúdo ao passar o mouse */
 body.menu-recolhido { --menu-ocupado: 68px; }
@@ -327,7 +328,7 @@ input, select, textarea {
   border: 1px solid var(--borda-forte); border-radius: var(--r); padding: 0 11px; height: 38px; width: 100%; min-width: 0;
   transition: border-color .12s, box-shadow .12s; box-shadow: inset 0 1px 2px rgba(10, 10, 10, .05);
 }
-input::placeholder, textarea::placeholder { color: #a5a5a5; }
+input::placeholder, textarea::placeholder { color: #8c8c8c; }
 input:hover, select:hover, textarea:hover { border-color: #b5b5b5; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primaria); box-shadow: var(--anel); }
 input[readonly] { background: var(--superficie-2); color: var(--texto-2); }
@@ -572,7 +573,6 @@ body.pagina-login {
 .login-marca-topo .marca-logo { width: 34px; height: 34px; }
 .login-marca-topo .marca-texto { text-align: left; }
 .login-marca-topo .marca-texto strong { font-size: 19px; }
-.login-marca-meio, .login-marca-rodape { display: none; }
 .login-painel { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .login-caixa {
   width: 100%; max-width: 400px; background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--r-lg);
@@ -645,4 +645,113 @@ body.pagina-login {
 .perm-item svg.i { width: 16px; height: 16px; color: var(--texto-3); }
 .perm input[type=checkbox], .perm-grupo-cab input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primaria); margin: 0; flex: 0 0 auto; }
 .acessos { border-bottom: 1px dotted var(--borda-forte); cursor: help; }
-@media (max-width: 900px) { .perm-grupos { grid-template-columns: 1fr; } }
+@media (max-width: 900px) {
+  .perm-grupos { grid-template-columns: 1fr; }
+  /* celular: cada usuário vira um cartão (nome, perfil, situação e ações), sem rolar para o lado */
+  .tab-usuarios, .tab-usuarios tbody { display: block; width: 100%; min-width: 0; }
+  .tab-usuarios thead, .tab-usuarios .col-sec { display: none; }
+  .tab-usuarios tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 12px 14px; border-bottom: 1px solid var(--borda); }
+  .tab-usuarios tbody tr:last-child { border-bottom: 0; }
+  .tab-usuarios td { display: block; padding: 0; border: 0 !important; max-width: none; min-width: 0; }
+  .tab-usuarios td:last-child { grid-column: 1 / -1; }
+  .tab-usuarios .acoes-tab { justify-content: flex-start; flex-wrap: wrap; gap: 8px 16px; }
+}
+/* ---------------------------------------------------------------- seletor do cenário de CBS (topo) */
+.cenario-cbs label { display: flex; align-items: center; gap: 6px; margin: 0; }
+.cenario-rotulo { font-size: 11.5px; font-weight: 600; letter-spacing: .04em; color: var(--texto-3); }
+.cenario-cbs select { height: 30px; width: auto; max-width: 240px; font-size: 12.5px; padding: 0 30px 0 10px; background-position: right 8px center; }
+/* cenário ligado: destaque âmbar para ninguém esquecer que os valores não são os oficiais */
+.cenario-cbs.ativo select { background-color: var(--ambar-suave); border-color: var(--ambar-borda); color: var(--ambar); font-weight: 600; }
+.cenario-cbs.ativo .cenario-rotulo { color: var(--ambar); }
+@media (max-width: 900px) { .cenario-rotulo { display: none; } .cenario-cbs select { max-width: 150px; } }
+/* quadro da alíquota do cenário na tela de alíquotas: mesmo âmbar do seletor */
+.kpi-cenario { background: var(--ambar-suave); border: 2px solid var(--ambar); }
+.kpi-cenario small { color: var(--ambar); font-weight: 600; }
+.kpi-cenario strong { color: var(--ambar); font-size: 26px; }
+.kpi-cenario span { display: block; font-size: 11.5px; color: var(--texto-3); margin-top: 2px; }
+
+/* ---------------------------------------------------------------- botão de tema (claro/escuro) */
+.btn-tema {
+  position: relative; width: 36px; height: 36px; flex: 0 0 auto; border: 0; border-radius: 50%; background: transparent;
+  color: var(--texto-2); cursor: pointer; display: grid; place-items: center; overflow: hidden; transition: background .15s, color .15s;
+}
+.btn-tema:hover { background: var(--superficie-2); color: var(--texto); }
+.btn-tema:focus-visible { outline: none; box-shadow: var(--anel); }
+.btn-tema svg { position: absolute; width: 19px; height: 19px; transition: transform .5s cubic-bezier(.4, 0, .2, 1), opacity .3s; }
+.tema-lua { transform: rotate(-90deg) scale(.4); opacity: 0; }
+[data-tema="escuro"] .tema-sol { transform: rotate(90deg) scale(.4); opacity: 0; }
+[data-tema="escuro"] .tema-lua { transform: none; opacity: 1; }
+.btn-tema-flutuante { position: fixed; top: 16px; right: 16px; background: var(--superficie); border: 1px solid var(--borda); box-shadow: var(--sombra-1); }
+
+/* efeito da troca: o tema novo cresce em círculo a partir do botão (tema.js) */
+::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+/* navegadores sem View Transitions / "reduzir movimento": cores mudam suavemente */
+.tema-trocando, .tema-trocando *, .tema-trocando *::before, .tema-trocando *::after {
+  transition: background-color .35s ease, border-color .35s ease, color .35s ease, fill .35s ease, box-shadow .35s ease !important;
+}
+
+/* ---------------------------------------------------------------- modo escuro */
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  --primaria: #4489f5;
+  --primaria-2: #6aa1f8;
+  --primaria-suave: #16243a;
+  --primaria-borda: #2a4570;
+
+  --fundo: #111316;
+  --superficie: #191c20;
+  --superficie-2: #1f2328;
+  --texto: #e5e7eb;
+  --texto-2: #c3c8cf;
+  --texto-3: #8d939c;
+  --borda: #2a2f36;
+  --borda-forte: #363c45;
+
+  --verde: #5cc283;  --verde-suave: #132519;  --verde-borda: #25492f;
+  --ambar: #e6aa48;  --ambar-suave: #2a2111;  --ambar-borda: #4f3c18;
+  --vermelho: #ff7d4d; --vermelho-suave: #2d1a13; --vermelho-borda: #5b301f;
+  --violeta: #a98cfa; --violeta-suave: #211a33; --violeta-borda: #3e3066;
+  --teal: #3cc5b8;   --teal-suave: #10282a;
+  --indigo: #8f90f7; --indigo-suave: #1c1d3a;
+
+  --sombra-1: 0 1px 0 rgba(0, 0, 0, .25);
+  --sombra-2: 0 2px 12px rgba(0, 0, 0, .4);
+  --sombra-3: 0 12px 32px rgba(0, 0, 0, .6);
+  --anel: 0 0 0 .2em rgba(68, 137, 245, .35);
+}
+/* cores fixas do tema claro que precisam de equivalente escuro */
+[data-tema="escuro"] * { scrollbar-color: #3a414b transparent; }
+[data-tema="escuro"] ::-webkit-scrollbar-thumb { background-color: #3a414b; }
+[data-tema="escuro"] .menu-grupo-titulo { color: var(--texto-3); }
+[data-tema="escuro"] .menu-grupo-titulo:hover { color: var(--texto); }
+[data-tema="escuro"] .menu-grupo-interno,
+[data-tema="escuro"] .sidebar-rodape { border-color: var(--borda); }
+[data-tema="escuro"] .menu-recolhido .sidebar:not(.expandido) .menu-grupo-titulo::after { background: var(--borda); }
+[data-tema="escuro"] .menu-recolhido .sidebar.expandido { box-shadow: 8px 0 28px -6px rgba(0, 0, 0, .6); }
+[data-tema="escuro"] .sidebar { box-shadow: 1px 0 0 var(--borda); }
+[data-tema="escuro"] .tile-cinza { background: #262a30; }
+[data-tema="escuro"] input:hover, [data-tema="escuro"] select:hover, [data-tema="escuro"] textarea:hover,
+[data-tema="escuro"] .btn-sec:hover, [data-tema="escuro"] .aba:hover { border-color: #4a525d; }
+[data-tema="escuro"] input:disabled, [data-tema="escuro"] select:disabled { background: #1b1e22; color: #5d636b; }
+[data-tema="escuro"] input::placeholder, [data-tema="escuro"] textarea::placeholder { color: #666c75; }
+[data-tema="escuro"] table.tab td { border-bottom-color: #23272d; }
+[data-tema="escuro"] .etq,
+[data-tema="escuro"] .st-SEM_NOMENCLATURA, [data-tema="escuro"] .st-SEM_GRUPO, [data-tema="escuro"] .st-NAO_AUDITADO { background: #23272d; }
+[data-tema="escuro"] .etq-teal { border-color: #1d4a47; }
+[data-tema="escuro"] .aviso, [data-tema="escuro"] .erro-caixa, [data-tema="escuro"] .info-caixa, [data-tema="escuro"] .ok-caixa,
+[data-tema="escuro"] .login-msg { background: var(--superficie-2); }
+[data-tema="escuro"] .candidata.principal { border-color: #2e6b44; border-left-color: var(--verde); }
+[data-tema="escuro"] .progresso { background: #262a30; }
+[data-tema="escuro"] .giro { border-color: #2f343b; border-top-color: var(--primaria); }
+[data-tema="escuro"] .modal-fundo { background: rgba(0, 0, 0, .6); }
+[data-tema="escuro"] .modal-fechar:hover { background: var(--superficie-2); }
+[data-tema="escuro"] .modal-caixa { border: 1px solid var(--borda); }
+[data-tema="escuro"] .toast { background: #2a2f36; border: 1px solid #3a414b; }
+[data-tema="escuro"] .toast.erro { background: #a8380c; border-color: #c4501f; }
+[data-tema="escuro"] .avatar { background: #2f353d; }
+[data-tema="escuro"] pre.json { background: #0b0e13; border: 1px solid var(--borda); }
+[data-tema="escuro"] .btn-verde { background: #2f8a51; }
+[data-tema="escuro"] .btn-verde:hover { background: #36995b; }
+[data-tema="escuro"] .pilula.ok i { background: #4cb874; box-shadow: 0 0 0 3px rgba(76, 184, 116, .2); }
+[data-tema="escuro"] .kpi.destaque { background: #1d4fa3; border-color: #2a5fba; }
+[data-tema="escuro"] .upload::before { filter: brightness(1.6); }

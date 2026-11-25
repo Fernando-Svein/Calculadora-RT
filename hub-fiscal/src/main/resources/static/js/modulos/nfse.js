@@ -46,7 +46,7 @@
       if (!r.ok) { res.innerHTML = Hub.problema(r); return; }
       comp.tabela(res, {
         colunas: [
-          { titulo: 'cIndOp', campo: 'cIndOp', render: (l) => `<code>${esc(l.cIndOp)}</code>` },
+          { titulo: 'Código', campo: 'cIndOp', render: (l) => `<code>${esc(l.cIndOp)}</code>` },
           { titulo: 'Tipo de operação', campo: 'tipoOperacao', largura: 60 },
           { titulo: 'Local de fornecimento', campo: 'localFornecimento', largura: 40 },
           { titulo: 'Local de incidência', campo: 'localIncidencia', largura: 30 },
@@ -60,20 +60,20 @@
 
   function abaLocal(d) {
     d.innerHTML = formLinha(`
-      <div class="campo" style="flex:0 0 180px"><label>cIndOp</label><input name="cIndOp" placeholder="Ex.: 100301"></div>
+      <div class="campo" style="flex:0 0 220px"><label>Indicador de operação (cIndOp)</label><input name="cIndOp" placeholder="Ex.: 100301"></div>
       <div class="campo" style="flex:0 0 180px"><label>Data do fato gerador</label><input type="date" name="data" value="${Hub.hoje()}"></div>`);
     const res = d.querySelector('[data-res]');
     d.querySelector('[data-ok]').onclick = async () => {
       const c = d.querySelector('[name=cIndOp]').value.trim();
-      if (!c) { Hub.toast('Informe o cIndOp.', 'erro'); return; }
+      if (!c) { Hub.toast('Informe o indicador de operação.', 'erro'); return; }
       Hub.carregando(res);
       const r = await api.get(api.rg(`${N}/local-operacao?cIndOp=${encodeURIComponent(c)}&dataOcorrenciaFatoGerador=${d.querySelector('[name=data]').value}`));
       if (!r.ok) { res.innerHTML = Hub.problema(r); return; }
       const x = r.data;
       res.innerHTML = `<dl class="dl">
-        <dt>cIndOp</dt><dd><code>${esc(x.cIndOp)}</code></dd>
+        <dt>Indicador de operação</dt><dd><code>${esc(x.cIndOp)}</code></dd>
         <dt>Local de fornecimento</dt><dd>${esc(x.localFornecimento)} <span class="sutil">(código ${esc(x.codigoLocalFornecimento)})</span></dd>
-        <dt>Local de incidência</dt><dd><strong>${esc(x.localIncidencia)}</strong> <span class="sutil">(código ${esc(x.codigoLocalIncidencia)})</span></dd>
+        <dt>Local de incidência do IBS</dt><dd><strong>${esc(x.localIncidencia)}</strong> <span class="sutil">(código ${esc(x.codigoLocalIncidencia)})</span></dd>
       </dl>`;
     };
   }
@@ -110,9 +110,9 @@
   function abaValidar(d) {
     d.innerHTML = `<p class="sutil">Verifica se a combinação de código de tributação nacional, indicador de operação, cClassTrib e NBS é aceita.</p>
       <div class="grade g4">
-        ${comp.campo('cTribNac (opcional)', '<input name="cTribNac" placeholder="Ex.: 010101">')}
-        ${comp.campo('cIndOp *', '<input name="cIndOp" placeholder="Ex.: 100301">')}
-        ${comp.campo('cClassTrib *', '<input name="cClassTrib" placeholder="Ex.: 000001">')}
+        ${comp.campo('Código de tributação nacional (cTribNac) – opcional', '<input name="cTribNac" placeholder="Ex.: 010101">')}
+        ${comp.campo('Indicador de operação (cIndOp) *', '<input name="cIndOp" placeholder="Ex.: 100301">')}
+        ${comp.campo('Classificação tributária (cClassTrib) *', '<input name="cClassTrib" placeholder="Ex.: 000001">')}
         ${comp.campo('NBS *', '<input name="nbs" placeholder="Ex.: 115021000">')}
         ${comp.campo('Data do fato gerador *', `<input type="date" name="dataOcorrenciaFatoGerador" value="${Hub.hoje()}">`)}
       </div>

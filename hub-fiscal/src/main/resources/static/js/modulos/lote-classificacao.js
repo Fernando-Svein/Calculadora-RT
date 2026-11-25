@@ -9,6 +9,13 @@
     INVALIDO: 'NCM/NBS inválido', SEM_NOMENCLATURA: 'Sem NCM/NBS',
   };
 
+  // botões "Detalhes" das alternativas: o código vai num atributo data-* (nunca dentro de onclick="..."),
+  // assim nenhum texto vira código JavaScript, e a política CSP pode bloquear scripts inline
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-detalhe-cct]');
+    if (b) Hub.detalheClassificacao(b.dataset.detalheCct);
+  });
+
   /** Tela de upload + processamento reutilizada pela classificação e pela auditoria. */
   Hub.telaLote = (el, cfg) => {
     el.innerHTML = comp.cabecalho(cfg.titulo, cfg.texto) +
@@ -75,7 +82,7 @@
         <div class="candidata-cab"><span class="cod">${esc(c.cClassTrib)}</span><span class="etq etq-azul">${esc(c.tratamento || '')}</span>
         ${Number(c.reducaoCbs) > 0 ? `<span class="etq etq-teal">Redução ${fmt.num(c.reducaoCbs)}%</span>` : ''}
         ${c.condicional ? '<span class="etq etq-amarelo">Condicional</span>' : ''}${c.dfeCompativel ? '' : '<span class="etq etq-vermelho">Não admitido no documento</span>'}
-        <button class="btn btn-sec btn-peq" onclick="Hub.detalheClassificacao('${esc(c.cClassTrib)}')">Detalhes</button></div>
+        <button class="btn btn-sec btn-peq" type="button" data-detalhe-cct="${esc(c.cClassTrib)}">Detalhes</button></div>
         <div>${esc(c.descricao)}</div>${c.textoAnexo ? `<div class="sutil" style="font-size:12px">Anexo ${esc(c.anexo)}, item ${esc(c.itemAnexo)}: ${esc(c.textoAnexo)}</div>` : ''}</div>`).join('');
     return `<div class="grade g2">
       <div>

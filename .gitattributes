@@ -5,3 +5,7 @@
 mvnw    text eol=lf
 *.jar   binary
 *.xlsx  binary
+
+# dados e respostas de referência dos testes: bytes exatos (sem conversão de fim de linha)
+testes/dados/** -text
+testes/referencia/** -text

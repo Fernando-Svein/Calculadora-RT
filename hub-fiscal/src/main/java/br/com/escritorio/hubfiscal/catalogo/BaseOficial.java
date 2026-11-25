@@ -271,12 +271,14 @@ public class BaseOficial {
         boolean numerico = limpo.matches("\\d+");
         String sql = "SELECT " + pn + "_CD, " + pn + "_DESCRICAO, " + pn + "_INICIO_VIGENCIA, " + pn + "_FIM_VIGENCIA" + colLc
                 + " FROM " + t.tabelaNomenclatura + " WHERE "
-                + (numerico ? pn + "_CD LIKE ? " : pn + "_DESCRICAO LIKE ? ")
+                + (numerico ? pn + "_CD LIKE ? " : pn + "_DESCRICAO LIKE ? ESCAPE '\\' ")
                 + "AND ? BETWEEN " + pn + "_INICIO_VIGENCIA AND COALESCE(" + pn + "_FIM_VIGENCIA, ?) "
                 + "ORDER BY " + pn + "_CD LIMIT ?";
         List<Nomenclatura> r = new ArrayList<>();
         try (Connection c = conectar(); PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, numerico ? limpo + "%" : "%" + termo.trim() + "%");
+            // % e _ digitados pelo usuário são texto literal, não curingas (ex.: buscar "100%")
+            String literal = termo.trim().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+            ps.setString(1, numerico ? limpo + "%" : "%" + literal + "%");
             ps.setString(2, d(data));
             ps.setString(3, d(data));
             ps.setInt(4, limite);

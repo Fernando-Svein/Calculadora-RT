@@ -10,14 +10,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import br.com.escritorio.hubfiscal.infra.Valores;
+
 /**
  * Leitor de arquivos SPED: EFD ICMS/IPI e EFD Contribuições.
  * <p>
  * Registros usados:
  * <ul>
  * <li>0000 – contribuinte e período</li>
- * <li>0200 – cadastro de itens (código, descrição, NCM, tipo do item, código de serviço)</li>
- * <li>C100/C170 – documentos e itens de mercadorias (CFOP, valores)</li>
+ * <li>0200 – cadastro de itens (código, descrição, NCM, tipo do item)</li>
+ * <li>C100/C170 – documentos e itens de mercadorias (modelo, CFOP, valores)</li>
  * <li>A100/A170 – serviços (EFD Contribuições)</li>
  * <li>C400/C425 – itens de cupom fiscal (ECF)</li>
  * </ul>
@@ -27,22 +29,23 @@ import java.util.Map;
 public final class SpedParser {
 
     /** Resultado da leitura de um arquivo SPED. */
-    public record ResultadoSped(String tipo, String nome, String cnpj, String uf, String dataInicial, String dataFinal,
+    public record ResultadoSped(String tipo, String nome, String cnpj, String dataInicial, String dataFinal,
             List<ItemFiscal> cadastro, List<ItemFiscal> movimentos) {
     }
 
     private SpedParser() {
     }
 
+    /** O conteúdo começa com o registro 0000 (ignorando BOM)? */
     public static boolean pareceSped(byte[] conteudo) {
         int i = 0;
-        // ignora BOM
         if (conteudo.length >= 3 && (conteudo[0] & 0xFF) == 0xEF && (conteudo[1] & 0xFF) == 0xBB) {
             i = 3;
         }
         return conteudo.length > i + 6 && conteudo[i] == '|' && new String(conteudo, i, 6, StandardCharsets.ISO_8859_1).equals("|0000|");
     }
 
+    /** UTF-8 quando válido; senão ISO-8859-1, a codificação padrão do SPED. */
     static String decodificar(byte[] conteudo) {
         try {
             return StandardCharsets.UTF_8.newDecoder()
@@ -50,31 +53,24 @@ public final class SpedParser {
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
                     .decode(ByteBuffer.wrap(conteudo)).toString();
         } catch (CharacterCodingException e) {
-            return new String(conteudo, StandardCharsets.ISO_8859_1); // padrão do SPED
+            return new String(conteudo, StandardCharsets.ISO_8859_1);
         }
     }
 
-    public static ResultadoSped ler(String arquivo, byte[] conteudo) {
-        String texto = decodificar(conteudo);
+    /** Lê o arquivo: contribuinte, período, cadastro de itens (0200) e movimentos completados pelo cadastro. */
+    public static ResultadoSped ler(byte[] conteudo) {
         String tipo = "EFD";
         String nome = null;
         String cnpj = null;
-        String uf = null;
         String dtIni = null;
         String dtFin = null;
 
         Map<String, ItemFiscal> cadastro = new HashMap<>();
         List<ItemFiscal> ordemCadastro = new ArrayList<>();
         List<ItemFiscal> movimentos = new ArrayList<>();
+        Integer modeloDocumento = null; // modelo do documento corrente (C100); A100 e C400 não têm modelo numérico
 
-        // contexto do documento corrente (C100 / A100 / C400)
-        Integer indOper = null;
-        String modelo = null;
-        String chave = null;
-        String numero = null;
-        String data = null;
-
-        for (String linha : texto.split("\r?\n")) {
+        for (String linha : decodificar(conteudo).split("\r?\n")) {
             if (linha.length() < 6 || linha.charAt(0) != '|') {
                 continue;
             }
@@ -82,8 +78,7 @@ public final class SpedParser {
             if (f.length < 3) {
                 continue;
             }
-            String reg = f[1];
-            switch (reg) {
+            switch (f[1]) {
                 case "0000" -> {
                     if (f.length > 9 && f[4].matches("\\d{8}") && f[7].matches("\\d{14}")) {
                         tipo = "EFD ICMS/IPI";
@@ -91,116 +86,80 @@ public final class SpedParser {
                         dtFin = dataSped(f[5]);
                         nome = f[6];
                         cnpj = f[7];
-                        uf = f[9];
                     } else if (f.length > 10) {
                         tipo = "EFD Contribuições";
                         dtIni = dataSped(f[6]);
                         dtFin = dataSped(f[7]);
                         nome = f[8];
                         cnpj = f[9];
-                        uf = f[10];
                     }
                 }
                 case "0200" -> {
-                    ItemFiscal it = new ItemFiscal();
-                    it.arquivo = arquivo;
-                    it.origem = tipo;
-                    it.registro = "0200";
+                    ItemFiscal it = novoItem("0200", cnpj, nome, null);
                     it.codigo = campo(f, 2);
                     it.descricao = campo(f, 3);
                     it.unidade = campo(f, 6);
                     it.tipoItemSped = campo(f, 7);
                     it.ncm = somenteDigitos(campo(f, 8));
-                    it.codigoServicoLc116 = campo(f, 11);
-                    it.donoCnpj = cnpj;
-                    it.donoNome = nome;
                     if (it.codigo != null) {
                         cadastro.put(it.codigo, it);
                         ordemCadastro.add(it);
                     }
                 }
-                case "C100" -> {
-                    indOper = inteiro(campo(f, 2));
-                    modelo = campo(f, 5);
-                    numero = campo(f, 8);
-                    chave = campo(f, 9);
-                    data = dataSped(campo(f, 10));
-                }
-                case "A100" -> {
-                    indOper = inteiro(campo(f, 2)); // 0 = serviço contratado, 1 = prestado
-                    modelo = "SERV";
-                    numero = campo(f, 8);
-                    chave = campo(f, 9);
-                    data = dataSped(campo(f, 10));
-                }
-                case "C400", "C405" -> {
-                    indOper = 1;
-                    modelo = "2D";
-                    chave = null;
-                    numero = null;
-                }
+                case "C100" -> modeloDocumento = Valores.inteiro(campo(f, 5));
+                case "A100", "C400", "C405" -> modeloDocumento = null;
                 case "C170" -> {
-                    ItemFiscal it = movimento(arquivo, tipo, "C170", cnpj, nome, indOper, modelo, chave, numero, data);
-                    it.numeroItem = inteiro(campo(f, 2));
+                    ItemFiscal it = novoItem("C170", cnpj, nome, modeloDocumento);
+                    it.numeroItem = Valores.inteiro(campo(f, 2));
                     it.codigo = campo(f, 3);
-                    it.quantidade = decimal(campo(f, 5));
+                    it.quantidade = decimalSped(campo(f, 5));
                     it.unidade = campo(f, 6);
-                    it.valor = decimal(campo(f, 7));
+                    it.valor = decimalSped(campo(f, 7));
                     it.cfop = campo(f, 11);
                     movimentos.add(it);
                 }
                 case "A170" -> {
-                    ItemFiscal it = movimento(arquivo, tipo, "A170", cnpj, nome, indOper, modelo, chave, numero, data);
-                    it.numeroItem = inteiro(campo(f, 2));
+                    ItemFiscal it = novoItem("A170", cnpj, nome, modeloDocumento);
+                    it.numeroItem = Valores.inteiro(campo(f, 2));
                     it.codigo = campo(f, 3);
-                    it.valor = decimal(campo(f, 5));
+                    it.valor = decimalSped(campo(f, 5));
                     movimentos.add(it);
                 }
                 case "C425" -> {
-                    ItemFiscal it = movimento(arquivo, tipo, "C425", cnpj, nome, 1, "2D", null, null, data);
+                    ItemFiscal it = novoItem("C425", cnpj, nome, null);
                     it.codigo = campo(f, 2);
-                    it.quantidade = decimal(campo(f, 3));
+                    it.quantidade = decimalSped(campo(f, 3));
                     it.unidade = campo(f, 4);
-                    it.valor = decimal(campo(f, 5));
+                    it.valor = decimalSped(campo(f, 5));
                     movimentos.add(it);
                 }
                 default -> {
-                    // demais registros não são necessários
+                    // demais registros não são usados
                 }
             }
         }
-        // completa os movimentos com os dados do cadastro
+        // completa os movimentos com os dados do cadastro e marca a origem (o tipo só é conhecido após o 0000)
         for (ItemFiscal m : movimentos) {
             ItemFiscal c = cadastro.get(m.codigo);
             if (c != null) {
                 m.descricao = c.descricao;
                 m.ncm = c.ncm;
                 m.tipoItemSped = c.tipoItemSped;
-                m.codigoServicoLc116 = c.codigoServicoLc116;
             }
+            m.origem = tipo;
         }
         for (ItemFiscal c : ordemCadastro) {
             c.origem = tipo;
         }
-        for (ItemFiscal m : movimentos) {
-            m.origem = tipo;
-        }
-        return new ResultadoSped(tipo, nome, cnpj, uf, dtIni, dtFin, ordemCadastro, movimentos);
+        return new ResultadoSped(tipo, nome, cnpj, dtIni, dtFin, ordemCadastro, movimentos);
     }
 
-    private static ItemFiscal movimento(String arquivo, String tipo, String registro, String cnpj, String nome,
-            Integer indOper, String modelo, String chave, String numero, String data) {
+    private static ItemFiscal novoItem(String registro, String cnpj, String nome, Integer modelo) {
         ItemFiscal it = new ItemFiscal();
-        it.arquivo = arquivo;
-        it.origem = tipo;
         it.registro = registro;
         it.donoCnpj = cnpj;
         it.donoNome = nome;
-        it.tipoOperacao = indOper;
-        it.modelo = inteiro(modelo);
-        it.chave = chave;
-        it.numeroDocumento = numero;
-        it.dataEmissao = data;
+        it.modelo = modelo;
         return it;
     }
 
@@ -212,6 +171,7 @@ public final class SpedParser {
         return v.isEmpty() ? null : v;
     }
 
+    /** Só os dígitos do texto (NCM/NBS com pontos), ou null se não houver nenhum. */
     static String somenteDigitos(String s) {
         if (s == null) {
             return null;
@@ -220,18 +180,8 @@ public final class SpedParser {
         return d.isEmpty() ? null : d;
     }
 
-    private static Integer inteiro(String s) {
-        if (s == null) {
-            return null;
-        }
-        try {
-            return Integer.valueOf(s.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static BigDecimal decimal(String s) {
+    /** Valor no formato do SPED (vírgula decimal, ponto de milhar opcional): "1.234,56". */
+    private static BigDecimal decimalSped(String s) {
         if (s == null) {
             return null;
         }

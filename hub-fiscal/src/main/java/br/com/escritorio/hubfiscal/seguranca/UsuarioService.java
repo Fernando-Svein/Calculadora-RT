@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,51 @@ public class UsuarioService {
 
     private final Map<String, Falhas> falhas = new ConcurrentHashMap<>();
 
+    /**
+     * Limite por endereço IP, contra tentativas espalhadas por vários usuários (password spraying),
+     * que o bloqueio por usuário não pega: 20 erros em 15 minutos bloqueiam o IP por 15 minutos.
+     */
+    static final int MAX_FALHAS_POR_IP = 20;
+    private static final Duration JANELA_IP = Duration.ofMinutes(15);
+
+    private record FalhasIp(int quantidade, Instant inicio, Instant bloqueadoAte) {
+    }
+
+    private final Map<String, FalhasIp> falhasPorIp = new ConcurrentHashMap<>();
+
+    private Optional<Instant> ipBloqueado(String ip) {
+        FalhasIp f = falhasPorIp.get(ip);
+        return f != null && f.bloqueadoAte() != null && Instant.now().isBefore(f.bloqueadoAte())
+                ? Optional.of(f.bloqueadoAte()) : Optional.empty();
+    }
+
+    private void registrarFalhaIp(String ip) {
+        Instant agora = Instant.now();
+        falhasPorIp.compute(ip, (k, f) -> {
+            if (f == null || agora.isAfter(f.inicio().plus(JANELA_IP))) {
+                return new FalhasIp(1, agora, null);
+            }
+            int qtd = f.quantidade() + 1;
+            if (qtd >= MAX_FALHAS_POR_IP) {
+                log.warn("Endereço {} bloqueado por {} minutos ({} logins errados)", ip, JANELA_IP.toMinutes(), qtd);
+                return new FalhasIp(qtd, f.inicio(), agora.plus(JANELA_IP));
+            }
+            return new FalhasIp(qtd, f.inicio(), f.bloqueadoAte());
+        });
+    }
+
+    /** Remove contadores vencidos (evita que logins inventados façam os mapas crescerem sem limite). */
+    @Scheduled(fixedDelay = 10 * 60 * 1000)
+    public void limparContadores() {
+        Instant agora = Instant.now();
+        falhas.entrySet().removeIf(e -> e.getValue().bloqueadoAte() != null && agora.isAfter(e.getValue().bloqueadoAte()));
+        falhasPorIp.entrySet().removeIf(e -> {
+            FalhasIp f = e.getValue();
+            Instant fim = f.bloqueadoAte() != null ? f.bloqueadoAte() : f.inicio().plus(JANELA_IP);
+            return agora.isAfter(fim);
+        });
+    }
+
     public UsuarioService(UsuarioRepositorio repo, PasswordEncoder encoder) {
         this.repo = repo;
         this.encoder = encoder;
@@ -59,6 +105,11 @@ public class UsuarioService {
         if (login.isEmpty() || senha == null || senha.isEmpty()) {
             return new ResultadoLogin.Falha("Informe usuário e senha.", 400);
         }
+        Optional<Instant> ipAte = ipBloqueado(ip);
+        if (ipAte.isPresent()) {
+            long min = Math.max(1, Duration.between(Instant.now(), ipAte.get()).toMinutes() + 1);
+            return new ResultadoLogin.Falha("Muitas tentativas erradas a partir deste computador. Aguarde " + min + " minuto(s).", 429);
+        }
         Falhas f = falhas.get(login);
         if (f != null && f.bloqueadoAte() != null && Instant.now().isBefore(f.bloqueadoAte())) {
             long min = Math.max(1, Duration.between(Instant.now(), f.bloqueadoAte()).toMinutes() + 1);
@@ -70,6 +121,7 @@ public class UsuarioService {
         if (u.isEmpty() || !senhaOk) {
             int qtd = (f == null || f.bloqueadoAte() != null ? 0 : f.quantidade()) + 1;
             falhas.put(login, new Falhas(qtd, qtd >= MAX_TENTATIVAS ? Instant.now().plus(BLOQUEIO) : null));
+            registrarFalhaIp(ip);
             log.warn("Login recusado: {} de {} (tentativa {})", login, ip, qtd);
             int restantes = MAX_TENTATIVAS - qtd;
             return new ResultadoLogin.Falha(restantes > 0

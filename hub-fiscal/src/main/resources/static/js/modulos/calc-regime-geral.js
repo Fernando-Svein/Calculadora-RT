@@ -38,19 +38,19 @@
         `<div class="card">
           <div class="card-cab"><h3>Operação</h3><div class="acoes">
             <button class="btn btn-sec btn-peq" data-exemplo>Carregar exemplo</button>
-            <button class="btn btn-sec btn-peq" data-json-env>Ver JSON a enviar</button></div></div>
+            <button class="btn btn-sec btn-peq" data-json-env>Ver dados técnicos</button></div></div>
           <div class="grade g4">
             ${comp.campo('Data do fato gerador *', `<input type="date" name="data" value="${Hub.hoje()}">`)}
             ${comp.campo('Hora', '<input type="time" name="hora" value="10:00">')}
             ${comp.campo('Documento', `<select name="tpDoc"><option value="">Não informar</option>${DOCS.map(([v, t]) => `<option value="${v}" ${v === '55' ? 'selected' : ''}>${t}</option>`).join('')}</select>`)}
-            ${comp.campo('Modo de cálculo', `<select name="modo"><option value="obs">Com observabilidade (erros por item)</option><option value="estrito">Estrito (falha no 1º erro)</option></select>`)}
+            ${comp.campo('Modo de cálculo', `<select name="modo"><option value="obs">Calcular todos e mostrar o erro de cada item</option><option value="estrito">Parar no primeiro item com erro</option></select>`)}
           </div>
           <div data-loc style="margin-top:12px"></div>
-          <details style="margin-top:8px"><summary>Compra governamental</summary>
+          <details style="margin-top:8px"><summary>Venda para órgão público (compra governamental)</summary>
             <div class="grade g4" style="margin-top:8px">
-              ${comp.campo('Ente governamental adquirente', `<select name="tpEnteGov"><option value="">Não é compra governamental</option>
+              ${comp.campo('Órgão comprador', `<select name="tpEnteGov"><option value="">Não é compra governamental</option>
                 <option value="1">1 – União</option><option value="2">2 – Estado</option><option value="3">3 – Distrito Federal</option><option value="4">4 – Município</option></select>`)}
-              ${comp.campo('Tipo de operação gov. (tpOperGov)', '<input name="tpOperGov" data-num placeholder="opcional">')}
+              ${comp.campo('Momento do pagamento', '<select name="tpOperGov"><option value="">Não informar</option><option value="1">Fornecimento com pagamento posterior</option><option value="2">Recebimento do pagamento com fornecimento já realizado</option><option value="3">Fornecimento com pagamento já realizado</option><option value="4">Recebimento do pagamento com fornecimento posterior</option><option value="5">Fornecimento e pagamento ao mesmo tempo</option></select>')}
             </div></details>
           <fieldset data-aliq style="margin-top:12px"><legend>Alíquotas nominais (obrigatórias a partir de 2027)</legend>
             <div class="grade g4">
@@ -75,6 +75,8 @@
       const ajustarAliq = () => { fsAliq.hidden = Number(inpData.value.substring(0, 4)) < 2027; };
       inpData.onchange = ajustarAliq;
       ajustarAliq();
+      // 2027 em diante: a CBS do cenário (seletor no topo) vai como alíquota nominal, calculada pela própria calculadora
+      Hub.cenarioCbs.ligarCampoNominal(el.querySelector('[name=aCbs]'), '8,8');
 
       function novoItem(dados = {}) {
         const n = lista.children.length + 1;
@@ -84,7 +86,7 @@
           <div class="grade g6">
             ${comp.campo('Nomenclatura', '<select name="tipoNom"><option value="ncm">NCM</option><option value="nbs">NBS</option><option value="">Nenhuma</option></select>')}
             ${comp.campo('Código NCM/NBS', '<input name="codNom" placeholder="código ou descrição">')}
-            ${comp.campo('cClassTrib *', '<input name="cClassTrib" placeholder="000001" list="">')}
+            ${comp.campo('Classificação tributária (cClassTrib) *', '<input name="cClassTrib" placeholder="000001" list="">')}
             ${comp.campo('CST *', '<input name="cst" placeholder="000">')}
             ${comp.campo('Quantidade', '<input name="quantidade" data-num>')}
             ${comp.campo('Unidade', '<input name="unidade" placeholder="UN, KG, LT...">')}
@@ -97,18 +99,18 @@
           <div class="grade g6" data-comp hidden style="margin-top:8px">${COMPONENTES.map(([k, t]) => comp.campo(t, `<input name="c_${k}" data-num placeholder="0,00">`)).join('')}</div>
           <details style="margin-top:8px"><summary>Imposto Seletivo do item</summary>
             <div class="grade g6" style="margin-top:8px">
-              ${comp.campo('CST IS', '<input name="is_cst" placeholder="000">')}
-              ${comp.campo('cClassTrib IS', '<input name="is_cClassTrib" placeholder="000001">')}
-              ${comp.campo('Base IS (R$)', '<input name="is_base" data-num>')}
-              ${comp.campo('Qtd. IS', '<input name="is_qtd" data-num>')}
-              ${comp.campo('Unidade IS', '<input name="is_un">')}
-              ${comp.campo('IS informado (R$)', '<input name="is_inf" data-num>')}
-              ${comp.campo('Alíq. ad valorem % (2027+)', '<input name="is_adv" data-num>')}
-              ${comp.campo('Alíq. ad rem (2027+)', '<input name="is_adr" data-num>')}
+              ${comp.campo('CST do Imposto Seletivo', '<input name="is_cst" placeholder="000">')}
+              ${comp.campo('Classificação do Imposto Seletivo', '<input name="is_cClassTrib" placeholder="000001">')}
+              ${comp.campo('Base do Imposto Seletivo (R$)', '<input name="is_base" data-num>')}
+              ${comp.campo('Quantidade tributada', '<input name="is_qtd" data-num>')}
+              ${comp.campo('Unidade de medida', '<input name="is_un">')}
+              ${comp.campo('Imposto Seletivo já destacado (R$)', '<input name="is_inf" data-num>')}
+              ${comp.campo('Alíquota sobre o valor (%) – a partir de 2027', '<input name="is_adv" data-num>')}
+              ${comp.campo('Valor fixo por unidade (R$) – a partir de 2027', '<input name="is_adr" data-num>')}
             </div></details>
           <details data-tr style="margin-top:6px"><summary>Tributação regular (suspensão, diferimento, ZFM/ALC)</summary>
             <p class="sutil" style="margin:8px 0">Obrigatória quando a classificação suspende ou desonera a operação (ex.: CST 550, cClassTrib 200022/200024):
-              informe o tratamento que valeria sem o benefício. A calculadora mostra o tributo que deixou de ser cobrado (grupo gTribRegular).</p>
+              informe o tratamento que valeria sem o benefício. A calculadora mostra o tributo que deixou de ser cobrado (coluna "Diferido / suspenso").</p>
             <div class="grade g6">
               ${comp.campo('CST regular', '<input name="tr_cst" placeholder="000">')}
               ${comp.campo('cClassTrib regular', '<input name="tr_cClassTrib" placeholder="000001">')}
@@ -195,7 +197,7 @@
         if (f.tpDoc) op.tpDoc = Number(f.tpDoc);
         if (f.tpEnteGov) {
           op.gCompraGov = { tpEnteGov: Number(f.tpEnteGov) };
-          if (f.tpOperGov !== undefined) op.gCompraGov.tpOperGov = f.tpOperGov;
+          if (f.tpOperGov) op.gCompraGov.tpOperGov = Number(f.tpOperGov);
         }
         Array.from(lista.children).forEach((b, i) => {
           const c = comp.lerCampos(b);
@@ -241,6 +243,12 @@
         const url = modo === 'estrito' ? '/calculadora/regime-geral' : '/calculadora/observabilidade/regime-geral';
         const r = await api.post(api.rg(url), op);
         if (!r.ok) { res.innerHTML = Hub.problema(r, 'A calculadora rejeitou a operação'); return; }
+        // até 2026 a calculadora só usa a alíquota oficial (erro REG-036 se informada): o hub reescala a CBS da resposta
+        if (Hub.cenarioCbs.ativo() && Number(op.dhFatoGerador.substring(0, 4)) < 2027) {
+          const c = await Hub.cenarioCbs.aplicar('regime-geral', r.data, op.dhFatoGerador.substring(0, 10));
+          if (!c.ok) { res.innerHTML = Hub.problema(c, 'Não foi possível aplicar o cenário de CBS'); return; }
+          r.data = c.data;
+        }
         mostrarResultado(op, r);
       }
 
@@ -284,9 +292,10 @@
         res.innerHTML = `<div class="card"><div class="card-cab"><h2>Resultado</h2><div class="acoes">
             <select data-xml-tipo style="width:auto"><option value="nfe">XML NF-e</option><option value="nfce">XML NFC-e</option>
               <option value="cte">XML CT-e</option><option value="bpe">XML BP-e</option><option value="nf3e">XML NF3e</option></select>
-            <button class="btn btn-sec btn-peq" data-xml>Gerar XML do grupo</button>
-            <button class="btn btn-sec btn-peq" data-json>Ver JSON</button></div></div>
+            <button class="btn btn-sec btn-peq" data-xml>Gerar XML do grupo IBS/CBS</button>
+            <button class="btn btn-sec btn-peq" data-json>Ver resposta técnica</button></div></div>
           ${r.aviso ? `<div class="aviso">${esc(Hub.avisoSimulado(r.aviso))}</div>` : ''}
+          ${Hub.cenarioCbs.aviso(d)}
           <div class="kpis">
             <div class="kpi"><small>Base IBS/CBS</small><strong>${fmt.moeda(base)}</strong></div>
             <div class="kpi"><small>CBS</small><strong>${fmt.moeda(vCBS)}</strong></div>
@@ -302,24 +311,25 @@
             { titulo: 'NCM/NBS', campo: 'nom' },
             { titulo: 'CST', campo: 'cst' },
             { titulo: 'cClassTrib', campo: 'cct' },
-            { titulo: 'Situação', campo: 'estado', render: (l) => `<span class="etq ${estados[l.estado] || ''}">${esc(l.estado)}</span>` },
+            { titulo: 'Situação', campo: 'estado', render: (l) => `<span class="etq ${estados[l.estado] || ''}">${esc(Hub.rotulos.estado(l.estado))}</span>`, exportar: (l) => Hub.rotulos.estado(l.estado) },
             { titulo: 'Base', campo: 'vBC', tipo: 'moeda' },
             { titulo: 'Redução', campo: 'red', tipo: 'pct' },
-            { titulo: 'pCBS', campo: 'pCBS', tipo: 'pct' },
+            { titulo: 'Alíq. CBS', campo: 'pCBS', tipo: 'pct' },
             { titulo: 'CBS', campo: 'vCBS', tipo: 'moeda' },
-            { titulo: 'pIBS UF', campo: 'pIBSUF', tipo: 'pct' },
+            { titulo: 'Alíq. IBS UF', campo: 'pIBSUF', tipo: 'pct' },
             { titulo: 'IBS UF', campo: 'vIBSUF', tipo: 'moeda' },
-            { titulo: 'pIBS Mun', campo: 'pIBSMun', tipo: 'pct' },
+            { titulo: 'Alíq. IBS Mun', campo: 'pIBSMun', tipo: 'pct' },
             { titulo: 'IBS Mun', campo: 'vIBSMun', tipo: 'moeda' },
-            { titulo: 'IS', campo: 'vIS', tipo: 'moeda' },
+            { titulo: 'Imp. Seletivo', campo: 'vIS', tipo: 'moeda' },
             { titulo: 'Diferido / suspenso', campo: 'naoCobrado', tipo: 'moeda' },
             { titulo: 'Erros', exportar: (l) => l.erros.map((e) => `${e.code}: ${e.detail}`).join(' | '), render: (l) => (l.erros.length ? `<span class="etq etq-vermelho">${l.erros.length}</span>` : '') },
           ],
           linhas,
-          exportar: { arquivo: 'simulacao-regime-regular', titulo: 'Simulação – Regime Regular', resumo: [['Município', String(op.municipio)], ['Data', op.dhFatoGerador], ['Base', String(base ?? '')], ['CBS', String(vCBS ?? '')], ['IBS', String(vIBS ?? '')]] },
+          exportar: { arquivo: 'simulacao-regime-regular', titulo: 'Simulação – Regime Regular', resumo: [['Município', String(op.municipio)], ['Data', op.dhFatoGerador], ['Base', String(base ?? '')], ['CBS', String(vCBS ?? '')], ['IBS', String(vIBS ?? '')]]
+            .concat(d.cenarioCbs ? [['Cenário CBS', `${d.cenarioCbs.rotulo}: ${d.cenarioCbs.aliquota}% (oficial ${d.cenarioCbs.aliquotaOficial ?? '-'}%) – simulação, não usar em documento fiscal`]] : []) },
           detalhe: (l) => {
-            const mem = l.memoria && typeof l.memoria === 'object' ? Object.entries(l.memoria).map(([k, v]) => `<div class="memoria"><strong>${esc(k)}:</strong> ${esc(v)}</div>`).join('') : '';
-            const errs = l.erros.length ? `<div class="erro-caixa"><ul>${l.erros.map((e) => `<li><strong>${esc(e.code)}</strong> – ${esc(e.title || '')}: ${esc(e.detail)} <span class="sutil">${esc(e.pointer || '')}</span></li>`).join('')}</ul></div>` : '';
+            const mem = l.memoria && typeof l.memoria === 'object' ? Object.entries(l.memoria).map(([k, v]) => `<div class="memoria"><strong>${esc(Hub.rotulos.memoria(k))}:</strong> ${esc(v)}</div>`).join('') : '';
+            const errs = l.erros.length ? `<div class="erro-caixa"><ul>${l.erros.map((e) => `<li><strong>${esc(e.code)}</strong> – ${esc(e.title || '')}: ${esc(e.detail)} <span class="sutil">${esc(Hub.rotulos.ponteiro(e.pointer))}</span></li>`).join('')}</ul></div>` : '';
             return (mem || '<span class="sutil">Sem memória de cálculo.</span>') + errs;
           },
         });
@@ -335,7 +345,8 @@
         if (!r2.ok) { Hub.modal(Hub.problema(r2, 'Falha ao gerar o XML')); return; }
         const xml = r2.texto;
         const c = Hub.modal(`<h2>XML do grupo de tributação (${esc(tipo.toUpperCase())})</h2>
-          <div class="acoes" style="margin-bottom:8px"><button class="btn btn-sec btn-peq" data-val>Validar no XSD</button>
+          ${Hub.cenarioCbs.ativo() ? '<p class="sutil">O XML usa sempre a alíquota oficial da calculadora: o cenário de CBS vale só para simulação.</p>' : ''}
+          <div class="acoes" style="margin-bottom:8px"><button class="btn btn-sec btn-peq" data-val>Validar no leiaute oficial</button>
           <button class="btn btn-sec btn-peq" data-copy>Copiar</button><button class="btn btn-sec btn-peq" data-down>Baixar</button><span data-st></span></div>
           <pre class="json">${esc(xml)}</pre>`);
         c.querySelector('[data-copy]').onclick = () => { navigator.clipboard.writeText(xml); Hub.toast('Copiado.'); };

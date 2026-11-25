@@ -93,8 +93,11 @@ public class AuthController {
     }
 
     @PostMapping("/senha")
-    public ResponseEntity<Void> trocarSenha(@AuthenticationPrincipal UsuarioSessao s, @RequestBody TrocaSenha t) {
+    public ResponseEntity<Void> trocarSenha(@AuthenticationPrincipal UsuarioSessao s, @RequestBody TrocaSenha t,
+            HttpServletRequest req, HttpServletResponse resp) {
         usuarios.trocarPropriaSenha(s.id(), t.senhaAtual(), t.novaSenha());
+        // esta sessão continua (com a marca da senha nova); as outras sessões do usuário são encerradas pelo filtro
+        usuarios.porId(s.id()).ifPresent(u -> iniciarSessao(u, req, resp));
         return ResponseEntity.noContent().build();
     }
 

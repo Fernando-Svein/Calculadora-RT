@@ -34,6 +34,11 @@
         pedidos.push(v.codigoUf ? api.get(api.rg(`${DA}/aliquota-uf?codigoUf=${v.codigoUf}&data=${data}`)) : null);
         pedidos.push(v.municipio ? api.get(api.rg(`${DA}/aliquota-municipio?codigoMunicipio=${v.municipio}&data=${data}`)) : null);
         const [u, uf, mun] = await Promise.all(pedidos);
+        await Hub.cenarioCbs.pronto;
+        // alíquota de CBS do cenário (hub.cenario-cbs no application.yml), em destaque para comparar com a oficial
+        const cenario = Hub.cenarioCbs.aliquota()
+          ? `<div class="kpi kpi-cenario"><small>CBS – ${esc(Hub.cenarioCbs.rotulo() || 'cenário')} (sugerida)</small>
+              <strong>${fmt.pct(Hub.cenarioCbs.aliquota())}</strong><span>Não oficial: usada só nas simulações</span></div>` : '';
         const valor = (r) => {
           if (!r) return '<span class="sutil">não informado</span>';
           if (!r.ok) return `<span class="sutil">${r.status === 404 ? 'sem alíquota cadastrada' : 'erro ' + r.status}</span>`;
@@ -45,6 +50,7 @@
         res.innerHTML = `<div class="card"><h3>Alíquotas em ${fmt.data(data)}</h3>
           <div class="kpis">
             <div class="kpi"><small>CBS (União)</small><strong>${valor(u)}</strong></div>
+            ${cenario}
             <div class="kpi"><small>IBS estadual ${esc(v.uf || '')}</small><strong>${valor(uf)}</strong></div>
             <div class="kpi"><small>IBS municipal ${esc(v.nomeMunicipio || '')}</small><strong>${valor(mun)}</strong></div>
             ${total !== null ? `<div class="kpi destaque"><small>Total CBS + IBS</small><strong>${fmt.pct(total)}</strong></div>` : ''}

@@ -9,9 +9,10 @@ Aplicação web interna do departamento fiscal, construída sobre as **calculado
 | Ligar tudo | Dê dois cliques em `iniciar-hub.bat` |
 | Desligar | `parar-hub.bat` |
 | Atualizar as calculadoras da Receita | `atualizar-calculadoras.bat` (baixa a versão nova, recria o banco e recompila) |
+| Conferir se está tudo funcionando | `testar-hub.bat` (testes automatizados; o hub em uso continua no ar) |
 | Acessar | `http://localhost:8090` neste computador, ou `http://IP-DESTE-PC:8090` nos demais (o endereço aparece ao iniciar) |
 
-Para que outros computadores acessem, libere a **porta 8090 (TCP, entrada)** no Firewall do Windows desta máquina. As portas 8080 e 8082 (calculadoras) não precisam ser liberadas: o hub repassa as chamadas.
+Para que outros computadores acessem, libere a **porta 8090 (TCP, entrada)** no Firewall do Windows desta máquina. As calculadoras (portas 8080 e 8082) escutam só em `127.0.0.1`: os demais computadores usam apenas o hub, que exige login e repassa as chamadas.
 
 ## Acesso (login e senha)
 
@@ -20,9 +21,10 @@ O hub exige login. Na **primeira vez**, abra `http://localhost:8090` **no própr
 usuário, no canto superior direito), o administrador cadastra a equipe:
 
 - cada usuário novo recebe uma **senha provisória**, mostrada uma única vez, que ele troca no primeiro acesso;
-- perfis: **Usuário** (todas as ferramentas) e **Administrador** (também gerencia usuários);
+- perfis: **Usuário** (usa as ferramentas que o administrador liberar para ele) e **Administrador** (todas as ferramentas e gestão de usuários);
 - **Desativar** bloqueia o acesso na hora (inclusive de quem está logado); **Redefinir senha** gera nova provisória;
-- senhas com no mínimo 8 caracteres, letras e números, guardadas com BCrypt; 5 erros seguidos bloqueiam o usuário por 15 minutos;
+- senhas com no mínimo 8 caracteres, letras e números, guardadas com BCrypt; 5 erros seguidos bloqueiam o usuário por 15 minutos,
+  e 20 erros do mesmo computador bloqueiam esse computador por 15 minutos; trocar a senha encerra as outras sessões do usuário;
   a sessão expira após 8 horas sem uso.
 
 Os usuários ficam em `dados\hub-usuarios.db` – **inclua esse arquivo no backup** do servidor. Se perder o acesso de todos
@@ -53,26 +55,49 @@ O resultado de cada verificação aparece em **Sistema → Situação do sistema
 - Simulador Simples Nacional (todos os documentos, anexos, fator r, ISS)
 - Comparador: IBS/CBS dentro do Simples × pelo regime regular
 
+**Cenário de alíquota da CBS (seletor "CBS" no topo)**
+- *Oficial*: o resultado da calculadora da Receita (em 2026, a alíquota de teste de 0,9%).
+- *Cenário* (ex.: "Cenário TCU – 11,3%"): no Simulador Regime Regular e no Pedágio, a operação é calculada pela calculadora
+  oficial e o hub recalcula só a CBS (alíquota do cenário × (1 − redução) × base), porque a calculadora não aceita outra
+  alíquota antes de 2027 (erro REG-036). De 2027 em diante a alíquota vai preenchida no campo "CBS %" e quem calcula é a
+  calculadora. O resultado mostra um aviso de simulação.
+- Não se aplica a: XML gerado (sempre com a alíquota legal), auditoria de notas (compara com a alíquota em vigor) e Simples
+  Nacional (CBS dentro do DAS).
+- A alíquota e o nome ficam em `hub.cenario-cbs` no `application.yml`; apagando a linha `aliquota`, o seletor some.
+
 **Processamento em lote (com planilha Excel)**
 - Classificar cadastro: SPED (EFD ICMS/IPI e EFD Contribuições), XML de NF-e/NFC-e/NFS-e ou ZIP. Sugere o cClassTrib, confere o usado nas notas e marca Divergente/Revisar/Sugerido/Conferido
 - Auditar XML: recalcula na calculadora oficial o IBS/CBS destacado e aponta divergências de base, alíquota, valor e classificação
-
-Arquivos fictícios para treino estão em `hub-fiscal/exemplos/`.
 
 ## Estrutura
 
 ```
 Calculadora RT/
-├─ calculadora-rtc-regime-regular/    repositório oficial da Receita (não alterar) – porta 8080
-├─ calculadora-rtc-simples-nacional/  repositório oficial da Receita (não alterar) – porta 8082
-├─ hub-fiscal/                        aplicação do escritório (Spring Boot + telas HTML/JS) – porta 8090
-│  ├─ src/main/java/...               servidor: proxy, catálogo, leitura de SPED/XML, lotes, Excel
-│  ├─ src/main/resources/static/      telas (sem etapa de build)
-│  └─ exemplos/                       arquivos fictícios para teste
-├─ scripts/hub.ps1                    iniciar / parar / status / atualizar
+├─ calculadora-rtc-regime-regular/    repositório oficial da Receita (não alterar) – 127.0.0.1:8080
+├─ calculadora-rtc-simples-nacional/  repositório oficial da Receita (não alterar) – 127.0.0.1:8082
+├─ hub-fiscal/                        aplicação do escritório (Spring Boot 4 + telas HTML/JS) – porta 8090
+│  └─ src/main/
+│     ├─ resources/application.yml    configuração: URLs das calculadoras, caminhos, paralelismo
+│     ├─ resources/static/            telas (HTML/CSS/JS sem etapa de build; um arquivo por tela em js/modulos)
+│     └─ java/br/com/escritorio/hubfiscal/
+│        ├─ infra/          integração com as calculadoras: ApiReceitaClient (único cliente HTTP),
+│        │                  EndpointsReceita (caminhos usados pelo servidor), J (leitura do JSON), Paralelo, Valores
+│        ├─ proxy/          repasse /proxy/rg/** e /proxy/sn/** das telas para as calculadoras
+│        ├─ catalogo/       consultas: NCM/NBS → cClassTrib (BaseOficial lê o SQLite oficial; CatalogoService combina com a API)
+│        ├─ importacao/     leitura de SPED, XML (NF-e, NFC-e, NFS-e) e ZIP
+│        ├─ classificacao/  regras da classificação em lote e planilha
+│        ├─ auditoria/      recálculo dos XMLs na calculadora e planilha
+│        ├─ lote/           endpoints dos lotes; excel/  exportação genérica e Planilha (Apache POI)
+│        ├─ seguranca/      login, usuários, permissões por ferramenta; sistema/  situação do sistema
+│        └─ config/         HubProperties, tratamento de erros
+├─ testes/                            testes automatizados (ver "Testes")
+├─ docs-api/                          contrato OpenAPI das calculadoras (referência)
+├─ scripts/hub.ps1                    iniciar / parar / status / atualizar / agendar
 ├─ tools/jdk-25*                      Java 25 portátil (exigido pelas calculadoras)
 └─ logs/                              logs dos três serviços
 ```
+
+Fluxo: tela → hub (8090) → `ApiReceitaClient` → calculadora oficial. Os lotes leem os arquivos (`importacao`), classificam ou auditam (`classificacao`/`auditoria`, que chamam a calculadora com no máximo `hub.paralelismo` chamadas simultâneas) e devolvem JSON para a tela e a planilha Excel.
 
 Os repositórios da Receita são usados **sem modificação**, para que as atualizações sejam um simples `git pull`. O hub lê o banco oficial (SQLite) apenas em modo leitura, para as consultas que as APIs não oferecem prontas (ex.: "quais cClassTrib valem para este NCM?"), reproduzindo a mesma regra de vínculo da calculadora oficial.
 
@@ -83,12 +108,42 @@ Os repositórios da Receita são usados **sem modificação**, para que as atual
 - A base oficial não vincula combustíveis (monofásico 620xxx) a NCM; o hub emite um alerta para esses NCMs.
 - O SPED não traz NBS: serviços vindos só do SPED aparecem como "Sem NCM/NBS".
 - Na base oficial, os números de anexo dos vínculos de NBS são inconsistentes; o hub mostra o vínculo NBS → cClassTrib, mas não o texto do anexo.
-- Não há login: use apenas na rede interna.
+- O hub usa HTTP: use apenas na rede interna.
 
 ## Desenvolvimento
 
 ```powershell
+# compilar o hub (gera hub-fiscal\target\hub-fiscal.jar)
 $env:JAVA_HOME = (Resolve-Path tools\jdk-25*).Path
 cd hub-fiscal
-.\mvnw.cmd clean package -DskipTests
+.\mvnw.cmd clean package
+
+# aplicar: reinicia os três serviços com o jar novo
+cd ..
+powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 reiniciar
+powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 status
 ```
+
+## Testes
+
+`testar-hub.bat` (ou `powershell -ExecutionPolicy Bypass -File testes\executar-testes.ps1`) sobe uma cópia isolada do hub
+na porta 8091, com usuários de teste num banco temporário, roda as suítes abaixo e desliga a cópia. Os usuários reais e
+o hub em uso não são tocados. Exige as calculadoras no ar e o hub compilado. Termina com código 0 quando tudo passa.
+
+| Suíte | O que confere |
+|---|---|
+| Referência | 36 respostas comparadas com `testes\referencia`: lotes (JSON e Excel célula a célula), consultas, repasse do proxy às calculadoras (incluindo POSTs de cálculo) e erros |
+| Funcional | arquivos inválidos (XML quebrado, XXE, vazio, binário), datas e parâmetros errados, limites |
+| Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, força bruta |
+
+Arquivos de entrada (fictícios) ficam em `testes\dados`. Quando uma mudança **intencional** alterar respostas, ou quando
+a Receita publicar uma base nova, confira as diferenças apontadas e, se estiverem certas, aprove as novas respostas com
+`testes\executar-testes.ps1 -GravarReferencia`.
+
+Fluxo para mudar o código: `parar-hub.bat` → compilar (ver "Desenvolvimento") → `iniciar-hub.bat` → `testar-hub.bat`.
+O hub precisa estar parado para compilar (o jar fica em uso), e os testes precisam das calculadoras no ar.
+
+Convenções:
+- Endpoint novo da calculadora usado pelo servidor → constante em `infra/EndpointsReceita`; URL ou caminho de arquivo → `application.yml` + `HubProperties`.
+- Telas: sem `<script>` inline nem `onclick=` (a política CSP bloqueia); use arquivos `.js` e atributos `data-*`.
+- Ao alterar arquivos em `static/`, aumente o `?v=` em `index.html`/`login.html` para os navegadores não usarem cópia antiga.

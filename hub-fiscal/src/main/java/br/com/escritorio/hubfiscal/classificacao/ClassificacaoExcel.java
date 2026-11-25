@@ -1,6 +1,7 @@
 package br.com.escritorio.hubfiscal.classificacao;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,17 +13,22 @@ import br.com.escritorio.hubfiscal.excel.Planilha.Coluna;
 /** Gera a planilha Excel da classificação em lote. */
 public final class ClassificacaoExcel {
 
+    /** Cor de fundo (RGB) da coluna Status. */
+    private static final Map<StatusClassificacao, String> CORES = new EnumMap<>(Map.of(
+            StatusClassificacao.DIVERGENTE, "F8B4B4",
+            StatusClassificacao.REVISAR, "FCE7A6",
+            StatusClassificacao.SUGERIDO, "CDEBD2",
+            StatusClassificacao.CONFERIDO, "8FD19E",
+            StatusClassificacao.INVALIDO, "E5C1E5",
+            StatusClassificacao.SEM_NOMENCLATURA, "D9D9D9"));
+
     private ClassificacaoExcel() {
     }
 
+    /** Planilha com as abas Resumo, Classificação e Alternativas por item. */
     public static byte[] gerar(ResultadoClassificacao r) {
         try (Planilha p = new Planilha()) {
-            p.corStatus("Divergente", "F8B4B4");
-            p.corStatus("Revisar", "FCE7A6");
-            p.corStatus("Sugerido", "CDEBD2");
-            p.corStatus("Conferido", "8FD19E");
-            p.corStatus("NCM/NBS inválido", "E5C1E5");
-            p.corStatus("Sem NCM/NBS", "D9D9D9");
+            CORES.forEach((s, cor) -> p.corStatus(s.rotulo(), cor));
 
             List<String[]> resumo = new ArrayList<>();
             resumo.add(new String[] { "Data de referência (vigência)", r.dataReferencia });
@@ -33,10 +39,8 @@ public final class ClassificacaoExcel {
             }
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Resultado por status" });
-            for (Map.Entry<String, Integer> e : r.contagemStatus.entrySet()) {
-                resumo.add(new String[] { ClassificacaoService.ROTULOS.getOrDefault(e.getKey(), e.getKey()),
-                        String.valueOf(e.getValue()) });
-            }
+            r.contagemStatus.forEach((s, n) -> resumo.add(new String[] {
+                    StatusClassificacao.valueOf(s).rotulo(), String.valueOf(n) }));
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Legenda" });
             resumo.add(new String[] { "Divergente", "A classificação usada nas notas é inválida para o NCM/NBS, para o "
@@ -53,14 +57,7 @@ public final class ClassificacaoExcel {
                     + "(anexos da LC 214/2025). Benefícios podem exigir requisitos que não constam dos arquivos "
                     + "(destinatário, finalidade, regime). A decisão final é do responsável técnico: use as colunas "
                     + "\"cClassTrib definido\" e \"Responsável\" para registrar." });
-            resumo.add(new String[] { "" });
-            resumo.add(new String[] { "Arquivos lidos" });
-            r.arquivos.forEach((k, v) -> resumo.add(new String[] { k, v }));
-            if (!r.avisos.isEmpty()) {
-                resumo.add(new String[] { "" });
-                resumo.add(new String[] { "Avisos" });
-                r.avisos.forEach(a -> resumo.add(new String[] { "", a }));
-            }
+            Planilha.secoesArquivosEAvisos(resumo, r.arquivos, r.avisos);
             p.abaResumo("Resumo", "Classificação tributária (cClassTrib) – Reforma Tributária", resumo);
 
             List<Coluna> cols = List.of(
@@ -104,7 +101,7 @@ public final class ClassificacaoExcel {
             for (LinhaClassificacao l : r.linhas) {
                 for (Candidata c : l.alternativas) {
                     alt.add(new Object[] { l.codigo, l.descricao, l.nomenclatura, c.cClassTrib(), c.cst(),
-                            c.descricao(), c.reducaoResumo(), c.categoria().getRotulo(),
+                            c.descricao(), c.reducaoResumo(), c.categoria().rotulo(),
                             c.condicional() ? "Sim" : "Não", c.dfeCompativel() ? "Sim" : "Não", c.anexo(),
                             c.itemAnexo(), c.textoAnexo(), c.fundamentacao() });
                 }

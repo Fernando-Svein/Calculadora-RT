@@ -119,7 +119,22 @@ public class Planilha implements AutoCloseable {
                 (byte) Integer.parseInt(s.substring(4, 6), 16) };
     }
 
-    /** Aba de resumo em formato chave/valor. */
+    /**
+     * Acrescenta ao resumo de um lote as seções "Arquivos lidos" (nome → o que foi encontrado)
+     * e, se houver, "Avisos".
+     */
+    public static void secoesArquivosEAvisos(List<String[]> resumo, Map<String, String> arquivos, List<String> avisos) {
+        resumo.add(new String[] { "" });
+        resumo.add(new String[] { "Arquivos lidos" });
+        arquivos.forEach((k, v) -> resumo.add(new String[] { k, v }));
+        if (!avisos.isEmpty()) {
+            resumo.add(new String[] { "" });
+            resumo.add(new String[] { "Avisos" });
+            avisos.forEach(a -> resumo.add(new String[] { "", a }));
+        }
+    }
+
+    /** Aba de resumo em formato chave/valor; um par com um só elemento vira subtítulo. */
     public Sheet abaResumo(String nome, String tituloTexto, List<String[]> pares) {
         Sheet sh = wb.createSheet(nome);
         sh.setColumnWidth(0, 45 * 256);

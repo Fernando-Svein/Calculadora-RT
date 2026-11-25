@@ -25,7 +25,7 @@
             ${comp.campo('Faturamento do período (R$) *', '<input name="faturamento" value="100.000,00">')}
             ${comp.campo('% das vendas para contribuintes (B2B)', '<input name="b2b" value="70">', 'Clientes que aproveitam crédito de IBS/CBS.')}
             ${comp.campo('Compras com crédito (R$)', '<input name="compras" value="40.000,00">', 'Aquisições tributadas que gerariam crédito no regime regular.')}
-            ${comp.campo('cClassTrib das vendas', '<input name="cClassTrib" value="000001">')}
+            ${comp.campo('Classificação tributária das vendas (cClassTrib)', '<input name="cClassTrib" value="000001">')}
             ${comp.campo('NCM/NBS principal', '<input name="nom" placeholder="opcional">')}
           </div>
           <div data-loc style="margin-top:12px"></div>
@@ -33,18 +33,18 @@
         <div class="grade g2">
           <div class="card"><h3>Cenário A – IBS/CBS dentro do Simples</h3>
             <div class="grade g2">
-              ${comp.campo('Atividade (cAtivSN) *', '<select name="cAtivSN"></select>')}
+              ${comp.campo('Atividade no Simples *', '<select name="cAtivSN"></select>')}
               ${comp.campo('Anexo da atividade', '<input name="anexo" readonly>')}
-              ${comp.campo('pCBSSN (parcela CBS da alíq. efetiva) *', '<input name="pCBSSN" placeholder="ex.: 1,1612">')}
-              ${comp.campo('pIBSSN (parcela IBS da alíq. efetiva) *', '<input name="pIBSSN" placeholder="ex.: 0,0129">')}
+              ${comp.campo('Parcela da CBS na alíquota efetiva do DAS (%) *', '<input name="pCBSSN" placeholder="ex.: 1,1612">')}
+              ${comp.campo('Parcela do IBS na alíquota efetiva do DAS (%) *', '<input name="pIBSSN" placeholder="ex.: 0,0129">')}
             </div>
-            <label class="check" style="margin-top:8px"><input type="checkbox" name="fatorR"> Fator r ≥ 28%</label>
+            <label class="check" style="margin-top:8px"><input type="checkbox" name="fatorR"> Fator r igual ou maior que 28%</label>
           </div>
           <div class="card"><h3>Cenário B – IBS/CBS pelo regime regular</h3>
             <div class="grade g3">
               ${comp.campo('CBS %', '<input name="aCbs" value="8,8">')}
-              ${comp.campo('IBS UF %', '<input name="aIbsUf" value="0,05">')}
-              ${comp.campo('IBS Mun %', '<input name="aIbsMun" value="0,05">')}
+              ${comp.campo('IBS estadual %', '<input name="aIbsUf" value="0,05">')}
+              ${comp.campo('IBS municipal %', '<input name="aIbsMun" value="0,05">')}
             </div>
             <p class="sutil" style="margin-top:8px">Alíquotas nominais estimadas para o ano; confira as vigentes. Em 2027–2028 o IBS ainda é de teste; a comparação fica mais relevante com as alíquotas cheias (2033).</p>
           </div>
@@ -53,6 +53,8 @@
         <div data-res></div>`;
 
       const loc = comp.seletorMunicipio(el.querySelector('[data-loc]'), { uf: 'SP', municipio: 3550308 });
+      // cenário de CBS (seletor no topo): vai como alíquota nominal, calculada pela própria calculadora
+      Hub.cenarioCbs.ligarCampoNominal(el.querySelector('[name=aCbs]'), '8,8');
       const selAtiv = el.querySelector('[name=cAtivSN]');
       const inpData = el.querySelector('[name=data]');
       const selTipo = el.querySelector('[name=tipo]');
@@ -143,8 +145,8 @@
           </div>
           <div class="info-caixa">Leitura: a opção B tende a compensar quando os clientes são contribuintes e valorizam o crédito integral,
             e quando há muitas compras com crédito. A opção A mantém o recolhimento unificado com carga menor, mas transfere crédito menor.
-            Simulação simplificada: não considera o efeito no DAS dos demais tributos, sublimites, regimes específicos, nem o fluxo de caixa do split payment.</div>
-          <div class="acoes"><button class="btn btn-sec btn-peq" data-ja>JSON cenário A</button><button class="btn btn-sec btn-peq" data-jb>JSON cenário B</button></div>
+            Simulação simplificada: não considera o efeito no DAS dos demais tributos, sublimites, regimes específicos, nem o fluxo de caixa do recolhimento na liquidação financeira (split payment).</div>
+          <div class="acoes"><button class="btn btn-sec btn-peq" data-ja>Dados técnicos – cenário A</button><button class="btn btn-sec btn-peq" data-jb>Dados técnicos – cenário B</button></div>
         </div>`;
         res.querySelector('[data-ja]').onclick = () => comp.verJson({ envio: opSn, resposta: ra.data }, 'Cenário A – Simples');
         res.querySelector('[data-jb]').onclick = () => comp.verJson({ envio: opRg, resposta: rb.data }, 'Cenário B – Regime regular');

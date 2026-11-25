@@ -1,0 +1,4 @@
+HTTP 400
+Content-Type: application/problem+json
+
+{"detail":"Um ou mais campos são inválidos - [itens: não deve estar vazio] [municipio: não deve ser nulo] [versao: não deve ser nulo] ","instance":"/api/calculadora/regime-geral","status":400,"title":"Campos inválidos.","type":"http://127.0.0.1/errors/erro-de-sistema-nao-previsto","timestamp":"<TS>"}

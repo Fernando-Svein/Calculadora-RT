@@ -1,5 +1,7 @@
 package br.com.escritorio.hubfiscal.catalogo;
 
+import static br.com.escritorio.hubfiscal.infra.Valores.zeroSeNulo;
+
 import java.math.BigDecimal;
 
 /**
@@ -53,26 +55,25 @@ public record Candidata(
             this.rotulo = rotulo;
         }
 
-        public String getRotulo() {
+        /** Texto exibido na planilha. */
+        public String rotulo() {
             return rotulo;
         }
     }
 
+    /** Resumo do tratamento para exibição: "Alíquota zero", "Redução 60%", "Redução CBS 60% / IBS 40%"... */
     public String reducaoResumo() {
         if (reducaoCbs == null || reducaoCbs.signum() == 0) {
             return tratamento == null ? "" : tratamento;
         }
-        boolean iguais = reducaoCbs.compareTo(nz(reducaoIbsUf)) == 0 && reducaoCbs.compareTo(nz(reducaoIbsMun)) == 0;
+        BigDecimal ibsUf = zeroSeNulo(reducaoIbsUf);
+        boolean iguais = reducaoCbs.compareTo(ibsUf) == 0 && reducaoCbs.compareTo(zeroSeNulo(reducaoIbsMun)) == 0;
         if (iguais && reducaoCbs.compareTo(new BigDecimal("100")) == 0 && tratamento != null && !tratamento.isBlank()) {
             return tratamento; // ex.: "Alíquota zero" (texto oficial) em vez de "Redução 100%"
         }
         String base = iguais ? reducaoCbs.stripTrailingZeros().toPlainString() + "%"
                 : "CBS " + reducaoCbs.stripTrailingZeros().toPlainString() + "% / IBS "
-                        + nz(reducaoIbsUf).stripTrailingZeros().toPlainString() + "%";
+                        + ibsUf.stripTrailingZeros().toPlainString() + "%";
         return "Redução " + base;
-    }
-
-    private static BigDecimal nz(BigDecimal b) {
-        return b == null ? BigDecimal.ZERO : b;
     }
 }

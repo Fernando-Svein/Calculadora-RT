@@ -1,0 +1,4 @@
+HTTP 422
+Content-Type: application/problem+json
+
+{"detail":"Nenhum SPED ou XML fiscal válido foi encontrado nos arquivos enviados. xml-quebrado.xml: XML inválido ou corrompido (As estruturas do documento XML devem começar e terminar com a mesma entidade.)","instance":"/hub/lote/classificacao","status":422,"title":"Não foi possível processar"}

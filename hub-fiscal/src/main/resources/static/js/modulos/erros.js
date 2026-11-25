@@ -11,7 +11,6 @@
       : api.rg(`/calculadora/observabilidade/erros?codigo=${encodeURIComponent(c)}`);
     return Hub.getCache(url);
   }
-  Hub.descricaoErro = buscar;
 
   Hub.registrar({
     rota: 'erros',

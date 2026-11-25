@@ -63,11 +63,14 @@ $env:JAVA_HOME = $Jdk.FullName
 $env:PATH = "$($Jdk.FullName)\bin;$env:PATH"
 $Java = Join-Path $Jdk.FullName 'bin\java.exe'
 
+# As calculadoras escutam só em 127.0.0.1: os outros computadores da rede acessam apenas o hub
+# (porta 8090), que exige login e aplica as permissões. Sem isso, qualquer máquina da rede chamaria
+# as calculadoras diretamente, sem login, pelas portas 8080/8082.
 $Servicos = @(
     @{ Nome = 'Calculadora Regime Geral'; Pasta = 'calculadora-rtc-regime-regular'; Jar = 'api-regime-geral.jar';
-        Args = @('-Dspring.profiles.active=offline'); Url = 'http://localhost:8080/api/calculadora/dados-abertos/versao'; Log = 'regime-geral' },
+        Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8080/api/calculadora/dados-abertos/versao'; Log = 'regime-geral' },
     @{ Nome = 'Calculadora Simples Nacional'; Pasta = 'calculadora-rtc-simples-nacional'; Jar = 'api-simples-nacional.jar';
-        Args = @('-Dspring.profiles.active=offline'); Url = 'http://localhost:8082/api/versao'; Log = 'simples-nacional' },
+        Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8082/api/versao'; Log = 'simples-nacional' },
     @{ Nome = 'Hub Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @(); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
 )
 
@@ -76,7 +79,12 @@ function Get-ProcessoServico($s) {
 }
 
 function Test-Url([string]$Url) {
-    try { Invoke-WebRequest $Url -UseBasicParsing -TimeoutSec 3 | Out-Null; return $true } catch { return $false }
+    try { Invoke-WebRequest $Url -UseBasicParsing -TimeoutSec 3 | Out-Null; return $true } catch {
+        # 401/403: o serviço está no ar, só exige login (o hub protege /hub/status)
+        $r = $_.Exception.Response
+        if ($r -and [int]$r.StatusCode -in 401, 403) { return $true }
+        return $false
+    }
 }
 
 function Find-Git {
@@ -121,9 +129,19 @@ function Build-Servico($s) {
     Write-Ok "$($s.Jar) gerado"
 }
 
+# Repositórios oficiais da Receita: usados sem modificação (só clone e git pull)
 $RepositoriosReceita = [ordered]@{
     'calculadora-rtc-regime-regular'   = 'https://github.com/ReceitaFederal/calculadora-rtc-regime-regular.git'
     'calculadora-rtc-simples-nacional' = 'https://github.com/ReceitaFederal/calculadora-rtc-simples-nacional.git'
+}
+$Repos = @($RepositoriosReceita.Keys)
+
+# Depois de baixar uma versão nova das calculadoras: banco oficial, compilação dos três serviços e início
+function Invoke-Reconstrucao {
+    New-BancoOficial
+    Copy-BancoSimples
+    foreach ($s in $Servicos) { Build-Servico $s }
+    Start-Servicos
 }
 
 # Em um clone novo deste projeto as calculadoras da Receita não vêm junto: baixa do GitHub oficial.
@@ -191,18 +209,14 @@ function Update-Calculadoras {
     if (-not $git) { Write-Falha 'Git não encontrado (instale o Git ou o GitHub Desktop).'; exit 1 }
     Write-Etapa 'Parando os serviços'
     Stop-Servicos
-    foreach ($repo in 'calculadora-rtc-regime-regular', 'calculadora-rtc-simples-nacional') {
+    foreach ($repo in $Repos) {
         Write-Etapa "Atualizando $repo (git pull)"
         & $git -c safe.directory=* -C (Join-Path $Raiz $repo) pull --ff-only
         if ($LASTEXITCODE -ne 0) { Write-Falha "git pull falhou em $repo"; exit 1 }
     }
-    New-BancoOficial
-    Copy-BancoSimples
-    foreach ($s in $Servicos) { Build-Servico $s }
-    Start-Servicos
+    Invoke-Reconstrucao
 }
 
-$Repos = @('calculadora-rtc-regime-regular', 'calculadora-rtc-simples-nacional')
 $ArquivoResultado = Join-Path $Logs 'ultima-atualizacao.json'
 
 function Save-Resultado([string]$Resultado, [string]$Mensagem, $Detalhes) {
@@ -251,10 +265,7 @@ function Update-SeHouverNovidade {
             Write-Etapa 'Há versão nova: atualizando'
             Stop-Servicos
             foreach ($r in $Repos) { Invoke-Git $r @('merge', '--ff-only', '@{u}') | Out-Null }
-            New-BancoOficial
-            Copy-BancoSimples
-            foreach ($s in $Servicos) { Build-Servico $s }
-            Start-Servicos
+            Invoke-Reconstrucao
             $fora = $Servicos | Where-Object { -not (Test-Url $_.Url) }
             if ($fora) { throw "Serviço(s) não responderam após a atualização: $(($fora | ForEach-Object Nome) -join ', ')" }
             $resumo = ($info | ForEach-Object { "$($_.repo): $($_.commitsNovos) commit(s)" }) -join '; '
@@ -267,10 +278,7 @@ function Update-SeHouverNovidade {
             try {
                 Stop-Servicos
                 foreach ($i in $info) { Invoke-Git $i.repo @('reset', '--hard', $i.anterior) | Out-Null }
-                New-BancoOficial
-                Copy-BancoSimples
-                foreach ($s in $Servicos) { Build-Servico $s }
-                Start-Servicos
+                Invoke-Reconstrucao
                 Save-Resultado 'falha' "A atualização falhou e a versão anterior foi restaurada. Erro: $erro" $info
             } catch {
                 Save-Resultado 'falha' "A atualização falhou e não foi possível restaurar a versão anterior. Erro: $erro / $($_.Exception.Message)" $info

@@ -16,7 +16,10 @@ import br.com.escritorio.hubfiscal.config.HubProperties;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Cliente HTTP das calculadoras oficiais (Regime Geral e Simples Nacional).
+ * Cliente HTTP das calculadoras oficiais (Regime Geral e Simples Nacional): o único ponto
+ * do hub que fala com elas. As URLs base vêm de {@link HubProperties}; os caminhos usados
+ * pelo servidor estão em {@link EndpointsReceita}. As calculadoras rodam localmente e não
+ * exigem autenticação.
  * <p>
  * Não lança exceção em erros HTTP: devolve sempre {@link ApiResposta}, para que
  * o chamador decida (o hub mostra os erros da calculadora ao usuário). Quando a
@@ -39,6 +42,7 @@ public class ApiReceitaClient {
         this.mapper = mapper;
     }
 
+    /** URL base da calculadora, sem barra final. */
     public String baseUrl(Api api) {
         String base = api == Api.RG ? props.apiRegimeGeral() : props.apiSimplesNacional();
         return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
@@ -57,7 +61,7 @@ public class ApiReceitaClient {
         try {
             HttpResponse<byte[]> resp = http.send(req.build(), HttpResponse.BodyHandlers.ofByteArray());
             String ct = resp.headers().firstValue("Content-Type").orElse("application/json");
-            String aviso = resp.headers().firstValue("x-warning-dados-simulados").orElse(null);
+            String aviso = resp.headers().firstValue(EndpointsReceita.CABECALHO_DADOS_SIMULADOS).orElse(null);
             return new ApiResposta(resp.statusCode(), resp.body(), ct, aviso);
         } catch (IOException e) {
             return indisponivel(api, e);
@@ -75,10 +79,12 @@ public class ApiReceitaClient {
         return new ApiResposta(0, msg.getBytes(StandardCharsets.UTF_8), "application/json", null);
     }
 
+    /** GET em {@code caminhoEQuery} (ex.: {@code EndpointsReceita.RG_NCM + "?ncm=..."}). */
     public ApiResposta get(Api api, String caminhoEQuery) {
         return chamar(api, "GET", caminhoEQuery, null, null);
     }
 
+    /** POST com {@code corpo} serializado em JSON. */
     public ApiResposta postJson(Api api, String caminho, Object corpo) {
         byte[] bytes = mapper.writeValueAsBytes(corpo);
         return chamar(api, "POST", caminho, bytes, "application/json");

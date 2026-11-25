@@ -1,7 +1,10 @@
 package br.com.escritorio.hubfiscal.auditoria;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import br.com.escritorio.hubfiscal.excel.Planilha;
@@ -10,16 +13,23 @@ import br.com.escritorio.hubfiscal.excel.Planilha.Coluna;
 /** Gera a planilha Excel da auditoria de XML. */
 public final class AuditoriaExcel {
 
+    /** Cor de fundo (RGB) da coluna Status. */
+    private static final Map<StatusAuditoria, String> CORES = new EnumMap<>(Map.of(
+            StatusAuditoria.DIVERGENTE, "F8B4B4",
+            StatusAuditoria.ERRO_CLASSIFICACAO, "F4C28E",
+            StatusAuditoria.OK, "8FD19E",
+            StatusAuditoria.SEM_GRUPO, "D9D9D9",
+            StatusAuditoria.NAO_AUDITADO, "E7E6E6"));
+
+    private static final Locale PT_BR = Locale.of("pt", "BR");
+
     private AuditoriaExcel() {
     }
 
+    /** Planilha com as abas Resumo e Itens. */
     public static byte[] gerar(ResultadoAuditoria r) {
         try (Planilha p = new Planilha()) {
-            p.corStatus("Divergente", "F8B4B4");
-            p.corStatus("Erro de classificação", "F4C28E");
-            p.corStatus("OK", "8FD19E");
-            p.corStatus("Sem grupo IBS/CBS", "D9D9D9");
-            p.corStatus("Não auditado", "E7E6E6");
+            CORES.forEach((s, cor) -> p.corStatus(s.rotulo(), cor));
 
             List<String[]> resumo = new ArrayList<>();
             resumo.add(new String[] { "Gerado em", r.geradoEm });
@@ -27,30 +37,21 @@ public final class AuditoriaExcel {
             resumo.add(new String[] { "Itens", String.valueOf(r.totalItens) });
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Resultado por status" });
-            for (Map.Entry<String, Integer> e : r.contagemStatus.entrySet()) {
-                resumo.add(new String[] { AuditoriaService.ROTULOS.getOrDefault(e.getKey(), e.getKey()),
-                        String.valueOf(e.getValue()) });
-            }
+            r.contagemStatus.forEach((s, n) -> resumo.add(new String[] {
+                    StatusAuditoria.valueOf(s).rotulo(), String.valueOf(n) }));
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Totais (itens auditados)" });
-            resumo.add(new String[] { "CBS informada no XML", fmt(r.totais.get("xmlVCBS")) });
-            resumo.add(new String[] { "CBS calculada", fmt(r.totais.get("calcVCBS")) });
-            resumo.add(new String[] { "IBS informado no XML", fmt(r.totais.get("xmlVIBS")) });
-            resumo.add(new String[] { "IBS calculado", fmt(r.totais.get("calcVIBS")) });
+            resumo.add(new String[] { "CBS informada no XML", moeda(r.totais.get("xmlVCBS")) });
+            resumo.add(new String[] { "CBS calculada", moeda(r.totais.get("calcVCBS")) });
+            resumo.add(new String[] { "IBS informado no XML", moeda(r.totais.get("xmlVIBS")) });
+            resumo.add(new String[] { "IBS calculado", moeda(r.totais.get("calcVIBS")) });
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Como ler", "Cada item é recalculado na calculadora oficial do Regime Geral com "
                     + "o CST/cClassTrib e a base do próprio XML. A coluna \"Base calculada (componentes)\" refaz a base "
                     + "a partir de vProd, frete, seguro, outras despesas, descontos, ICMS, PIS/COFINS etc. Diferenças "
                     + "acima de R$ 0,01 aparecem como Divergente. \"Erro de classificação\" indica que a calculadora "
                     + "rejeitou o CST/cClassTrib/NCM do item (ex.: NCM fora do anexo)." });
-            resumo.add(new String[] { "" });
-            resumo.add(new String[] { "Arquivos lidos" });
-            r.arquivos.forEach((k, v) -> resumo.add(new String[] { k, v }));
-            if (!r.avisos.isEmpty()) {
-                resumo.add(new String[] { "" });
-                resumo.add(new String[] { "Avisos" });
-                r.avisos.forEach(a -> resumo.add(new String[] { "", a }));
-            }
+            Planilha.secoesArquivosEAvisos(resumo, r.arquivos, r.avisos);
             p.abaResumo("Resumo", "Auditoria IBS/CBS dos documentos fiscais", resumo);
 
             List<Coluna> cols = List.of(Coluna.texto("Status", 18), Coluna.texto("Documento", 7),
@@ -82,7 +83,7 @@ public final class AuditoriaExcel {
         }
     }
 
-    private static String fmt(java.math.BigDecimal b) {
-        return b == null ? "0,00" : String.format(java.util.Locale.of("pt", "BR"),"R$ %,.2f", b);
+    private static String moeda(BigDecimal b) {
+        return b == null ? "0,00" : String.format(PT_BR, "R$ %,.2f", b);
     }
 }

@@ -1,0 +1,4 @@
+HTTP 405
+Content-Type: application/problem+json
+
+{"detail":"Method 'DELETE' is not supported.","instance":"/hub/status","status":405,"title":"Method Not Allowed"}

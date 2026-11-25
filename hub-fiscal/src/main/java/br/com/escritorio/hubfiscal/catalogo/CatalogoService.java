@@ -23,6 +23,7 @@ import br.com.escritorio.hubfiscal.config.ErroHandler.ErroNegocio;
 import br.com.escritorio.hubfiscal.infra.Api;
 import br.com.escritorio.hubfiscal.infra.ApiReceitaClient;
 import br.com.escritorio.hubfiscal.infra.ApiResposta;
+import br.com.escritorio.hubfiscal.infra.EndpointsReceita;
 import br.com.escritorio.hubfiscal.infra.J;
 
 /**
@@ -42,6 +43,13 @@ public class CatalogoService {
             "(?i)administra[cç][aã]o p[uú]blica|[oó]rg[aã]os|emerg[eê]ncia|produtor rural|\\bZFM\\b|zona franca|"
                     + "livre com[eé]rcio|incentivad|motorista|cooperativ|regime|repetro|projetos|\\bEAC\\b|"
                     + "importa[cç][aã]o|adquirid[oa]s por|soberania|reabilita|autônomo|aut[oô]nomo|nanoempreendedor");
+
+    /**
+     * Prefixos de NCM de combustíveis do regime monofásico (gasolina, diesel, querosene, GLP/GN, etanol, biodiesel).
+     * A base oficial não vincula combustíveis a NCM, por isso a lista é mantida aqui para emitir o alerta.
+     */
+    private static final List<String> COMBUSTIVEIS = List.of("271012", "271019", "271020", "2711", "220710", "220720",
+            "3826");
 
     private final ApiReceitaClient api;
     private final BaseOficial base;
@@ -72,7 +80,7 @@ public class CatalogoService {
     /** Todas as classificações CBS/IBS vigentes na data, por código. */
     public Map<String, Map<String, Object>> classificacoes(LocalDate data) {
         return cacheClassificacoes.computeIfAbsent(data.toString(), k -> {
-            ApiResposta r = api.get(Api.RG, "/calculadora/dados-abertos/classificacoes-tributarias/cbs-ibs?data=" + k);
+            ApiResposta r = api.get(Api.RG, EndpointsReceita.RG_CLASSIFICACOES_CBS_IBS + "?data=" + k);
             if (!r.ok()) {
                 throw new ErroNegocio("Não foi possível obter a tabela de classificações da calculadora oficial: "
                         + J.str(api.json(r), "detail"));
@@ -88,7 +96,7 @@ public class CatalogoService {
     /** Fundamentação legal resumida por cClassTrib. */
     public Map<String, String> fundamentacoes(LocalDate data) {
         return cacheFundamentacao.computeIfAbsent(data.toString(), k -> {
-            ApiResposta r = api.get(Api.RG, "/calculadora/dados-abertos/fundamentacoes-legais?data=" + k);
+            ApiResposta r = api.get(Api.RG, EndpointsReceita.RG_FUNDAMENTACOES + "?data=" + k);
             Map<String, String> m = new LinkedHashMap<>();
             if (r.ok()) {
                 for (Object o : api.jsonLista(r)) {
@@ -115,10 +123,10 @@ public class CatalogoService {
         return comAnexo(t, data).contains(cClassTrib);
     }
 
-    /** Dados do NCM na API oficial (inclui sujeição ao Imposto Seletivo). */
-    public Map<String, Object> ncmApi(String ncm, LocalDate data) {
+    /** Dados do NCM na API oficial (inclui sujeição ao Imposto Seletivo); vazio se a API recusar. */
+    private Map<String, Object> ncmApi(String ncm, LocalDate data) {
         return cacheNcmApi.computeIfAbsent(ncm + "|" + data, k -> {
-            ApiResposta r = api.get(Api.RG, "/calculadora/dados-abertos/ncm?ncm=" + ncm + "&data=" + data);
+            ApiResposta r = api.get(Api.RG, EndpointsReceita.RG_NCM + "?ncm=" + ncm + "&data=" + data);
             return r.ok() ? api.jsonObjeto(r) : Map.of();
         });
     }
@@ -211,17 +219,13 @@ public class CatalogoService {
                 n.descricaoCompleta(), n.lc116(), is, especificas, situacionais, obs);
     }
 
-    /** Prefixos de NCM de combustíveis do regime monofásico (gasolina, diesel, querosene, GLP/GN, etanol, biodiesel). */
-    private static final List<String> COMBUSTIVEIS = List.of("271012", "271019", "271020", "2711", "220710", "220720",
-            "3826");
-
     private static AnaliseNomenclatura invalida(Tipo tipo, String codigo, LocalDate data, Integer tipoDfe, String msg) {
         return new AnaliseNomenclatura(tipo.name(), codigo, data.toString(), tipoDfe, false, msg, null, null, null,
                 false, List.of(), List.of(), List.of());
     }
 
     /** Ordem: categoria (prioridade), maior redução, código. */
-    public static final Comparator<Candidata> ORDEM = Comparator
+    private static final Comparator<Candidata> ORDEM = Comparator
             .comparing((Candidata c) -> !c.dfeCompativel())
             .thenComparing(Candidata::condicional)
             .thenComparing(Candidata::categoria)
@@ -236,13 +240,20 @@ public class CatalogoService {
         Categoria cat = categoria(cst, descricao, v != null);
         boolean condicional = cat == Categoria.REGIME_ESPECIAL || cat == Categoria.OPERACAO
                 || cat == Categoria.BENEFICIO_ATIVIDADE || CONDICIONAL.matcher(String.valueOf(descricao)).find();
-        boolean dfeOk = tipoDfe == null || J.list(c, "tiposDfeClassificacao").stream()
-                .anyMatch(t -> tipoDfe.toString().equals(J.str(t, "tipo")));
         return new Candidata(cod, cst, descricao, J.str(c, "descricaoTratamentoTributario"),
                 J.num(c, "percentualReducaoCbs"), J.num(c, "percentualReducaoIbsUf"), J.num(c, "percentualReducaoIbsMun"),
                 cat, condicional, v != null,
                 v == null ? null : v.anexo(), v == null ? null : v.itemAnexo(), v == null ? null : v.textoItemAnexo(),
-                fund.get(cod), dfeOk);
+                fund.get(cod), admiteDocumento(c, tipoDfe));
+    }
+
+    /**
+     * A classificação (registro da tabela oficial) é admitida no documento modelo {@code tipoDfe}
+     * (lista {@code tiposDfeClassificacao})? Sem modelo informado, não filtra.
+     */
+    public static boolean admiteDocumento(Map<String, Object> registro, Integer tipoDfe) {
+        return tipoDfe == null || J.list(registro, "tiposDfeClassificacao").stream()
+                .anyMatch(t -> tipoDfe.toString().equals(J.str(t, "tipo")));
     }
 
     private static Categoria categoria(String cst, String descricao, boolean viaAnexo) {

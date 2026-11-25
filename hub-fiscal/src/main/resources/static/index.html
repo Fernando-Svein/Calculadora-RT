@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hub Fiscal – Reforma Tributária</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%231f3a5f'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='Segoe UI,Arial' font-weight='700'>RT</text></svg>">
-  <link rel="stylesheet" href="css/app.css?v=9">
+  <script src="js/tema.js?v=16"></script>
+  <link rel="stylesheet" href="css/app.css?v=16">
 </head>
 <body>
   <aside class="sidebar" id="sidebar">
@@ -36,6 +37,8 @@
         <span class="pilula" id="pilSN"><i></i>Simples Nacional</span>
         <span class="pilula pilula-info" id="pilBase">Base –</span>
       </div>
+      <div class="cenario-cbs" id="cenarioCbs" hidden></div>
+      <button class="btn-tema" type="button" data-alternar-tema><svg class="tema-sol" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="tema-lua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg></button>
       <div class="usuario-menu" id="usuarioMenu"></div>
     </header>
     <main id="conteudo" class="conteudo" tabindex="-1"></main>
@@ -50,27 +53,29 @@
     </div>
   </div>
 
-  <script src="js/app.js?v=9"></script>
-  <script src="js/icones.js?v=9"></script>
-  <script src="js/componentes.js?v=9"></script>
-  <script src="js/modulos/inicio.js?v=9"></script>
-  <script src="js/modulos/consulta-nomenclatura.js?v=9"></script>
-  <script src="js/modulos/tabelas-classificacao.js?v=9"></script>
-  <script src="js/modulos/aliquotas.js?v=9"></script>
-  <script src="js/modulos/atividades-simples.js?v=9"></script>
-  <script src="js/modulos/nfse.js?v=9"></script>
-  <script src="js/modulos/dados-abertos.js?v=9"></script>
-  <script src="js/modulos/erros.js?v=9"></script>
-  <script src="js/modulos/calc-regime-geral.js?v=9"></script>
-  <script src="js/modulos/calc-simples.js?v=9"></script>
-  <script src="js/modulos/comparador.js?v=9"></script>
-  <script src="js/modulos/bases-calculo.js?v=9"></script>
-  <script src="js/modulos/pedagio.js?v=9"></script>
-  <script src="js/modulos/lote-classificacao.js?v=9"></script>
-  <script src="js/modulos/lote-auditoria.js?v=9"></script>
-  <script src="js/modulos/xml.js?v=9"></script>
-  <script src="js/modulos/sistema.js?v=9"></script>
-  <script src="js/modulos/usuarios.js?v=9"></script>
-  <script>Hub.iniciar();</script>
+  <script src="js/app.js?v=16"></script>
+  <script src="js/icones.js?v=16"></script>
+  <script src="js/componentes.js?v=16"></script>
+  <script src="js/rotulos.js?v=16"></script>
+  <script src="js/cenario-cbs.js?v=16"></script>
+  <script src="js/modulos/inicio.js?v=16"></script>
+  <script src="js/modulos/consulta-nomenclatura.js?v=16"></script>
+  <script src="js/modulos/tabelas-classificacao.js?v=16"></script>
+  <script src="js/modulos/aliquotas.js?v=16"></script>
+  <script src="js/modulos/atividades-simples.js?v=16"></script>
+  <script src="js/modulos/nfse.js?v=16"></script>
+  <script src="js/modulos/dados-abertos.js?v=16"></script>
+  <script src="js/modulos/erros.js?v=16"></script>
+  <script src="js/modulos/calc-regime-geral.js?v=16"></script>
+  <script src="js/modulos/calc-simples.js?v=16"></script>
+  <script src="js/modulos/comparador.js?v=16"></script>
+  <script src="js/modulos/bases-calculo.js?v=16"></script>
+  <script src="js/modulos/pedagio.js?v=16"></script>
+  <script src="js/modulos/lote-classificacao.js?v=16"></script>
+  <script src="js/modulos/lote-auditoria.js?v=16"></script>
+  <script src="js/modulos/xml.js?v=16"></script>
+  <script src="js/modulos/sistema.js?v=16"></script>
+  <script src="js/modulos/usuarios.js?v=16"></script>
+  <script src="js/iniciar.js?v=16"></script>
 </body>
 </html>

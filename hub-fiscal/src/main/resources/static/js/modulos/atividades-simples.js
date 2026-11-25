@@ -19,10 +19,10 @@
     icone: '🏷️',
     ordem: 4,
     etiquetas: ['Simples'],
-    descricao: 'Catálogo de atividades do Simples Nacional (cAtivSN): anexo, sujeição ao fator r e documentos admitidos.',
+    descricao: 'Catálogo de atividades do Simples Nacional: anexo, sujeição ao fator r e documentos admitidos.',
     render(el) {
       el.innerHTML = comp.cabecalho('Atividades do Simples Nacional',
-        'Códigos de atividade usados no cálculo do IBS/CBS no Simples (cAtivSN). Indicam o anexo aplicável, se a atividade depende do fator r e em quais documentos pode ser usada.') +
+        'Códigos de atividade usados no cálculo do IBS/CBS no Simples (no leiaute da nota, campo cAtivSN). Indicam o anexo aplicável, se a atividade depende do fator r e em quais documentos pode ser usada.') +
         `<div class="card"><div class="linha">
           <div class="campo" style="flex:0 0 180px"><label>Data</label><input type="date" name="data" value="${Hub.hoje() < '2027-01-01' ? '2027-01-01' : Hub.hoje()}"></div>
           <div class="campo" style="flex:0 0 160px"><label>Anexos</label><input name="anexos" placeholder="Ex.: III,V"></div>
@@ -41,13 +41,13 @@
         if (!r.ok) { res.innerHTML = Hub.problema(r); return; }
         comp.tabela(res, {
           colunas: [
-            { titulo: 'cAtivSN', campo: 'codigo', render: (l) => `<code><strong>${esc(l.codigo)}</strong></code>` },
+            { titulo: 'Código', campo: 'codigo', render: (l) => `<code><strong>${esc(l.codigo)}</strong></code>` },
             { titulo: 'Descrição', campo: 'descricao', largura: 70 },
             { titulo: 'Anexo', campo: 'rotuloAnexo' },
             { titulo: 'Anexo sem fator r', campo: 'anexoSemFatorR' },
             { titulo: 'Anexo com fator r', campo: 'anexoComFatorR' },
             { titulo: 'Fator r', exportar: (l) => (l.sujeitaFatorR ? 'Sim' : 'Não') },
-            { titulo: 'Documentos', exportar: (l) => (l.tpDocsAdmissiveis || []).join(', ') },
+            { titulo: 'Documentos', exportar: (l) => (l.tpDocsAdmissiveis || []).map((c) => Hub.rotulos.documento(c)).join(', ') },
             { titulo: 'Disponível', exportar: (l) => (l.disponivel ? 'Sim' : 'Não – faltam: ' + (l.anexosFaltantes || []).join(', ')) },
           ],
           linhas: r.data,

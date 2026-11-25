@@ -186,7 +186,7 @@
     const chaves = [];
     linhas.forEach((l) => Object.keys(l).forEach((k) => { if (!chaves.includes(k)) chaves.push(k); }));
     return tabela(container, Object.assign({
-      colunas: chaves.map((k) => ({ titulo: k, campo: null, exportar: (l) => l[k], render: (l) => esc(typeof l[k] === 'boolean' ? (l[k] ? 'Sim' : 'Não') : l[k]) })),
+      colunas: chaves.map((k) => ({ titulo: Hub.rotulos ? Hub.rotulos.campo(k) : k, campo: null, exportar: (l) => l[k], render: (l) => esc(typeof l[k] === 'boolean' ? (l[k] ? 'Sim' : 'Não') : l[k]) })),
       linhas,
     }, opts));
   }
@@ -376,5 +376,5 @@
     return o;
   }
 
-  Hub.comp = { tabela, jsonTabela, abas, seletorMunicipio, autocompletarNomenclatura, upload, enviarComProgresso, verJson, cabecalho, campo, status, lerCampos, achatar };
+  Hub.comp = { tabela, jsonTabela, abas, seletorMunicipio, autocompletarNomenclatura, upload, enviarComProgresso, verJson, cabecalho, campo, status, lerCampos };
 })();

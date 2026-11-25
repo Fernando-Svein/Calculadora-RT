@@ -1,0 +1,4 @@
+HTTP 422
+Content-Type: application/problem+json
+
+{"detail":"Nenhum SPED ou XML fiscal válido foi encontrado nos arquivos enviados. xml-xxe.xml: XML inválido ou corrompido (DOCTYPE fica desativado quando o recurso \"http://apache.org/xml/features/disallow-doctype-decl\" é definido como verdadeiro.)","instance":"/hub/lote/auditoria","status":422,"title":"Não foi possível processar"}

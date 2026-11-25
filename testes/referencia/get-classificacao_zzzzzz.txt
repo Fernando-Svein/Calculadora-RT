@@ -1,0 +1,4 @@
+HTTP 422
+Content-Type: application/problem+json
+
+{"detail":"cClassTrib zzzzzz não encontrado ou não vigente em <HOJE>.","instance":"/hub/classificacao/zzzzzz","status":422,"title":"Não foi possível processar"}

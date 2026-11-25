@@ -15,12 +15,13 @@ import br.com.escritorio.hubfiscal.config.HubProperties;
 /**
  * Guarda em memória, por algumas horas, os resultados de processamentos em
  * lote, para que a tela mostre o resultado e o usuário baixe a planilha sem
- * reprocessar os arquivos.
+ * reprocessar os arquivos. Cada resultado só pode ser baixado por quem o gerou
+ * (os dados vêm de notas e SPED de clientes).
  */
 @Component
 public class ResultadoStore {
 
-    private record Entrada(Object valor, Instant criado) {
+    private record Entrada(Object valor, long dono, Instant criado) {
     }
 
     private final Map<String, Entrada> dados = new ConcurrentHashMap<>();
@@ -30,15 +31,17 @@ public class ResultadoStore {
         this.retencao = Duration.ofMinutes(props.retencaoResultadosMinutos());
     }
 
-    public String guardar(Object valor) {
+    /** Guarda o resultado do usuário {@code dono} e devolve o identificador para download. */
+    public String guardar(Object valor, long dono) {
         String id = UUID.randomUUID().toString();
-        dados.put(id, new Entrada(valor, Instant.now()));
+        dados.put(id, new Entrada(valor, dono, Instant.now()));
         return id;
     }
 
-    public <T> T obter(String id, Class<T> tipo) {
+    public <T> T obter(String id, Class<T> tipo, long dono) {
         Entrada e = dados.get(id);
-        if (e == null || !tipo.isInstance(e.valor())) {
+        // resultado de outro usuário responde igual a inexistente (não confirma que o id existe)
+        if (e == null || e.dono() != dono || !tipo.isInstance(e.valor())) {
             throw new ErroNegocio("Resultado não encontrado ou expirado. Processe os arquivos novamente.");
         }
         return tipo.cast(e.valor());

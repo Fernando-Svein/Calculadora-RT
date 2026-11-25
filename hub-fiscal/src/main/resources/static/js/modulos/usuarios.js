@@ -139,17 +139,17 @@
         const eu = Hub.usuario.id;
         const totalFerramentas = cat.length;
         const nomesFerramentas = (ids) => (ids.length ? cat.filter((f) => ids.includes(f.id)).map((f) => f.titulo).join('\n') : 'Nenhuma ferramenta');
-        lista.innerHTML = `<div class="tabela-wrap" style="max-height:none"><table class="tab"><thead><tr>
-            <th>Nome</th><th>Usuário</th><th>Perfil</th><th>Acessos</th><th>Situação</th><th>Último acesso</th><th></th></tr></thead><tbody>
+        lista.innerHTML = `<div class="tabela-wrap" style="max-height:none"><table class="tab tab-usuarios"><thead><tr>
+            <th>Nome</th><th class="col-sec">Usuário</th><th>Perfil</th><th class="col-sec">Acessos</th><th>Situação</th><th class="col-sec">Último acesso</th><th></th></tr></thead><tbody>
           ${r.data.map((u) => `<tr data-id="${u.id}">
             <td><strong>${esc(u.nome)}</strong>${u.id === eu ? ' <span class="etq etq-azul">você</span>' : ''}</td>
-            <td class="mono">${esc(u.login)}</td>
+            <td class="mono col-sec">${esc(u.login)}</td>
             <td>${u.perfil === 'ADMIN' ? '<span class="etq etq-azul">Administrador</span>' : 'Usuário'}</td>
-            <td>${u.perfil === 'ADMIN' || u.acessoTotal ? '<span class="sutil">Todas as ferramentas</span>'
+            <td class="col-sec">${u.perfil === 'ADMIN' || u.acessoTotal ? '<span class="sutil">Todas as ferramentas</span>'
               : `<span class="acessos" title="${esc(nomesFerramentas(u.permissoes))}">${u.permissoes.length} de ${totalFerramentas} ferramentas</span>`}</td>
             <td>${!u.ativo ? '<span class="etq st-DIVERGENTE">Desativado</span>'
               : u.trocarSenha ? '<span class="etq st-REVISAR">Aguardando 1º acesso</span>' : '<span class="etq st-OK">Ativo</span>'}</td>
-            <td>${esc(dataHora(u.ultimoAcesso))}</td>
+            <td class="col-sec">${esc(dataHora(u.ultimoAcesso))}</td>
             <td><div class="acoes-tab">
               <button class="btn-link" data-acao="editar">Editar</button>
               <button class="btn-link" data-acao="senha">Redefinir senha</button>

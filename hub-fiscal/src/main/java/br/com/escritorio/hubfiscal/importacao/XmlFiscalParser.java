@@ -1,5 +1,8 @@
 package br.com.escritorio.hubfiscal.importacao;
 
+import static br.com.escritorio.hubfiscal.infra.Valores.decimal;
+import static br.com.escritorio.hubfiscal.infra.Valores.inteiro;
+
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -108,14 +111,12 @@ public final class XmlFiscalParser {
             d.chave = texto(raiz, "chNFe");
         }
         d.numero = texto(ide, "nNF");
-        d.serie = texto(ide, "serie");
         String dh = texto(ide, "dhEmi");
         if (dh == null) {
             String dEmi = texto(ide, "dEmi");
             dh = dEmi == null ? null : dEmi + "T00:00:00-03:00";
         }
         d.dataHoraEmissao = dh;
-        d.tipoOperacao = inteiro(texto(ide, "tpNF"));
         d.municipioFatoGerador = inteiro(texto(ide, "cMunFG"));
         d.emitenteCnpj = coalesce(texto(emit, "CNPJ"), texto(emit, "CPF"));
         d.emitenteNome = texto(emit, "xNome");
@@ -157,15 +158,6 @@ public final class XmlFiscalParser {
                 }
             }
             d.itens.add(it);
-        }
-        Element tot = primeiro(filho(inf, "total"), "IBSCBSTot");
-        if (tot != null) {
-            for (String tag : List.of("vBCIBSCBS", "vIBS", "vCBS", "vIBSUF", "vIBSMun")) {
-                String v = texto(tot, tag);
-                if (v != null) {
-                    d.totaisIbsCbs.put(tag, v);
-                }
-            }
         }
         return d;
     }
@@ -253,7 +245,6 @@ public final class XmlFiscalParser {
             d.destinatarioNome = texto(toma, "xNome");
         }
         d.dataHoraEmissao = coalesce(texto(infDps, "dhEmi"), texto(inf, "dhProc"));
-        d.tipoOperacao = 1;
         d.municipioFatoGerador = inteiro(coalesce(texto(inf, "cLocIncid"), texto(primeiro(infDps, "locPrest"), "cLocPrestacao")));
 
         ItemFiscal it = novoItem(d);
@@ -264,7 +255,6 @@ public final class XmlFiscalParser {
         it.codigo = coalesce(texto(cServ, "cTribNac"), texto(cServ, "cTribMun"));
         it.descricao = texto(cServ, "xDescServ");
         it.nbs = SpedParser.somenteDigitos(texto(cServ, "cNBS"));
-        it.codigoServicoLc116 = texto(cServ, "cTribNac");
         Element valores = primeiro(infDps, "valores");
         it.valor = decimal(coalesce(texto(primeiro(valores, "vServPrest"), "vServ"), texto(valores, "vServ")));
         // Classificação informada na DPS e valores calculados na NFS-e
@@ -284,20 +274,8 @@ public final class XmlFiscalParser {
 
     private static ItemFiscal novoItem(DocumentoFiscal d) {
         ItemFiscal it = new ItemFiscal();
-        it.arquivo = d.arquivo;
         it.origem = d.origem;
         it.modelo = d.modelo;
-        it.chave = d.chave;
-        it.numeroDocumento = d.numero;
-        it.dataEmissao = d.dataHoraEmissao == null || d.dataHoraEmissao.length() < 10 ? null
-                : d.dataHoraEmissao.substring(0, 10);
-        it.tipoOperacao = d.tipoOperacao;
-        it.emitenteCnpj = d.emitenteCnpj;
-        it.emitenteNome = d.emitenteNome;
-        it.emitenteUf = d.emitenteUf;
-        it.emitenteCrt = d.emitenteCrt;
-        it.destinatarioCnpj = d.destinatarioCnpj;
-        it.destinatarioNome = d.destinatarioNome;
         // o "dono" do cadastro é o emitente (o produto é dele)
         it.donoCnpj = d.emitenteCnpj;
         it.donoNome = d.emitenteNome;
@@ -370,27 +348,5 @@ public final class XmlFiscalParser {
 
     private static String coalesce(String a, String b) {
         return a != null ? a : b;
-    }
-
-    private static Integer inteiro(String s) {
-        if (s == null || s.isBlank()) {
-            return null;
-        }
-        try {
-            return Integer.valueOf(s.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static BigDecimal decimal(String s) {
-        if (s == null || s.isBlank()) {
-            return null;
-        }
-        try {
-            return new BigDecimal(s.trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 }

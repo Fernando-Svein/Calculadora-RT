@@ -63,6 +63,7 @@ public class ImportacaoService {
         Importacao imp = new Importacao();
         for (MultipartFile f : arquivos) {
             if (f.isEmpty()) {
+                imp.arquivos.put(nome(f), "Arquivo vazio – ignorado");
                 continue;
             }
             try (InputStream in = f.getInputStream()) {
@@ -110,7 +111,7 @@ public class ImportacaoService {
             return;
         }
         if (SpedParser.pareceSped(conteudo)) {
-            ResultadoSped s = SpedParser.ler(nome, conteudo);
+            ResultadoSped s = SpedParser.ler(conteudo);
             imp.speds.add(s);
             imp.arquivos.put(nome, s.tipo() + " de " + s.nome() + " (" + s.dataInicial() + " a " + s.dataFinal()
                     + "): " + s.cadastro().size() + " itens no 0200, " + s.movimentos().size() + " movimentos");

@@ -1,0 +1,4 @@
+HTTP 200
+Content-Type: application/json
+
+{"tipo":"NCM","codigo":"123","data":"<HOJE>","tipoDfe":null,"valida":false,"mensagem":"NCM deve ter 8 dígitos (informado: \"123\").","descricao":null,"descricaoCompleta":null,"lc116":null,"impostoSeletivo":false,"especificas":[],"situacionais":[],"observacoes":[]}

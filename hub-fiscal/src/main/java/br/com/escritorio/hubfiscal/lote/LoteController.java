@@ -9,6 +9,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,6 +27,7 @@ import br.com.escritorio.hubfiscal.classificacao.ResultadoClassificacao;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
 import br.com.escritorio.hubfiscal.infra.ResultadoStore;
+import br.com.escritorio.hubfiscal.seguranca.UsuarioSessao;
 
 /** Processamentos em lote a partir de arquivos (SPED, XML, ZIP). */
 @RestController
@@ -51,31 +53,32 @@ public class LoteController {
     /** Classificação de cClassTrib a partir de SPED/XML. */
     @PostMapping("/classificacao")
     public ResultadoClassificacao classificar(@RequestParam("arquivos") List<MultipartFile> arquivos,
-            @RequestParam(required = false) LocalDate data) {
+            @RequestParam(required = false) LocalDate data, @AuthenticationPrincipal UsuarioSessao usuario) {
         Importacao imp = importacao.importar(arquivos);
         ResultadoClassificacao r = classificacao.classificar(imp, data == null ? LocalDate.now() : data);
-        r.id = store.guardar(r);
+        r.id = store.guardar(r, usuario.id());
         return r;
     }
 
     @GetMapping("/classificacao/{id}/excel")
-    public ResponseEntity<byte[]> excelClassificacao(@PathVariable String id) {
-        ResultadoClassificacao r = store.obter(id, ResultadoClassificacao.class);
+    public ResponseEntity<byte[]> excelClassificacao(@PathVariable String id, @AuthenticationPrincipal UsuarioSessao usuario) {
+        ResultadoClassificacao r = store.obter(id, ResultadoClassificacao.class, usuario.id());
         return arquivo(ClassificacaoExcel.gerar(r), "classificacao-cclasstrib");
     }
 
     /** Auditoria do grupo IBS/CBS das notas (recalcula na calculadora oficial). */
     @PostMapping("/auditoria")
-    public ResultadoAuditoria auditar(@RequestParam("arquivos") List<MultipartFile> arquivos) {
+    public ResultadoAuditoria auditar(@RequestParam("arquivos") List<MultipartFile> arquivos,
+            @AuthenticationPrincipal UsuarioSessao usuario) {
         Importacao imp = importacao.importar(arquivos);
         ResultadoAuditoria r = auditoria.auditar(imp);
-        r.id = store.guardar(r);
+        r.id = store.guardar(r, usuario.id());
         return r;
     }
 
     @GetMapping("/auditoria/{id}/excel")
-    public ResponseEntity<byte[]> excelAuditoria(@PathVariable String id) {
-        ResultadoAuditoria r = store.obter(id, ResultadoAuditoria.class);
+    public ResponseEntity<byte[]> excelAuditoria(@PathVariable String id, @AuthenticationPrincipal UsuarioSessao usuario) {
+        ResultadoAuditoria r = store.obter(id, ResultadoAuditoria.class, usuario.id());
         return arquivo(AuditoriaExcel.gerar(r), "auditoria-ibs-cbs");
     }
 

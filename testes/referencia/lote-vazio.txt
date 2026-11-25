@@ -1,0 +1,4 @@
+HTTP 422
+Content-Type: application/problem+json
+
+{"detail":"Nenhum SPED ou XML fiscal válido foi encontrado nos arquivos enviados. vazio.xml: Arquivo vazio – ignorado","instance":"/hub/lote/classificacao","status":422,"title":"Não foi possível processar"}

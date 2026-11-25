@@ -5,34 +5,23 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Item extraído de um arquivo fiscal (SPED ou XML). Campos públicos para
- * simplificar a montagem pelos leitores; os campos não aplicáveis ficam nulos.
+ * Item extraído de um arquivo fiscal (SPED ou XML), com os dados usados pela
+ * classificação e pela auditoria. Campos públicos para simplificar a montagem
+ * pelos leitores; os campos não aplicáveis ficam nulos. Os dados do documento
+ * (chave, emitente, destinatário...) ficam em {@link DocumentoFiscal}.
  */
 public class ItemFiscal {
 
     // ---- origem
-    public String arquivo;
     /** "EFD ICMS/IPI", "EFD Contribuições", "NF-e", "NFC-e", "NFS-e". */
     public String origem;
-    /** Registro de origem no SPED (0200, C170, A170...) ou "det" no XML. */
+    /** Registro de origem no SPED (0200, C170, A170...) ou "det"/"serv" no XML. */
     public String registro;
     /** Modelo do documento: 55, 65, 91... (null para cadastro do SPED). */
     public Integer modelo;
-
-    // ---- documento
-    public String chave;
-    public String numeroDocumento;
-    public String dataEmissao;
-    /** 0 = entrada, 1 = saída (do ponto de vista de quem escritura/emite). */
-    public Integer tipoOperacao;
+    /** Contribuinte dono do cadastro do item (quem escritura o SPED ou emite a nota). */
     public String donoCnpj;
     public String donoNome;
-    public String emitenteCnpj;
-    public String emitenteNome;
-    public String emitenteUf;
-    public String emitenteCrt;
-    public String destinatarioCnpj;
-    public String destinatarioNome;
 
     // ---- item
     public Integer numeroItem;
@@ -40,7 +29,6 @@ public class ItemFiscal {
     public String descricao;
     public String ncm;
     public String nbs;
-    public String codigoServicoLc116;
     public String tipoItemSped;
     public String cfop;
     public String unidade;

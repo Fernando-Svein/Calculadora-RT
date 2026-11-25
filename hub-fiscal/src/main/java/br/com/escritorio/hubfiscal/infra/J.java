@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Navegação segura em estruturas JSON já convertidas para Map/List.
+ * Navegação segura nas respostas JSON das calculadoras (já convertidas para Map/List):
+ * caminho inexistente devolve null (ou lista/mapa vazio), nunca exceção.
  * Ex.: {@code J.str(obj, "tribCalc", "IBSCBS", "cClassTrib")}.
  */
 public final class J {
@@ -13,6 +14,7 @@ public final class J {
     private J() {
     }
 
+    /** Valor no caminho (chaves de objeto ou índices de lista), ou null. */
     public static Object get(Object raiz, Object... caminho) {
         Object atual = raiz;
         for (Object chave : caminho) {
@@ -35,19 +37,19 @@ public final class J {
         return v == null ? null : String.valueOf(v);
     }
 
+    /** Número no caminho (aceita número ou texto numérico), ou null. */
     public static BigDecimal num(Object raiz, Object... caminho) {
         Object v = get(raiz, caminho);
         if (v == null) {
             return null;
         }
-        if (v instanceof BigDecimal b) {
-            return b;
-        }
-        try {
-            return new BigDecimal(String.valueOf(v).trim());
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return v instanceof BigDecimal b ? b : Valores.decimal(String.valueOf(v));
+    }
+
+    /** Parte inteira do número no caminho, ou null. */
+    public static Integer inteiro(Object raiz, Object... caminho) {
+        BigDecimal n = num(raiz, caminho);
+        return n == null ? null : n.intValue();
     }
 
     public static boolean bool(Object raiz, Object... caminho) {

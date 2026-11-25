@@ -9,7 +9,7 @@ import br.com.escritorio.hubfiscal.catalogo.Candidata;
 /** Uma linha do resultado da classificação: um produto/serviço do cadastro. */
 public class LinhaClassificacao {
 
-    public String status;
+    public StatusClassificacao status;
     public String statusRotulo;
 
     public String donoCnpj;

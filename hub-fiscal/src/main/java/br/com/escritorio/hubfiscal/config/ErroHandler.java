@@ -40,7 +40,8 @@ public class ErroHandler {
 
     /** Parâmetro com formato errado (ex.: data inválida) ou obrigatório ausente. */
     @ExceptionHandler({ MethodArgumentTypeMismatchException.class, MissingServletRequestParameterException.class,
-            MissingServletRequestPartException.class, org.springframework.http.converter.HttpMessageNotReadableException.class })
+            MissingServletRequestPartException.class, org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.multipart.MultipartException.class })
     public ProblemDetail parametro(Exception e) {
         String detalhe;
         if (e instanceof org.springframework.http.converter.HttpMessageNotReadableException) {
@@ -75,11 +76,32 @@ public class ErroHandler {
         return p;
     }
 
+    /**
+     * Erros do próprio Spring com status definido (método não permitido 405, tipo de conteúdo 415, 404...):
+     * mantém o status correto em vez de transformá-los em erro interno.
+     */
+    @ExceptionHandler(org.springframework.web.ErrorResponseException.class)
+    public ProblemDetail respostaSpring(org.springframework.web.ErrorResponseException e) {
+        return e.getBody();
+    }
+
+    @ExceptionHandler({ org.springframework.web.HttpRequestMethodNotSupportedException.class,
+            org.springframework.web.HttpMediaTypeNotSupportedException.class,
+            org.springframework.web.HttpMediaTypeNotAcceptableException.class })
+    public ProblemDetail requisicaoInvalida(Exception e) {
+        return ((org.springframework.web.ErrorResponse) e).getBody();
+    }
+
+    /**
+     * Falha inesperada: a tela recebe só um código de referência; o detalhe técnico (classe, mensagem,
+     * caminhos de arquivo) fica no log do servidor, onde o código permite localizá-lo.
+     */
     @ExceptionHandler(Exception.class)
     public ProblemDetail geral(Exception e) {
-        log.error("Erro inesperado no hub", e);
+        String codigo = java.util.UUID.randomUUID().toString().substring(0, 8);
+        log.error("Erro inesperado no hub [ref {}]", codigo, e);
         ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
-                "Erro inesperado: " + e.getClass().getSimpleName() + (e.getMessage() == null ? "" : " - " + e.getMessage()));
+                "Ocorreu um erro inesperado. Se persistir, informe ao administrador o código " + codigo + ".");
         p.setTitle("Erro interno do hub");
         return p;
     }

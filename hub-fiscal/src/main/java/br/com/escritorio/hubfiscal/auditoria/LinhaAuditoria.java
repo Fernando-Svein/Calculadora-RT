@@ -7,7 +7,7 @@ import java.util.List;
 /** Resultado da auditoria de um item de documento fiscal. */
 public class LinhaAuditoria {
 
-    public String status;
+    public StatusAuditoria status;
     public String statusRotulo;
 
     public String arquivo;

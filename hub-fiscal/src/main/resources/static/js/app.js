@@ -195,7 +195,6 @@ window.Hub = (() => {
     pilBase.textContent = b.versao ? `Base ${b.versao}` : 'Base indisponível';
     pilBase.title = b.data ? `Banco oficial ${b.versao} de ${String(b.data).substring(0, 10)}` : (b.erro || '');
     [pilRG, pilSN, pilBase].forEach((p) => { p.onclick = () => ir('status'); });
-    Hub.statusAtual = s;
   }
 
   // ------------------------------------------------------------------ chamadas HTTP
@@ -554,10 +553,11 @@ window.Hub = (() => {
     setInterval(atualizarStatus, 60000);
   }
 
+  // API pública usada pelos módulos (js/modulos/*.js) e por componentes.js
   return {
-    GRUPOS, modulos, registrar, iniciar, ir, rotear, api, getCache, esc, fmt, hoje, dataHoraComFuso, numero, el,
-    debounce, semAcento, toast, modal, fecharModal, carregando, problema, baixarBlob, baixarTexto, baixarUrl,
-    exportarExcel, avisoSimulado, statusAtual: null, atual: () => moduloAtual, recentes,
+    GRUPOS, modulos, registrar, iniciar, api, getCache, esc, fmt, hoje, dataHoraComFuso, numero, el,
+    debounce, semAcento, toast, modal, fecharModal, carregando, problema, baixarTexto, baixarUrl,
+    exportarExcel, avisoSimulado, atual: () => moduloAtual, recentes,
     usuario: null, tokenCsrf, tratarAuth,
   };
 })();

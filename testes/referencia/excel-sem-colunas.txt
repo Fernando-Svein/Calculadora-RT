@@ -1,0 +1,4 @@
+HTTP 400
+Content-Type: application/problem+json
+
+{"detail":"Informe as colunas e as linhas da planilha.","instance":"/hub/excel","status":400,"title":"Parâmetro inválido"}

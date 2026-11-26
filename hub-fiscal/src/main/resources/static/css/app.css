@@ -220,7 +220,16 @@ body.menu-recolhido { --menu-ocupado: 68px; }
 .pilula.ok i { background: #36995b; box-shadow: 0 0 0 3px rgba(54, 153, 91, .16); }
 .pilula.erro { background: var(--vermelho-suave); border-color: var(--vermelho-borda); color: var(--vermelho); }
 .pilula.erro i { background: var(--vermelho); box-shadow: 0 0 0 3px rgba(192, 38, 45, .15); }
-.pilula-info { font-family: var(--mono); font-size: 11.5px; }
+.pilula-info { font-size: 11.5px; }
+.pilula-info strong { font-weight: 600; color: var(--texto); }
+.pilula-info .pil-sep { margin: 0 2px; opacity: .5; }
+.pilula-info .rot-curto { display: none; }
+@media (max-width: 1520px) {
+  .pilula-info .rot-longo { display: none; }
+  .pilula-info .rot-curto { display: inline; }
+}
+.pilula-info.alerta { background: var(--ambar-suave); border-color: var(--ambar-borda); }
+.pilula-info.alerta strong:last-child { color: var(--ambar); }
 
 .conteudo { padding: 30px 32px 48px; max-width: 1480px; width: 100%; outline: none; animation: entrar .22s ease-out; }
 @keyframes entrar { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
@@ -770,3 +779,38 @@ body.pagina-login {
 [data-tema="escuro"] .pilula.ok i { background: #4cb874; box-shadow: 0 0 0 3px rgba(76, 184, 116, .2); }
 [data-tema="escuro"] .kpi.destaque { background: #1d4fa3; border-color: #2a5fba; }
 [data-tema="escuro"] .upload::before { filter: brightness(1.6); }
+
+/* ---------------------------------------------------------------- empresa da simulação (simuladores) */
+.empresa-sim {
+  background: var(--superficie); border: 1px solid var(--borda); border-left: 4px solid var(--borda-forte);
+  border-radius: var(--r-lg); padding: 12px 16px; margin-bottom: 18px; box-shadow: var(--sombra-1);
+}
+.empresa-sim[data-estado="ativa"] { border-color: var(--violeta-borda); border-left-color: var(--violeta); background: var(--violeta-suave); }
+.empresa-sim-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.empresa-sim-ico { display: inline-flex; color: var(--violeta); }
+.empresa-sim-ico .i { width: 20px; height: 20px; }
+.empresa-sim-rot { font-weight: 600; color: var(--texto); }
+.empresa-sim-cab select { flex: 1 1 320px; max-width: 620px; width: auto; }
+.empresa-sim-info { margin-top: 8px; font-size: 13px; color: var(--texto-2); }
+.empresa-sim-dados { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--texto); }
+.empresa-sim-dados strong { font-size: 14px; }
+.empresa-sim-usadas { margin-top: 6px; }
+.empresa-sim-alerta { margin-top: 6px; color: var(--ambar); font-weight: 500; }
+/* campo preenchido pelo cadastro da empresa (some quando o usuário altera) */
+[data-da-empresa]:not([type="checkbox"]) { border-color: var(--violeta) !important; box-shadow: 0 0 0 2px var(--violeta-suave); }
+input[type="checkbox"][data-da-empresa] { outline: 2px solid var(--violeta); outline-offset: 1px; }
+.empresa-res {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 13.5px;
+  border-radius: var(--r); background: var(--violeta-suave); border: 1px solid var(--violeta-borda); color: var(--texto);
+}
+.empresa-res .i { flex: 0 0 auto; color: var(--violeta); width: 18px; height: 18px; }
+.empresa-res.generica { background: var(--fundo); border-color: var(--borda); color: var(--texto-2); }
+.empresa-res.generica .i { color: var(--texto-2); }
+
+/* ---------------------------------------------------------------- novidades da versão (início, administradores) */
+.novidades { border-left: 4px solid var(--primaria); }
+.novidades h4 { margin: 16px 0 6px; }
+.novidades ul { margin: 4px 0 0; padding-left: 20px; }
+.novidades li { margin: 3px 0; }
+.novidades code { font-size: 12px; }
+.novidades .grade { gap: 14px; }

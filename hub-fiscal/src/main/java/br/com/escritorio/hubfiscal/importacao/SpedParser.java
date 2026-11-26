@@ -28,9 +28,17 @@ import br.com.escritorio.hubfiscal.infra.Valores;
  */
 public final class SpedParser {
 
-    /** Resultado da leitura de um arquivo SPED. */
+    /**
+     * Resultado da leitura de um arquivo SPED.
+     *
+     * @param uf                UF do contribuinte (registro 0000)
+     * @param municipio         código IBGE do município do contribuinte (registro 0000)
+     * @param incidenciaPisCofins EFD Contribuições, registro 0110 (COD_INC_TRIB): 1 = não cumulativo, 2 = cumulativo,
+     *                          3 = ambos; null quando o arquivo não informa
+     */
     public record ResultadoSped(String tipo, String nome, String cnpj, String dataInicial, String dataFinal,
-            List<ItemFiscal> cadastro, List<ItemFiscal> movimentos) {
+            List<ItemFiscal> cadastro, List<ItemFiscal> movimentos, String uf, Integer municipio,
+            String incidenciaPisCofins) {
     }
 
     private SpedParser() {
@@ -64,6 +72,9 @@ public final class SpedParser {
         String cnpj = null;
         String dtIni = null;
         String dtFin = null;
+        String uf = null;
+        Integer municipio = null;
+        String incidencia = null;
 
         Map<String, ItemFiscal> cadastro = new HashMap<>();
         List<ItemFiscal> ordemCadastro = new ArrayList<>();
@@ -86,14 +97,19 @@ public final class SpedParser {
                         dtFin = dataSped(f[5]);
                         nome = f[6];
                         cnpj = f[7];
+                        uf = campo(f, 9);
+                        municipio = Valores.inteiro(campo(f, 11));
                     } else if (f.length > 10) {
                         tipo = "EFD Contribuições";
                         dtIni = dataSped(f[6]);
                         dtFin = dataSped(f[7]);
                         nome = f[8];
                         cnpj = f[9];
+                        uf = campo(f, 10);
+                        municipio = Valores.inteiro(campo(f, 11));
                     }
                 }
+                case "0110" -> incidencia = campo(f, 2);
                 case "0200" -> {
                     ItemFiscal it = novoItem("0200", cnpj, nome, null);
                     it.codigo = campo(f, 2);
@@ -151,7 +167,11 @@ public final class SpedParser {
         for (ItemFiscal c : ordemCadastro) {
             c.origem = tipo;
         }
-        return new ResultadoSped(tipo, nome, cnpj, dtIni, dtFin, ordemCadastro, movimentos);
+        if (uf != null && !uf.matches("[A-Za-z]{2}")) {
+            uf = null;
+        }
+        return new ResultadoSped(tipo, nome, cnpj, dtIni, dtFin, ordemCadastro, movimentos,
+                uf == null ? null : uf.toUpperCase(), municipio, incidencia);
     }
 
     private static ItemFiscal novoItem(String registro, String cnpj, String nome, Integer modelo) {

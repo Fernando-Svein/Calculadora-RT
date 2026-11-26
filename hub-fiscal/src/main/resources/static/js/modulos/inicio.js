@@ -66,6 +66,8 @@
         ${rec.length ? `<div class="recentes"><span class="recentes-rot">${Hub.icone('relogio')} Usados recentemente</span>
           ${rec.map((m) => `<a class="chip" href="#/${m.rota}">${Hub.iconeRota(m.rota)}${esc(m.titulo)}</a>`).join('')}</div>` : ''}
 
+        ${Hub.novidades ? Hub.novidades.html() : ''}
+
         ${ferramentas().some((m) => m.grupo !== 'Sistema') ? '' : `<div class="aviso">Nenhuma ferramenta foi liberada para o seu usuário ainda.
           Peça ao administrador do hub para liberar o acesso em <strong>Sistema → Usuários</strong>.</div>`}
         <div data-lista>${painelGrupos()}</div>
@@ -73,6 +75,7 @@
         <p class="nota-transicao">${Hub.icone('info')}<span><strong>Transição:</strong> em 2026 valem as alíquotas de teste (CBS 0,9% e IBS 0,1%).
           A partir de 2027 a base oficial não traz alíquotas de referência e os simuladores marcam o resultado como <em>simulado</em>.</span></p>`;
 
+      if (Hub.novidades) Hub.novidades.ligar(el);
       const lista = el.querySelector('[data-lista]');
       const busca = el.querySelector('[data-busca]');
       busca.addEventListener('input', () => {

@@ -108,6 +108,37 @@
     return o;
   }
 
+  // ------------------------------------------------------------------ empresa da simulação
+  let emp = null;          // seletor da tela aberta
+  const montados = [];     // formulários (abas) já desenhados: recebem a empresa quando ela muda
+
+  /** Particularidades da empresa que entram nas bases: documento usual e, na NFS-e, a situação no Simples. */
+  function aplicarNoFormulario(d, f, e) {
+    const usadas = [];
+    if (!e) return usadas;
+    const D = Hub.empresas.definir;
+    const campo = (n) => d.querySelector(`[name="${n}"]`);
+    if (f.id === 'unificada' && ['55', '65'].includes(e.documentoPadrao) && D(campo('tipoDocumento'), e.documentoPadrao)) {
+      usadas.push('documento usual ' + Hub.empresas.DOCUMENTOS[e.documentoPadrao]);
+    }
+    if (f.id === 'nfse-unif' && e.regime) {
+      D(campo('opSimpNac'), Hub.empresas.OP_SIMP_NAC[e.regime]);
+      if (Hub.empresas.ehSimples(e)) {
+        D(campo('regApIBSCBSSN'), e.ibscbsForaSimples ? '3' : (e.regime === 'SIMPLES_EXCESSO' || e.sublimiteExcedido) ? '2' : '1');
+      } else {
+        campo('regApIBSCBSSN').value = '';
+      }
+      usadas.push('situação no Simples (' + Hub.empresas.regimeTexto(e) + ')');
+    }
+    return usadas;
+  }
+
+  function aplicarEmpresa(e) {
+    const usadas = new Set();
+    montados.forEach(({ d, f }) => aplicarNoFormulario(d, f, e).forEach((u) => usadas.add(u)));
+    return { usadas: [...usadas] };
+  }
+
   function formulario(d, f) {
     d.innerHTML = `<p class="sutil">${esc(f.desc)}</p>
       <div class="grade g4">${f.campos.map(campoHtml).join('')}</div>
@@ -150,8 +181,14 @@
       return corpo;
     };
     d.querySelector('[data-json]').onclick = () => comp.verJson(montar(), 'Dados a enviar');
+    montados.push({ d, f });
+    if (emp && emp.empresa()) {
+      aplicarNoFormulario(d, f, emp.empresa());
+      emp.reaplicar(); // atualiza a lista do que veio do cadastro
+    }
     d.querySelector('[data-ok]').onclick = async () => {
       const corpo = montar();
+      const ctx = { empresa: emp && emp.empresa(), usadas: emp ? emp.usadas() : [] };
       if (f.id === 'is' && corpo.anoFatoGerador < 2027) {
         res.innerHTML = '<div class="aviso">O Imposto Seletivo começa a ser cobrado em 2027. Informe um ano a partir de 2027.</div>';
         return;
@@ -163,9 +200,30 @@
       const dados = r.data;
       const numeros = Object.entries(dados).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)));
       const avisos = [].concat(ignorados.length ? [`Não compõem a base em ${corpo.anoFatoGerador} e foram ignorados: ${ignorados.join(', ')}.`] : [], dados.avisos || []);
-      res.innerHTML = `<div class="kpis">${numeros.map(([k, v]) => `<div class="kpi ${/^base/i.test(k) ? 'destaque' : ''}"><small>${esc(Hub.rotulos.campo(k))}</small><strong>${fmt.moeda(v)}</strong></div>`).join('')}</div>
+      res.innerHTML = `<div class="card-cab"><h3>Resultado</h3><div class="acoes">${Hub.relatorio.botoes()}</div></div>
+        ${Hub.empresas.faixaResultado(ctx.empresa)}
+        <div class="kpis">${numeros.map(([k, v]) => `<div class="kpi ${/^base/i.test(k) ? 'destaque' : ''}"><small>${esc(Hub.rotulos.campo(k))}</small><strong>${fmt.moeda(v)}</strong></div>`).join('')}</div>
         ${avisos.length ? `<div class="aviso"><ul>${avisos.map((a) => `<li>${esc(typeof a === 'object' ? JSON.stringify(a) : a)}</li>`).join('')}</ul></div>` : ''}
         <details><summary>Resposta técnica completa</summary><pre class="json">${esc(JSON.stringify(dados, null, 2))}</pre></details>`;
+      Hub.relatorio.ligar(res, async () => {
+        // dados informados (o que foi enviado à calculadora) e bases calculadas
+        const rotuloCampo = Object.fromEntries(f.campos.map((c) => [c[0], c[1].replace(/\s*\*$/, '')]));
+        const entrada = Object.entries(corpo).filter(([, v]) => typeof v !== 'object').map(([k, v]) => {
+          const def = f.campos.find((c) => c[0] === k);
+          const opcao = def && Array.isArray(def[2]) ? def[2].map((o) => o.split('|')).find(([cod]) => cod === String(v)) : null;
+          return [rotuloCampo[k] || Hub.rotulos.campo(k), opcao ? opcao[1] : (typeof v === 'number' && !/^ano/i.test(k) ? fmt.moeda(v) : String(v))];
+        });
+        const t = Hub.relatorio.tabelaDePares(numeros.map(([k, v]) => [Hub.rotulos.campo(k), Number(v)]), 'Valor (R$)');
+        return {
+          titulo: `Bases de cálculo – ${f.titulo}`,
+          arquivo: 'bases-calculo-' + f.id,
+          empresa: await Hub.empresas.linhasRelatorio(ctx.empresa, ctx.usadas),
+          resumo: [['Dados informados'], ...entrada],
+          colunas: t.colunas,
+          linhas: t.linhas,
+          observacoes: [...avisos.map((a) => (typeof a === 'object' ? JSON.stringify(a) : String(a))), f.desc],
+        };
+      });
     };
   }
 
@@ -179,7 +237,9 @@
     descricao: 'Base unificada da NF-e/NFC-e (regular, IS e Simples), base detalhada de mercadorias, base do IS e bases da NFS-e.',
     render(el, params) {
       el.innerHTML = comp.cabecalho('Bases de cálculo', 'Calculadoras oficiais de base de cálculo. A base unificada mostra numa só chamada as bases do regime regular, do Imposto Seletivo e do Simples Nacional.') +
-        '<div class="card" data-abas></div>';
+        '<div data-empresa></div><div class="card" data-abas></div>';
+      montados.length = 0;
+      emp = Hub.empresas.seletor(el.querySelector('[data-empresa]'), { raiz: el, aoMudar: aplicarEmpresa });
       comp.abas(el.querySelector('[data-abas]'), FORMS.map((f) => ({ id: f.id, titulo: f.titulo, render: (d) => formulario(d, f) })), params.aba);
     },
   });

@@ -24,15 +24,20 @@ import br.com.escritorio.hubfiscal.auditoria.ResultadoAuditoria;
 import br.com.escritorio.hubfiscal.classificacao.ClassificacaoExcel;
 import br.com.escritorio.hubfiscal.classificacao.ClassificacaoService;
 import br.com.escritorio.hubfiscal.classificacao.ResultadoClassificacao;
+import br.com.escritorio.hubfiscal.empresa.EmpresaService;
+import br.com.escritorio.hubfiscal.empresa.EmpresaService.EmpresaNova;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
 import br.com.escritorio.hubfiscal.infra.ResultadoStore;
 import br.com.escritorio.hubfiscal.seguranca.UsuarioSessao;
+import jakarta.servlet.http.HttpServletResponse;
 
 /** Processamentos em lote a partir de arquivos (SPED, XML, ZIP). */
 @RestController
 @RequestMapping("/hub/lote")
 public class LoteController {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(LoteController.class);
 
     private static final MediaType XLSX = MediaType
             .parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -41,20 +46,40 @@ public class LoteController {
     private final ClassificacaoService classificacao;
     private final AuditoriaService auditoria;
     private final ResultadoStore store;
+    private final EmpresaService empresas;
 
     public LoteController(ImportacaoService importacao, ClassificacaoService classificacao, AuditoriaService auditoria,
-            ResultadoStore store) {
+            ResultadoStore store, EmpresaService empresas) {
         this.importacao = importacao;
         this.classificacao = classificacao;
         this.auditoria = auditoria;
         this.store = store;
+        this.empresas = empresas;
+    }
+
+    /** Cabeçalho com as empresas cadastradas automaticamente nesta importação (a tela avisa o usuário). */
+    static final String CABECALHO_EMPRESAS = "X-Hub-Empresas-Novas";
+
+    /**
+     * Cadastra as empresas novas dos arquivos. Vai num cabeçalho (e não no corpo) para não mudar o resultado do
+     * lote; uma falha aqui não impede o processamento.
+     */
+    private void cadastrarEmpresas(Importacao imp, HttpServletResponse resposta) {
+        try {
+            List<EmpresaNova> novas = empresas.cadastrarDaImportacao(imp);
+            resposta.setHeader(CABECALHO_EMPRESAS, String.valueOf(novas.size()));
+        } catch (RuntimeException e) {
+            log.warn("Cadastro automático de empresas falhou: {}", e.getMessage());
+        }
     }
 
     /** Classificação de cClassTrib a partir de SPED/XML. */
     @PostMapping("/classificacao")
     public ResultadoClassificacao classificar(@RequestParam("arquivos") List<MultipartFile> arquivos,
-            @RequestParam(required = false) LocalDate data, @AuthenticationPrincipal UsuarioSessao usuario) {
+            @RequestParam(required = false) LocalDate data, @AuthenticationPrincipal UsuarioSessao usuario,
+            HttpServletResponse resposta) {
         Importacao imp = importacao.importar(arquivos);
+        cadastrarEmpresas(imp, resposta);
         ResultadoClassificacao r = classificacao.classificar(imp, data == null ? LocalDate.now() : data);
         r.id = store.guardar(r, usuario.id());
         return r;
@@ -69,8 +94,9 @@ public class LoteController {
     /** Auditoria do grupo IBS/CBS das notas (recalcula na calculadora oficial). */
     @PostMapping("/auditoria")
     public ResultadoAuditoria auditar(@RequestParam("arquivos") List<MultipartFile> arquivos,
-            @AuthenticationPrincipal UsuarioSessao usuario) {
+            @AuthenticationPrincipal UsuarioSessao usuario, HttpServletResponse resposta) {
         Importacao imp = importacao.importar(arquivos);
+        cadastrarEmpresas(imp, resposta);
         ResultadoAuditoria r = auditoria.auditar(imp);
         r.id = store.guardar(r, usuario.id());
         return r;

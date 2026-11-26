@@ -40,6 +40,20 @@ Por segurança o hub não guarda o arquivo enviado: confere o formato pelos byte
 abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px. O arquivo fica em `dados\logo.png`
 (configurável em `hub.arquivo-logo`) – inclua no backup junto com os usuários.
 
+## Empresas, simuladores e relatórios
+
+- **Cadastros → Empresas**: empresas atendidas e suas particularidades (regime, Lucro Real/Presumido, município, alíquotas
+  do DAS por anexo, fator r, sublimite, atividade, documento e cClassTrib usuais). Ao importar um SPED ou XML num
+  processamento em lote, a empresa do arquivo (contribuinte do SPED ou emitente do XML) é cadastrada automaticamente com
+  CNPJ e razão social, marcada como "A conferir"; o mesmo CNPJ nunca é cadastrado duas vezes. Incluir e editar exige a
+  ferramenta "Empresas". Ficam em `dados\hub-empresas.db` (`hub.banco-empresas`) – inclua no backup.
+- **Empresa da simulação**: todos os simuladores (Regime Regular, Simples, Comparador, Pedágio e Bases) têm o seletor no
+  topo; a empresa escolhida preenche os campos (borda violeta) e aparece no resultado. Fica lembrada no navegador.
+- **Relatórios**: depois de calcular, "Relatório PDF" e "Relatório Excel" (empresa, resumo, tabela e observações). Os
+  lotes continuam com a planilha própria.
+- **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária
+  (`ativar-atualizacao-automatica.bat` no Windows; timer das 03:00 no Linux). Sem agendamento, mostra "não agendada".
+
 ## Instalação no servidor (VM Windows)
 
 1. Copie a pasta inteira do projeto para a VM (ex.: `C:\HubFiscal`) — inclui `tools\` com o Java 25 portátil.
@@ -144,9 +158,10 @@ o hub em uso não são tocados. Exige as calculadoras no ar e o hub compilado. T
 |---|---|
 | Referência | 36 respostas comparadas com `testes\referencia`: lotes (JSON e Excel célula a célula), consultas, repasse do proxy às calculadoras (incluindo POSTs de cálculo) e erros |
 | Funcional | arquivos inválidos (XML quebrado, XXE, vazio, binário), datas e parâmetros errados, limites |
+| Empresas | cadastro automático na importação (sem duplicar, CNPJ alfanumérico, CPF/CNPJ inválido ignorados), edição das particularidades e validações, permissões, relatório PDF e datas da base no status |
 | Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, envio da logo (formatos, SVG, tamanho, permissão), força bruta |
 
-São 130 testes (36 + 44 + 50). Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
+São 163 testes (36 + 44 + 33 + 50); a suíte de Segurança roda por último porque o teste de força bruta bloqueia novos logins. Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
 e um SPED fictícios para experimentar à mão as telas de lote. Quando uma mudança **intencional** alterar respostas, ou quando
 a Receita publicar uma base nova, confira as diferenças apontadas e, se estiverem certas, aprove as novas respostas com
 `testes\executar-testes.ps1 -GravarReferencia`.

@@ -40,6 +40,9 @@ hub:
   retencao-resultados-minutos: 240
   # Usuários e senhas do hub (senhas com BCrypt). Faça backup deste arquivo.
   banco-usuarios: ../dados/hub-usuarios.db
+  # Empresas atendidas e suas particularidades (regime, município, alíquotas do Simples...). Cadastradas
+  # automaticamente na importação de SPED/XML e editadas na tela Cadastros → Empresas. Faça backup deste arquivo.
+  banco-empresas: ../dados/hub-empresas.db
   # Resultado da última verificação de atualização das calculadoras (gravado por scripts\hub.ps1 verificar)
   arquivo-ultima-atualizacao: ../logs/ultima-atualizacao.json
   # Cenário de simulação da CBS (seletor no topo do hub). As simulações de 2026 são calculadas pela calculadora

@@ -6,6 +6,7 @@
     - Referência: respostas comparadas com testes\referencia (lotes, Excel, consultas, proxy, erros)
     - Funcional:  entradas inválidas, arquivos ruins e limites
     - Segurança:  permissões, CSRF, sessões, isolamento, cabeçalhos e força bruta
+    - Empresas:   cadastro automático na importação (sem duplicar), edição das particularidades, relatório PDF
   No fim desliga a cópia e apaga os arquivos temporários. O hub em uso (porta 8090) continua no ar.
 
   Pré-requisitos: as calculadoras da Receita no ar (iniciar-hub.bat) e o hub compilado
@@ -54,7 +55,7 @@ New-Item -ItemType Directory $tmp | Out-Null
 Copy-Item $jar (Join-Path $tmp 'hub-fiscal-teste.jar')   # cópia: não trava o jar usado pelo hub em produção
 $proc = Start-Process -FilePath (Join-Path $jdk.FullName 'bin\java.exe') -PassThru -WindowStyle Hidden `
     -WorkingDirectory (Join-Path $Raiz 'hub-fiscal') `
-    -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db", "--hub.arquivo-logo=$tmp\logo.png" `
+    -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db", "--hub.arquivo-logo=$tmp\logo.png", "--hub.banco-empresas=$tmp\empresas.db" `
     -RedirectStandardOutput (Join-Path $tmp 'hub.log') -RedirectStandardError (Join-Path $tmp 'hub.err')
 
 $codigoSaida = 1
@@ -82,7 +83,8 @@ try {
     Write-Host "    OK  no ar, com usuários de teste"
 
     # cada suíte roda até o fim; um erro inesperado vira falha registrada e as demais suítes continuam
-    foreach ($suite in @(@('Referência', 'suite-referencia.ps1'), @('Funcional', 'suite-funcional.ps1'), @('Segurança', 'suite-seguranca.ps1'))) {
+    # Segurança por último: o teste de força bruta bloqueia novos logins deste computador por 15 minutos
+    foreach ($suite in @(@('Referência', 'suite-referencia.ps1'), @('Funcional', 'suite-funcional.ps1'), @('Empresas', 'suite-empresas.ps1'), @('Segurança', 'suite-seguranca.ps1'))) {
         Write-Etapa "Suíte: $($suite[0])"
         try {
             if ($suite[1] -eq 'suite-referencia.ps1') { . (Join-Path $PSScriptRoot $suite[1]) -GravarReferencia:$GravarReferencia }

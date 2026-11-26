@@ -14,7 +14,8 @@
     agendar     (servidor, como administrador) Cria as tarefas no Agendador do Windows:
                   - "HUB Fiscal - Iniciar": liga os serviços quando o servidor inicia
                   - "HUB Fiscal - Atualizacao": roda "verificar" todo dia no horário -Hora
-    desagendar  Remove as duas tarefas
+                e grava o horário em logs\agendamento-atualizacao.json (o hub mostra a próxima atualização)
+    desagendar  Remove as duas tarefas (e o arquivo de horário)
 
   Uso: powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 iniciar
        powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 agendar -Hora 03:00
@@ -239,6 +240,12 @@ function Invoke-Git([string]$Repo, [string[]]$Argumentos) {
 function Update-SeHouverNovidade {
     Start-Transcript -Path (Join-Path $Logs 'atualizacao.log') -Append | Out-Null
     try {
+        # servidores agendados antes desta versão: registra o horário da tarefa para o hub mostrar a próxima atualização
+        $tarefa = Get-ScheduledTask -TaskName $NomesTarefas.Atualizar -ErrorAction SilentlyContinue
+        if ($tarefa -and $tarefa.Triggers -and $tarefa.Triggers[0].StartBoundary) {
+            $script:Hora = ([datetime]$tarefa.Triggers[0].StartBoundary).ToString('HH:mm')
+            Save-Agendamento
+        }
         $script:Git = Find-Git
         if (-not $script:Git) { Save-Resultado 'falha' 'Git não encontrado no servidor.' @(); Write-Falha 'Git não encontrado'; return }
 
@@ -317,6 +324,7 @@ function Register-Tarefas {
     Register-ScheduledTask -TaskName $NomesTarefas.Atualizar -Action (& $acao 'verificar') -Trigger $gAtu -Principal $quem -Settings $cfg `
         -Description 'Verifica versão nova das calculadoras da Receita e atualiza se houver.' -Force | Out-Null
     Write-Ok "Tarefa '$($NomesTarefas.Atualizar)' criada (todo dia às $Hora)"
+    Save-Agendamento
     Write-Host ''
     Write-Host 'Resultado de cada verificação: tela "Situação do sistema" do hub e logs\atualizacao.log' -ForegroundColor Yellow
 }
@@ -328,6 +336,18 @@ function Unregister-Tarefas {
             Write-Ok "Tarefa '$n' removida"
         } else { Write-Host "    --  Tarefa '$n' não existia" }
     }
+    # sem agendamento: o hub passa a mostrar "próxima atualização: não agendada"
+    if (Test-Path $ArquivoAgendamento) { Remove-Item $ArquivoAgendamento -Force }
+}
+
+# Horário da verificação diária, lido pelo hub para mostrar a data prevista da próxima atualização no topo das telas
+$ArquivoAgendamento = Join-Path $Logs 'agendamento-atualizacao.json'
+
+function Save-Agendamento {
+    $h = [datetime]::ParseExact($Hora, 'HH:mm', $null).ToString('HH:mm')
+    [ordered]@{ horario = $h; sistema = 'windows'; tarefa = $NomesTarefas.Atualizar; gravadoEm = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss') } |
+        ConvertTo-Json | Set-Content -Path $ArquivoAgendamento -Encoding UTF8
+    Write-Ok "Horário registrado para o hub ($h): logs\agendamento-atualizacao.json"
 }
 
 switch ($Acao) {

@@ -29,7 +29,8 @@
         'Usa a calculadora oficial do Simples Nacional. Informe, para cada anexo em que a empresa atua, quanto da alíquota efetiva do DAS ' +
         'corresponde à CBS e ao IBS no período. A calculadora escolhe o anexo pela atividade e pelo fator r, e decide qual linha de alíquotas ' +
         'usar conforme a situação do ISS.') +
-        `<div class="card"><div class="card-cab"><h3>Operação</h3><div class="acoes">
+        `<div data-empresa></div>
+        <div class="card"><div class="card-cab"><h3>Operação</h3><div class="acoes">
             <button class="btn btn-sec btn-peq" data-ex-nfe>Exemplo NF-e</button><button class="btn btn-sec btn-peq" data-ex-nfse>Exemplo NFS-e</button>
             <button class="btn btn-sec btn-peq" data-json-env>Ver dados técnicos</button></div></div>
           <div class="grade g4">
@@ -87,6 +88,58 @@
       async function carregarAtividades() {
         atividades = await Hub.atividadesSimples(inpData.value, selDoc.value);
         lista.querySelectorAll('select[name=cAtivSN]').forEach((s) => preencherAtividades(s, s.value));
+        // a atividade da empresa só pode ser marcada depois que a lista do documento/data carregou
+        if (emp && emp.empresa() && emp.empresa().atividadeSimples) {
+          lista.querySelectorAll('select[name=cAtivSN]').forEach((s) => { if (!s.value) Hub.empresas.definir(s, emp.empresa().atividadeSimples); });
+        }
+      }
+
+      // empresa da simulação: CRT, forma de recolher o IBS/CBS, fator r, sublimite, alíquotas do DAS por anexo,
+      // atividade, documento e cClassTrib usuais vêm do cadastro
+      let emp = null;
+      let padrao = { atividade: null, cct: null };
+      function aplicarEmpresa(e) {
+        padrao = { atividade: (e && e.atividadeSimples) || null, cct: (e && e.cClassTribPadrao) || null };
+        if (!e) return {};
+        const D = Hub.empresas.definir;
+        const q = (n) => el.querySelector(`[name="${n}"]`);
+        const usadas = [];
+        const simples = Hub.empresas.ehSimples(e);
+        const docAntes = selDoc.value;
+        if (D(selDoc, e.documentoPadrao)) usadas.push('documento usual ' + (Hub.empresas.DOCUMENTOS[e.documentoPadrao] || e.documentoPadrao));
+        if (e.regime) {
+          D(q('CRT'), Hub.empresas.CRT[e.regime]);
+          q('tpRegimeIBSCBS').value = '';
+          if (simples && e.ibscbsForaSimples) D(q('tpRegimeIBSCBS'), '1');
+          D(q('opSimpNac'), Hub.empresas.OP_SIMP_NAC[e.regime]);
+          D(q('regApIBSCBSSN'), e.ibscbsForaSimples ? '3' : (e.regime === 'SIMPLES_EXCESSO' || e.sublimiteExcedido) ? '2' : '1');
+          usadas.push('regime ' + Hub.empresas.regimeTexto(e));
+        }
+        if (simples) {
+          D(cardAliq.querySelector('[name=fatorR]'), !!e.fatorR);
+          D(cardAliq.querySelector('[name=impedimentoSublimite]'), !!e.sublimiteExcedido);
+          usadas.push(`fator r ${e.fatorR ? 'igual ou maior que 28%' : 'abaixo de 28%'}`);
+          if (e.sublimiteExcedido) usadas.push('sublimite estadual ultrapassado');
+          const aliq = e.aliquotasSimples || {};
+          if (Object.keys(aliq).length) {
+            // as alíquotas da empresa substituem toda a tabela (anexos sem valor ficam em branco)
+            ANEXOS.forEach((x) => ['cbs', 'ibs', 'scbs', 'sibs'].forEach((c) => { const i = cardAliq.querySelector(`[name=a${x}_${c}]`); if (i) i.value = ''; }));
+            const nomes = { cbs: 'cbs', ibs: 'ibs', cbsSemIss: 'scbs', ibsSemIss: 'sibs' };
+            Object.entries(aliq).forEach(([x, p]) => Object.entries(p).forEach(([c, v]) => D(cardAliq.querySelector(`[name=a${x}_${nomes[c]}]`), String(v).replace('.', ','))));
+            usadas.push('alíquotas do DAS dos anexos ' + Object.keys(aliq).join(', '));
+          }
+        }
+        if (padrao.cct) {
+          lista.querySelectorAll('[name=cClassTrib]').forEach((i) => { if (!i.value || i.value === '000001') D(i, padrao.cct); });
+          usadas.push('cClassTrib usual ' + padrao.cct);
+        }
+        if (padrao.atividade) usadas.push('atividade ' + padrao.atividade);
+        if (selDoc.value !== docAntes) ajustarDoc(); else carregarAtividades();
+        let aviso = '';
+        if (!simples && e.regime === 'NORMAL') aviso = 'Empresa do regime normal: use o <a href="#/calc-rg">Simulador Regime Regular</a>. Esta calculadora só atende optantes do Simples.';
+        if (e.regime === 'MEI') aviso = 'MEI recolhe valores fixos no DAS-MEI: a calculadora do Simples não calcula IBS/CBS por documento para o MEI.';
+        if (simples && !Object.keys(e.aliquotasSimples || {}).length) aviso = 'O cadastro ainda não tem as alíquotas do DAS: preencha-as na tabela abaixo ou no <a href="#/empresas?id=' + encodeURIComponent(e.id) + '">cadastro da empresa</a>.';
+        return { usadas, aviso };
       }
 
       function preencherAtividades(sel, valor) {
@@ -108,6 +161,8 @@
       }
 
       function novoItem(d = {}) {
+        // itens novos já vêm com a atividade e a cClassTrib usuais da empresa selecionada
+        d = Object.assign({}, padrao.atividade ? { cAtivSN: padrao.atividade } : {}, padrao.cct ? { cClassTrib: padrao.cct } : {}, d);
         const b = Hub.el(`<div class="item-bloco">
           <div class="item-cab"><strong>Item ${lista.children.length + 1}</strong><span class="espaco"></span><button class="btn btn-perigo btn-peq" data-rm>Remover</button></div>
           <div class="grade g4">
@@ -186,13 +241,14 @@
         const fora = foraDoEscopo(op);
         if (fora) { res.innerHTML = `<div class="aviso"><strong>Esta operação não é calculada pela calculadora do Simples.</strong><br>${fora}</div>`; return; }
         Hub.carregando(res, 'Calculando na calculadora do Simples Nacional...');
+        const ctx = { empresa: emp.empresa(), usadas: emp.usadas() };
         const r = await api.post(api.sn('/calculadora/observabilidade/simples-nacional/nao-assistido'), op);
         if (!r.ok) {
           res.innerHTML = Hub.problema(r, 'A calculadora rejeitou a operação',
             'combinação de documento e regime que a calculadora não cobre (ex.: documento não suportado, regime do emitente (CRT) incompatível com a forma de recolher o IBS/CBS) ou data sem alíquotas cadastradas.');
           return;
         }
-        mostrar(r.data, op);
+        mostrar(r.data, op, ctx);
       }
 
       /** Situações que a calculadora oficial recusa sem mensagem (HTTP 422 vazio). */
@@ -207,7 +263,7 @@
         return null;
       }
 
-      function mostrar(d, op) {
+      function mostrar(d, op, ctx) {
         const t = d.total || {};
         const resol = (d.resolucaoAliquotas && d.resolucaoAliquotas.itens) || [];
         // Na NFS-e a calculadora usa a alíquota com 2 casas (regra do leiaute, NT 2026.005)
@@ -227,7 +283,9 @@
         const avisosGerais = [].concat((d.resolucaoAliquotas && d.resolucaoAliquotas.avisos) || [], d.avisos || []);
         res.innerHTML = `<div class="card"><div class="card-cab"><h2>Resultado</h2>
             <div class="acoes"><span class="etq etq-teal" title="Regime de apuração identificado pela calculadora">${esc(R.regimeSimples(d.oper && d.oper.regimeApuracao))}</span>
+            ${Hub.relatorio.botoes()}
             <button class="btn btn-sec btn-peq" data-json>Ver resposta técnica</button></div></div>
+          ${Hub.empresas.faixaResultado(ctx.empresa)}
           ${avisosGerais.length ? `<div class="aviso">${avisosGerais.map((a) => esc(typeof a === 'object' ? (a.mensagem || a.detail || JSON.stringify(a)) : a)).join('<br>')}</div>` : ''}
           <div class="kpis">
             <div class="kpi"><small>Receita bruta do Simples</small><strong>${fmt.moeda(t.vRBSNtot)}</strong></div>
@@ -238,7 +296,7 @@
             <div class="kpi destaque"><small>Total de tributos</small><strong>${fmt.moeda(t.totalTributos)}</strong></div>
           </div><div data-tab></div>
           <p class="sutil">Clique num item para ver por que essas alíquotas foram usadas, a memória de cálculo e os erros.</p></div>`;
-        comp.tabela(res.querySelector('[data-tab]'), {
+        const tab = comp.tabela(res.querySelector('[data-tab]'), {
           busca: false,
           colunas: [
             { titulo: 'Item', campo: 'n', tipo: 'num' },
@@ -257,7 +315,7 @@
             { titulo: 'Total', campo: 'totalItem', tipo: 'moeda' },
           ],
           linhas,
-          exportar: { arquivo: 'simulacao-simples-nacional', titulo: 'Simulação – Simples Nacional' },
+          // a exportação da tabela agora sai pelos botões "Relatório PDF / Excel" (com empresa e resumo)
           detalhe: (l) => {
             const rs = l.rs || {};
             const mem = l.memoria ? Object.entries(l.memoria).map(([k, v]) => `<div class="memoria"><strong>${esc(R.memoria(k))}:</strong> ${esc(v)}</div>`).join('') : '';
@@ -271,6 +329,44 @@
           },
         });
         res.querySelector('[data-json]').onclick = () => comp.verJson(d, 'Resposta da calculadora do Simples');
+        Hub.relatorio.ligar(res, async () => {
+          const x = tab.exportacao();
+          const comErro = linhas.filter((l) => l.erros.length);
+          const regime = op.tpDoc === '91'
+            ? { 1: 'Não optante', 2: 'MEI', 3: 'Optante – ME ou EPP', 4: 'Opção pelo Simples pendente' }[op.opSimpNac] || op.opSimpNac
+            : { 1: '1 – Simples Nacional', 2: '2 – Simples Nacional, excesso de sublimite', 3: '3 – Regime normal', 4: '4 – MEI' }[op.CRT] || op.CRT;
+          const anexos = Object.keys((op.aliquotasEfetivas || {})).filter((k) => /^anexo/.test(k)).map((k) => {
+            const p = op.aliquotasEfetivas[k];
+            return [`Alíquotas do DAS – Anexo ${k.substring(5)}`, `CBS ${String(p.pCBSSN ?? '–').replace('.', ',')}% · IBS ${String(p.pIBSSN ?? '–').replace('.', ',')}%` +
+              (p.semRedistribuicaoISS ? ` (sem ISS no DAS: CBS ${String(p.semRedistribuicaoISS.pCBSSN ?? '–').replace('.', ',')}% · IBS ${String(p.semRedistribuicaoISS.pIBSSN ?? '–').replace('.', ',')}%)` : '')];
+          });
+          return {
+            titulo: 'Simulação – Simples Nacional (CBS e IBS)',
+            arquivo: 'simulacao-simples-nacional',
+            empresa: await Hub.empresas.linhasRelatorio(ctx.empresa, ctx.usadas),
+            resumo: [
+              ['Data do fato gerador', fmt.data(op.data)],
+              ['Documento', Hub.empresas.DOCUMENTOS[op.tpDoc] || op.tpDoc],
+              [op.tpDoc === '91' ? 'Situação do prestador no Simples' : 'Regime do emitente (CRT)', regime],
+              ['Regime de apuração identificado', R.regimeSimples(d.oper && d.oper.regimeApuracao) || '–'],
+              ['Fator r igual ou maior que 28%', op.aliquotasEfetivas && op.aliquotasEfetivas.fatorR ? 'Sim' : 'Não'],
+              ...anexos,
+              ['Receita bruta do Simples', fmt.moeda(t.vRBSNtot)],
+              ['Base de cálculo', fmt.moeda(t.vBC)],
+              ['CBS devida', fmt.moeda(t.vCBSSNtot)],
+              ['IBS devido', fmt.moeda(t.vIBSSNtot)],
+              ['Pendente/suspenso', fmt.moeda(Number(t.vCBSSNtotPendSusp || 0) + Number(t.vIBSSNtotPendSusp || 0))],
+              ['Total de tributos', fmt.moeda(t.totalTributos)],
+            ],
+            colunas: x.colunas,
+            linhas: x.linhas,
+            observacoes: [
+              ...avisosGerais.map((a) => (typeof a === 'object' ? (a.mensagem || a.detail || JSON.stringify(a)) : a)),
+              ...comErro.map((l) => `Item ${l.n}: ${l.erros.map((e) => `${e.code} – ${e.detail}`).join(' | ')}`),
+              'Valores calculados pela calculadora oficial do Simples Nacional da Receita Federal.',
+            ],
+          };
+        });
       }
 
       function exemploNfe() {
@@ -304,6 +400,7 @@
       el.querySelector('[data-ex-nfse]').onclick = exemploNfse;
       el.querySelector('[data-json-env]').onclick = () => comp.verJson(montar(), 'Operação a enviar');
       novoItem();
+      emp = Hub.empresas.seletor(el.querySelector('[data-empresa]'), { raiz: el, aoMudar: aplicarEmpresa });
     },
   });
 })();

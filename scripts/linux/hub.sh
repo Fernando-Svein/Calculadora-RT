@@ -28,6 +28,7 @@ principal() {
     atualizar) exigir_root "$@"; atualizar ;;
     verificar) exigir_root "$@"; gravar_agendamento; verificar 2>&1 | tee -a "$LOGS/atualizacao.log" ;;
     atualizar-hub) exigir_root "$@"; atualizar_hub ;;
+    depois-de-atualizar-hub) exigir_root "$@"; depois_atualizar_hub ;;
     ajuda | -h | --help) sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
     *) falha "Comando desconhecido: $comando"; sed -n '6,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
   esac
@@ -176,6 +177,14 @@ atualizar_hub() {
   # roda como administrador (o usuário do serviço não consegue pedir o token no seu terminal) e
   # devolve os arquivos ao usuário do serviço em seguida
   git -c safe.directory="$RAIZ" -C "$RAIZ" pull --ff-only || morrer "git pull falhou"
+  # o bash já carregou as funções da versão anterior deste script: os passos seguintes rodam com a versão que
+  # acabou de ser baixada (antes, um passo novo, como instalar o gatilho do botão "Atualizar agora", só rodava
+  # na segunda vez que o comando era executado)
+  exec bash "$RAIZ/scripts/linux/hub.sh" depois-de-atualizar-hub
+}
+
+# Parte final do atualizar-hub, já com os scripts novos (chamada por ele; não use direto)
+depois_atualizar_hub() {
   chown -R "$USUARIO_SERVICO:$USUARIO_SERVICO" "$RAIZ"
   systemctl daemon-reload
   gravar_agendamento

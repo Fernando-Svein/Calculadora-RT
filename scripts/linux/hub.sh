@@ -109,9 +109,15 @@ atualizar() {
 }
 
 salvar_resultado() {  # resultado mensagem json-dos-repositórios
-  jq -n --arg data "$(date +%Y-%m-%dT%H:%M:%S)" --arg resultado "$1" --arg mensagem "$2" --argjson repos "${3:-[]}" \
-    '{data: $data, resultado: $resultado, mensagem: $mensagem, repos: $repos}' >"$ARQUIVO_RESULTADO"
-  chmod 644 "$ARQUIVO_RESULTADO"
+  # grava num arquivo temporário e só troca no fim: o hub nunca lê um arquivo vazio ou pela metade
+  local tmp="$ARQUIVO_RESULTADO.tmp" repos="${3:-[]}"
+  jq -e . >/dev/null 2>&1 <<<"$repos" || repos='[]'
+  if jq -n --arg data "$(date +%Y-%m-%dT%H:%M:%S)" --arg resultado "$1" --arg mensagem "$2" --argjson repos "$repos" \
+    '{data: $data, resultado: $resultado, mensagem: $mensagem, repos: $repos}' >"$tmp"; then
+    chmod 644 "$tmp" && mv -f "$tmp" "$ARQUIVO_RESULTADO"
+  else
+    falha "Não foi possível gravar $ARQUIVO_RESULTADO"; rm -f "$tmp"
+  fi
 }
 
 verificar() {

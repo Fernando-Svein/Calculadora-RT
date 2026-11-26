@@ -29,7 +29,7 @@
             ${x.online ? '<span class="etq st-OK">Em funcionamento</span>' : '<span class="etq st-DIVERGENTE">Fora do ar</span>'}</div>
           ${det ? `<dl class="dl">${Object.entries(det).map(([k, v]) => `<dt>${esc(ROTULOS[k] || k)}</dt><dd>${esc(/data/i.test(k) ? fmt.data(v) : v)}</dd>`).join('')}</dl>`
             : `<div class="erro-caixa" style="margin:0">${esc(typeof x.detalhes === 'string' ? x.detalhes : JSON.stringify(x.detalhes))}
-              <br>Inicie as calculadoras com o arquivo <code>iniciar-hub.bat</code> na pasta do projeto.</div>`}</div>`;
+              <br>${s.servidorLinux ? 'No servidor, rode <code>sudo bash /opt/hub-fiscal/scripts/linux/hub.sh iniciar</code>.' : 'Inicie as calculadoras com o arquivo <code>iniciar-hub.bat</code> na pasta do projeto.'}</div>`}</div>`;
       };
       const b = s.bancoOficial || {};
       res.innerHTML = `<div class="grade g2">${bloco('Calculadora – Regime Geral', s.regimeGeral, 'indigo')}${bloco('Calculadora – Simples Nacional', s.simplesNacional, 'verde')}</div>
@@ -41,11 +41,17 @@
           <dt>Conteúdo</dt><dd>${esc(b.descricao || '–')}</dd><dt>Arquivo</dt><dd><code>${esc(b.arquivo || '–')}</code></dd>
           <dt>Data do servidor</dt><dd>${fmt.data(s.dataServidor)}</dd></dl>
         </div>
-        ${blocoAtualizacao(s.atualizacao)}`;
+        ${blocoAtualizacao(s.atualizacao, s.servidorLinux)}`;
     },
   });
 
-  function blocoAtualizacao(a) {
+  function blocoAtualizacao(a, linux) {
+    const dica = linux
+      ? `No servidor Linux a verificação já está agendada para toda madrugada (03:00): só atualiza quando a Receita publica versão nova.
+        Para verificar na hora, rode <code>sudo bash /opt/hub-fiscal/scripts/linux/hub.sh verificar</code>; a situação dos serviços sai com <code>hub.sh status</code>.`
+      : `No servidor, execute uma vez <code>ativar-atualizacao-automatica.bat</code> como administrador:
+        o hub passa a ligar sozinho com o servidor e verifica toda madrugada se a Receita publicou versão nova (só atualiza quando há novidade).
+        Para atualizar na hora, use <code>atualizar-calculadoras.bat</code>.`;
     const ROT = {
       'sem-novidade': ['st-OK', 'Em dia'],
       atualizado: ['st-OK', 'Atualizado'],
@@ -60,9 +66,7 @@
       ${a ? `<dl class="dl"><dt>Última verificação</dt><dd>${esc(quando)}</dd><dt>Resultado</dt><dd>${esc(a.mensagem || '–')}</dd>
         ${repos.map((r) => `<dt>${esc(r.repo)}</dt><dd><code>${esc(String(r.novo || '').slice(0, 10))}</code>${r.commitsNovos ? ` · ${esc(r.commitsNovos)} commit(s) novo(s)` : ''}</dd>`).join('')}</dl>`
         : `<p class="sutil" style="margin:0 0 12px">Nenhuma verificação automática registrada neste servidor.</p>`}
-      <div class="info-caixa" style="margin-bottom:0">No servidor, execute uma vez <code>ativar-atualizacao-automatica.bat</code> como administrador:
-        o hub passa a ligar sozinho com o servidor e verifica toda madrugada se a Receita publicou versão nova (só atualiza quando há novidade).
-        Para atualizar na hora, use <code>atualizar-calculadoras.bat</code>.</div></div>`;
+      <div class="info-caixa" style="margin-bottom:0">${dica}</div></div>`;
   }
 
   Hub.registrar({

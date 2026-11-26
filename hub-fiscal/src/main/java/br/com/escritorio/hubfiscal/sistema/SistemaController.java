@@ -40,6 +40,8 @@ public class SistemaController {
         r.put("bancoOficial", base.versao());
         r.put("dataServidor", LocalDate.now().toString());
         r.put("atualizacao", ultimaAtualizacao());
+        // a tela mostra os comandos do sistema do servidor (.bat no Windows, hub.sh no Linux)
+        r.put("servidorLinux", !System.getProperty("os.name", "").toLowerCase().contains("win"));
         return r;
     }
 
@@ -60,6 +62,9 @@ public class SistemaController {
         try {
             // o PowerShell grava o JSON com BOM (U+FEFF), que o leitor de JSON não aceita
             String json = Files.readString(arquivoAtualizacao, StandardCharsets.UTF_8).replace("﻿", "");
+            if (json.isBlank()) {
+                return null; // arquivo criado mas ainda sem resultado: tratado como "nenhuma verificação"
+            }
             return api.mapper().readValue(json, Map.class);
         } catch (Exception e) {
             return Map.of("resultado", "falha", "mensagem", "Não foi possível ler " + arquivoAtualizacao + ": " + e.getMessage());

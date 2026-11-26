@@ -180,15 +180,16 @@ public class EmpresaRepositorio {
     }
 
     /**
-     * Cadastro automático (importação): só insere se o CNPJ ainda não existe. Devolve true se cadastrou.
-     * Empresas já cadastradas não são alteradas (as particularidades conferidas pelo escritório prevalecem).
+     * Empresa encontrada numa importação e escolhida pelo usuário: só insere se o CNPJ ainda não existe (devolve true
+     * se cadastrou). Empresas já cadastradas não são alteradas (as particularidades conferidas pelo escritório prevalecem).
      */
     public boolean inserirSeNovo(String cnpj, String razaoSocial, String nomeFantasia, String uf, Integer municipio,
-            String regime, String regimeApuracao, String origem) {
+            String regime, String regimeApuracao, String origem, Map<String, Object> dadosCadastrais) {
         return executar("""
                 INSERT OR IGNORE INTO empresa (cnpj, razao_social, nome_fantasia, uf, municipio, regime, regime_apuracao,
-                  origem, revisado, criado_em) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)""",
-                cnpj, razaoSocial, nomeFantasia, uf, municipio, regime, regimeApuracao, origem, agora()) == 1;
+                  origem, revisado, criado_em, dados_cadastrais) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?)""",
+                cnpj, razaoSocial, nomeFantasia, uf, municipio, regime, regimeApuracao, origem, agora(),
+                gravarMapa(dadosCadastrais)) == 1;
     }
 
     /** Cadastro manual. Devolve o id criado. */

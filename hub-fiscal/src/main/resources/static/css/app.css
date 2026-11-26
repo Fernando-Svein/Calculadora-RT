@@ -261,6 +261,8 @@ body.menu-recolhido { --menu-ocupado: 68px; }
 .grade.g2 + .acoes, .grade + .acoes { margin-top: 18px; }
 .linha { display: flex; gap: 12px 14px; align-items: flex-end; flex-wrap: wrap; }
 .linha > .campo { flex: 1 1 180px; }
+/* texto solto ao lado de campos (dica, situação do envio): centralizado na altura do campo (38 px), não colado na base */
+.linha > .sutil, .linha > span:not(.espaco) { display: inline-flex; align-items: center; min-height: 38px; line-height: 1.35; }
 .espaco { flex: 1; }
 
 /* ---------------------------------------------------------------- início (painel) */
@@ -818,3 +820,8 @@ input[type="checkbox"][data-da-empresa] { outline: 2px solid var(--violeta); out
 /* ---------------------------------------------------------------- importação no simulador */
 input[data-sugerido] { border-color: var(--ambar) !important; background: var(--ambar-suave); }
 .item-desc { font-size: 12.5px; color: var(--texto-2); margin-left: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+/* ---------------------------------------------------------------- seleção múltipla (lista de empresas) */
+.barra-selecao { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; padding: 8px 12px; margin-bottom: 10px;
+  background: var(--fundo); border: 1px solid var(--borda); border-radius: var(--r); }
+.barra-selecao .btn { margin-left: auto; }
+.tab td input[type="checkbox"][data-sel-id] { width: 16px; height: 16px; cursor: pointer; }

@@ -48,17 +48,28 @@ public class ConsultaCnpjService {
     private record Guardado(Map<String, Object> dados, Instant em) {
     }
 
-    private final String url;
+    /**
+     * Serviços em ordem de preferência (hub.consulta-cnpj-url, separados por vírgula). O seguinte é tentado quando o
+     * anterior falha (5xx, tempo esgotado, sem conexão, limite ou "não encontrado"): a BrasilAPI, por exemplo, responde
+     * 503 para alguns CNPJs que a fonte dela (minhareceita.org) devolve normalmente. Todos no formato da BrasilAPI.
+     */
+    private final List<String> urls;
     private final HttpClient http;
     private final Map<String, Guardado> cache = new ConcurrentHashMap<>();
 
     public ConsultaCnpjService(HubProperties props) {
-        this.url = props.consultaCnpjUrl().trim();
+        String cfg = props.consultaCnpjUrl().trim();
+        this.urls = "desativada".equalsIgnoreCase(cfg) ? List.of()
+                : java.util.Arrays.stream(cfg.split(",")).map(String::trim).filter(u -> u.contains("{cnpj}")).toList();
         this.http = HttpClient.newBuilder().connectTimeout(TEMPO_LIMITE).followRedirects(HttpClient.Redirect.NORMAL).build();
     }
 
     public boolean disponivel() {
-        return !"desativada".equalsIgnoreCase(url) && url.contains("{cnpj}");
+        return !urls.isEmpty();
+    }
+
+    /** Falha de um serviço: status HTTP (0 = sem resposta) e motivo. */
+    private record Falha(int status, String motivo) {
     }
 
     /** Cadastro público do CNPJ, normalizado; erros como ResponseStatusException/ErroNegocio com mensagem para a tela. */
@@ -74,6 +85,41 @@ public class ConsultaCnpjService {
         if (g != null && g.em().plus(VALIDADE_CACHE).isAfter(Instant.now())) {
             return g.dados();
         }
+        List<Falha> falhas = new ArrayList<>();
+        for (String url : urls) {
+            Object r = consultarEm(url, cnpj);
+            if (r instanceof Map<?, ?> m) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> dados = (Map<String, Object>) m;
+                if (!falhas.isEmpty()) {
+                    log.info("Consulta de CNPJ atendida pelo serviço reserva {} (o anterior falhou: {})", host(url), falhas);
+                }
+                cache.put(cnpj, new Guardado(dados, Instant.now()));
+                return dados;
+            }
+            falhas.add((Falha) r);
+        }
+        // nenhum serviço respondeu: a mensagem reflete a falha mais informativa
+        String fmt = EmpresaService.formatarCnpj(cnpj);
+        if (falhas.stream().allMatch(f -> f.status() == 404)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "CNPJ " + fmt + " não encontrado na base pública da Receita. Confira o número ou cadastre manualmente.");
+        }
+        if (falhas.stream().anyMatch(f -> f.status() == 429)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Limite de consultas do serviço público de CNPJ atingido. Aguarde alguns minutos e tente de novo (o cadastro manual continua disponível).");
+        }
+        if (falhas.stream().allMatch(f -> f.status() == 400 || f.status() == 404)) {
+            throw new ErroNegocio("O serviço de consulta recusou o CNPJ " + fmt
+                    + " (o CNPJ alfanumérico pode ainda não ser aceito por ele). Cadastre manualmente.");
+        }
+        log.warn("Consulta de CNPJ sem sucesso em todos os serviços: {}", falhas);
+        throw indisponivel(String.join("; ", falhas.stream().map(Falha::motivo).toList()));
+    }
+
+    /** Consulta um serviço: devolve o cadastro normalizado (Map) ou a {@link Falha}. */
+    private Object consultarEm(String url, String cnpj) {
+        String quem = host(url);
         HttpResponse<String> resp;
         try {
             HttpRequest req = HttpRequest.newBuilder(URI.create(url.replace("{cnpj}", cnpj)))
@@ -83,42 +129,38 @@ public class ConsultaCnpjService {
                     .GET().build();
             resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         } catch (HttpTimeoutException e) {
-            throw indisponivel("o serviço de consulta demorou demais para responder");
+            return new Falha(0, quem + " demorou demais para responder");
         } catch (IOException e) {
-            throw indisponivel("sem conexão com o serviço de consulta (" + e.getClass().getSimpleName() + ")");
+            return new Falha(0, "sem conexão com " + quem);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw indisponivel("consulta interrompida");
+            return new Falha(0, "consulta interrompida");
+        } catch (IllegalArgumentException e) {
+            return new Falha(0, "endereço inválido em hub.consulta-cnpj-url");
         }
         int st = resp.statusCode();
-        if (st == 404) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "CNPJ " + EmpresaService.formatarCnpj(cnpj) + " não encontrado na base pública da Receita. Confira o número ou cadastre manualmente.");
-        }
-        if (st == 429) {
-            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
-                    "Limite de consultas do serviço público de CNPJ atingido. Aguarde alguns minutos e tente de novo (o cadastro manual continua disponível).");
-        }
-        if (st == 400) {
-            throw new ErroNegocio("O serviço de consulta recusou o CNPJ " + EmpresaService.formatarCnpj(cnpj)
-                    + " (o CNPJ alfanumérico pode ainda não ser aceito por ele). Cadastre manualmente.");
-        }
         if (st < 200 || st >= 300) {
-            log.warn("Consulta de CNPJ: HTTP {} do serviço externo", st);
-            throw indisponivel("o serviço respondeu com erro HTTP " + st);
+            return new Falha(st, quem + " respondeu com erro HTTP " + st);
         }
         JsonNode j;
         try {
             j = JSON.readTree(resp.body());
         } catch (RuntimeException e) {
-            throw indisponivel("resposta em formato inesperado");
+            return new Falha(st, quem + " devolveu resposta em formato inesperado");
         }
         if (j == null || !j.isObject() || texto(j, "razao_social") == null) {
-            throw indisponivel("resposta sem a razão social");
+            return new Falha(st, quem + " devolveu resposta sem a razão social");
         }
-        Map<String, Object> dados = normalizar(j, cnpj);
-        cache.put(cnpj, new Guardado(dados, Instant.now()));
-        return dados;
+        return normalizar(j, cnpj, quem);
+    }
+
+    private static String host(String url) {
+        try {
+            String h = URI.create(url.replace("{cnpj}", "0")).getHost();
+            return h == null ? url : h;
+        } catch (IllegalArgumentException e) {
+            return url;
+        }
     }
 
     private static ResponseStatusException indisponivel(String motivo) {
@@ -127,7 +169,7 @@ public class ConsultaCnpjService {
     }
 
     /** Formato do hub (independe do serviço usado), com os campos públicos que interessam ao escritório. */
-    static Map<String, Object> normalizar(JsonNode j, String cnpj) {
+    static Map<String, Object> normalizar(JsonNode j, String cnpj, String fonte) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("cnpj", cnpj);
         m.put("razaoSocial", texto(j, "razao_social"));
@@ -193,7 +235,7 @@ public class ConsultaCnpjService {
         }
         m.put("qsa", qsa);
         m.put("regimeSugerido", regimeSugerido(m));
-        m.put("fonte", "Dados públicos do CNPJ (Receita Federal) via BrasilAPI");
+        m.put("fonte", "Dados públicos do CNPJ (Receita Federal) via " + fonte);
         m.put("consultadoEm", LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString());
         return m;
     }

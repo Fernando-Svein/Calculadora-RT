@@ -71,7 +71,7 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
 
 - **Cadastros → Empresas**: empresas atendidas e suas particularidades (regime, Lucro Real/Presumido, município, alíquotas
   do DAS por anexo, fator r, sublimite, atividade, documento e cClassTrib usuais). Ao importar um SPED ou XML num
-  processamento em lote, a empresa do arquivo (contribuinte do SPED ou emitente do XML) é cadastrada automaticamente com
+  processamento em lote ou no simulador, o hub pergunta se as empresas dos arquivos (contribuinte do SPED ou emitente do XML) que ainda não estão no cadastro devem ser adicionadas; cada uma escolhida entra com a consulta completa do CNPJ (ou, se a consulta falhar, com
   CNPJ e razão social, marcada como "A conferir"; o mesmo CNPJ nunca é cadastrado duas vezes. Incluir e editar exige a
   ferramenta "Empresas". Ficam em `/opt/hub-fiscal/dados/hub-empresas.db` (`hub.banco-empresas`) – inclua no backup.
 - **Empresa da simulação**: todos os simuladores (Regime Regular, Simples, Comparador, Pedágio e Bases) têm o seletor no

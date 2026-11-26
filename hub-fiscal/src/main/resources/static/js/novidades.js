@@ -50,9 +50,9 @@
 
   const TESTES = [
     ['1. Cadastro automático de empresas', [
-      'Processamento em lote → Classificar cadastro: envie <code>testes/dados/empresa-sped-contribuicoes.txt</code> e <code>empresa-nfe-simples.xml</code>.',
-      'O resultado mostra "2 empresa(s) cadastrada(s) automaticamente". Em Cadastros → Empresas elas aparecem como "A conferir" (a do SPED como Regime normal – Lucro Presumido; a da NF-e, com CNPJ alfanumérico, como Simples Nacional).',
-      'Processe os mesmos arquivos de novo: nenhum aviso e nenhuma empresa duplicada.',
+      'Processamento em lote → Classificar cadastro (ou Importar XML/SPED no simulador): envie <code>testes/dados/empresa-sped-contribuicoes.txt</code> e <code>empresa-nfe-simples.xml</code>.',
+      'Abre a caixa "Adicionar empresas ao cadastro?" com as empresas novas. Marque e clique em Adicionar selecionadas: cada uma entra com a consulta completa do CNPJ (situação, CNAEs, endereço, quadro societário) e aparece em Cadastros → Empresas como "A conferir".',
+      'Processe os mesmos arquivos de novo: a caixa não aparece (nada novo) e nenhuma empresa é duplicada. Em Cadastros → Empresas, marque várias empresas e use Excluir selecionadas.',
       'Abra uma empresa, informe regime, alíquotas do DAS, documento e cClassTrib usuais e salve: passa a "Conferido".',
     ]],
     ['2. Empresa nos simuladores', [
@@ -85,7 +85,7 @@
   ];
 
   const DECISOES = [
-    '<strong>Quem é cadastrado na importação:</strong> do SPED, o contribuinte do registro 0000; do XML, só o <em>emitente</em> (não o destinatário). Importar XMLs de compras cadastra os fornecedores: eles ficam "A conferir" e podem ser excluídos.',
+    '<strong>Empresas na importação:</strong> nada é cadastrado sem confirmação. O hub lista o contribuinte do SPED (registro 0000) e o <em>emitente</em> de cada XML (não o destinatário) que ainda não estão no cadastro, e o usuário marca quais adicionar; em notas de compra o emitente é o fornecedor. Cada escolhida é cadastrada com a consulta do CNPJ; o regime do arquivo (CRT/EFD) prevalece sobre o indicado pela base pública. A lista vale por 2 horas e só para quem importou.',
     '<strong>Regime deduzido do arquivo:</strong> EFD Contribuições → regime normal (0110: 1 = Lucro Real, 2 = Lucro Presumido); EFD ICMS/IPI → "a definir"; NF-e → CRT; NFS-e → opSimpNac. CPF e CNPJ com dígito verificador inválido não são cadastrados (por isso os arquivos de teste antigos, com CNPJ fictício, não geram cadastro).',
     '<strong>Reimportação não altera</strong> uma empresa já cadastrada (nem a razão social): o que o escritório conferiu prevalece.',
     '<strong>Permissão:</strong> consultar empresas é liberado a todo usuário logado (os simuladores precisam do seletor); incluir, editar e excluir exige a ferramenta nova "Empresas". Usuários com acesso a todas as ferramentas já a recebem; os com acesso parcial precisam que o administrador a libere.',
@@ -97,7 +97,7 @@
     '<strong>Topo:</strong> a pílula "Regime Geral" passou a "Regime Normal". A versão da base (V0073) saiu do topo, mas continua na tela Situação do sistema como detalhe técnico.',
     '<strong>Aviso de empresas novas</strong> vai num cabeçalho da resposta do lote (e não no resultado), para não alterar o resultado nem a planilha do lote.',
     '<strong>Botão "Atualizar agora":</strong> o hub não roda a atualização (no Linux ele não tem privilégio para parar e religar serviços). Ele grava um pedido em <code>logs/pedido-atualizacao.json</code>; no Linux uma unidade <code>hubfiscal-atualizacao.path</code> do systemd (root) inicia a mesma verificação das 03:00; no Windows o hub inicia <code>scripts\\hub.ps1 verificar</code>. Só verifica e atualiza se houver versão nova; desligável com <code>hub.atualizacao-manual: desativada</code>.',
-    '<strong>Consulta de CNPJ pela BrasilAPI</strong> (gratuita, sem chave, republica os dados abertos do CNPJ): o servidor envia só o CNPJ consultado e precisa de internet. Não há garantia de disponibilidade nem limite publicado; o hub guarda cada resposta por 24 h. Se o escritório tiver contrato com outro provedor, basta trocar <code>hub.consulta-cnpj-url</code> (o formato da resposta precisa ser o da BrasilAPI) ou desligar com <code>desativada</code>.',
+    '<strong>Consulta de CNPJ pela BrasilAPI, com a minhareceita.org (fonte dela) como reserva</strong> quando a BrasilAPI falha – ela responde 503 para alguns CNPJs (gratuita, sem chave, republica os dados abertos do CNPJ): o servidor envia só o CNPJ consultado e precisa de internet. Não há garantia de disponibilidade nem limite publicado; o hub guarda cada resposta por 24 h. Se o escritório tiver contrato com outro provedor, basta trocar <code>hub.consulta-cnpj-url</code> (o formato da resposta precisa ser o da BrasilAPI) ou desligar com <code>desativada</code>.',
     '<strong>Auditor:</strong> o status OK/Divergente continua comparando o XML com a alíquota oficial (a que vale para a nota em 2026). A coluna do cenário TCU é só simulação, calculada no hub sem nova chamada à calculadora.',
     '<strong>Importação no simulador:</strong> cada XML é uma operação (data e local próprios): com vários arquivos, a tela pede qual simular. O simulador carrega até 300 itens por documento; acima disso, use o processamento em lote. A sugestão de cClassTrib é a mesma da classificação em lote (anexo do NCM/NBS; sem anexo, 000001) e precisa ser conferida.',
     '<strong>Nome:</strong> a marca voltou a "Hub Fiscal" em telas, títulos, PDF, scripts e documentação. O PDF da documentação em <code>docs/</code> foi gerado antes e não foi alterado.',

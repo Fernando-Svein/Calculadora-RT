@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.escritorio.hubfiscal.empresa.EmpresaService.DadosEmpresa;
+import br.com.escritorio.hubfiscal.seguranca.UsuarioSessao;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 /**
  * Cadastro de empresas. A consulta é aberta a todo usuário logado (os simuladores listam as empresas no
@@ -40,6 +42,31 @@ public class EmpresaController {
     @GetMapping("/consulta-cnpj/{cnpj}")
     public Map<String, Object> consultarCnpj(@PathVariable String cnpj) {
         return consulta.consultar(cnpj);
+    }
+
+    /** Empresas encontradas numa importação e ainda não cadastradas (a tela pergunta quais adicionar). */
+    @GetMapping("/encontradas/{token}")
+    public List<EmpresaService.EmpresaEncontrada> encontradas(@PathVariable String token, @AuthenticationPrincipal UsuarioSessao usuario) {
+        return empresas.encontradasGuardadas(token, usuario.id());
+    }
+
+    public record Escolha(List<String> cnpjs) {
+    }
+
+    /** Adiciona as escolhidas, cada uma com a consulta completa do CNPJ; exige a ferramenta "Empresas" (POST /hub/empresas...). */
+    @PostMapping("/encontradas/{token}")
+    public List<EmpresaService.ResultadoCadastro> adicionarEncontradas(@PathVariable String token, @RequestBody Escolha escolha,
+            @AuthenticationPrincipal UsuarioSessao usuario) {
+        return empresas.cadastrarEncontradas(token, escolha == null ? null : escolha.cnpjs(), usuario.id(), consulta);
+    }
+
+    public record Selecao(List<Long> ids) {
+    }
+
+    /** Exclusão das empresas selecionadas na lista. */
+    @PostMapping("/excluir")
+    public Map<String, Object> excluirSelecionadas(@RequestBody Selecao selecao) {
+        return Map.of("excluidas", empresas.excluirVarias(selecao == null ? null : selecao.ids()));
     }
 
     /** A tela mostra o botão "Consultar CNPJ" só quando a consulta está ligada. */

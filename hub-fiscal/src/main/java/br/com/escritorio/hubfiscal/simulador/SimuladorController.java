@@ -12,6 +12,8 @@ import org.springframework.web.multipart.MultipartFile;
 import br.com.escritorio.hubfiscal.empresa.EmpresaService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
+import br.com.escritorio.hubfiscal.seguranca.UsuarioSessao;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 /** Importação de XML/SPED para o Simulador do Regime Regular (ferramenta "calc-rg", ver Ferramentas). */
 @RestController
@@ -31,14 +33,15 @@ public class SimuladorController {
 
     @PostMapping("/hub/simulador/importar")
     public Map<String, Object> importar(@RequestParam("arquivos") List<MultipartFile> arquivos,
-            @RequestParam(required = false) LocalDate data) {
+            @RequestParam(required = false) LocalDate data, @AuthenticationPrincipal UsuarioSessao usuario) {
         Importacao imp = importacao.importar(arquivos);
-        int novas = 0;
+        String encontradas = null;
         try {
-            novas = empresas.cadastrarDaImportacao(imp).size(); // mesma regra dos lotes
+            // mesma regra dos lotes: nada é cadastrado sem o usuário confirmar
+            encontradas = empresas.guardarEncontradas(imp, usuario.id()).orElse(null);
         } catch (RuntimeException e) {
-            log.warn("Cadastro automático de empresas falhou: {}", e.getMessage());
+            log.warn("Separação das empresas dos arquivos falhou: {}", e.getMessage());
         }
-        return ImportacaoSimuladorService.resposta(conversor.converter(imp, data == null ? LocalDate.now() : data), imp, novas);
+        return ImportacaoSimuladorService.resposta(conversor.converter(imp, data == null ? LocalDate.now() : data), imp, encontradas);
     }
 }

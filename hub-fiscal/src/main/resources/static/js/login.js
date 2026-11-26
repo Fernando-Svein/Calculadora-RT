@@ -1,4 +1,4 @@
-/* Tela de login do HUB Fiscal (arquivo separado: a política CSP não permite scripts inline). */
+/* Tela de login do Hub Fiscal (arquivo separado: a política CSP não permite scripts inline). */
 'use strict';
 (() => {
   const $ = (s) => document.querySelector(s);

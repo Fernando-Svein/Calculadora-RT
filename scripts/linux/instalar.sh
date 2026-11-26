@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# HUB Fiscal – instalação num servidor Ubuntu (24.04 LTS). Rode uma única vez, como administrador:
+# Hub Fiscal – instalação num servidor Ubuntu (24.04 LTS). Rode uma única vez, como administrador:
 #
 #     sudo bash /opt/hub-fiscal/scripts/linux/instalar.sh
 #
@@ -18,7 +18,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 principal() {
   exigir_root "$@"
   [[ -f "$RAIZ/hub-fiscal/pom.xml" ]] || morrer "Não encontrei $RAIZ/hub-fiscal. Clone o projeto em /opt/hub-fiscal antes."
-  echo "Instalando o HUB Fiscal em $RAIZ"
+  echo "Instalando o Hub Fiscal em $RAIZ"
 
   etapa "Pacotes do sistema (git, curl, jq)"
   export DEBIAN_FRONTEND=noninteractive
@@ -51,16 +51,17 @@ principal() {
   done
 
   etapa "Registrando os serviços no systemd"
-  escrever_unidade hubfiscal-calc-rg "HUB Fiscal - Calculadora Regime Geral (Receita Federal)" calculadora-rtc-regime-regular \
+  escrever_unidade hubfiscal-calc-rg "Hub Fiscal - Calculadora Regime Geral (Receita Federal)" calculadora-rtc-regime-regular \
     "-Dspring.profiles.active=offline -Dserver.address=127.0.0.1" api-regime-geral.jar regime-geral ""
-  escrever_unidade hubfiscal-calc-sn "HUB Fiscal - Calculadora Simples Nacional (Receita Federal)" calculadora-rtc-simples-nacional \
+  escrever_unidade hubfiscal-calc-sn "Hub Fiscal - Calculadora Simples Nacional (Receita Federal)" calculadora-rtc-simples-nacional \
     "-Dspring.profiles.active=offline -Dserver.address=127.0.0.1" api-simples-nacional.jar simples-nacional ""
-  escrever_unidade hubfiscal "HUB Fiscal" hub-fiscal "" hub-fiscal.jar hub "hubfiscal-calc-rg.service hubfiscal-calc-sn.service"
+  escrever_unidade hubfiscal "Hub Fiscal" hub-fiscal "" hub-fiscal.jar hub "hubfiscal-calc-rg.service hubfiscal-calc-sn.service"
   escrever_agendamento
   systemctl daemon-reload
   systemctl enable hubfiscal-calc-rg hubfiscal-calc-sn hubfiscal hubfiscal-atualizacao.timer --quiet
   systemctl start hubfiscal-atualizacao.timer
   gravar_agendamento
+  escrever_gatilho_atualizacao
   ok "Serviços registrados e habilitados na inicialização da VM"
   ok "Atualização automática agendada: todo dia às $HORARIO_ATUALIZACAO"
 
@@ -109,7 +110,7 @@ EOF
 escrever_agendamento() {
   cat >/etc/systemd/system/hubfiscal-atualizacao.service <<EOF
 [Unit]
-Description=HUB Fiscal - verifica versão nova das calculadoras da Receita e atualiza se houver
+Description=Hub Fiscal - verifica versão nova das calculadoras da Receita e atualiza se houver
 After=network-online.target
 Wants=network-online.target
 
@@ -120,7 +121,7 @@ TimeoutStartSec=2h
 EOF
   cat >/etc/systemd/system/hubfiscal-atualizacao.timer <<EOF
 [Unit]
-Description=HUB Fiscal - verificação diária de atualização das calculadoras ($HORARIO_ATUALIZACAO)
+Description=Hub Fiscal - verificação diária de atualização das calculadoras ($HORARIO_ATUALIZACAO)
 
 [Timer]
 OnCalendar=*-*-* $HORARIO_ATUALIZACAO:00
@@ -137,7 +138,7 @@ liberar_firewall() {
   if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
     local rede
     for rede in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16; do
-      ufw allow from "$rede" to any port 8090 proto tcp comment 'HUB Fiscal' >/dev/null
+      ufw allow from "$rede" to any port 8090 proto tcp comment 'Hub Fiscal' >/dev/null
     done
     ok "Porta 8090 liberada só para redes internas (as calculadoras ficam só em 127.0.0.1)"
   else

@@ -61,6 +61,40 @@
     filtrar();
   }
 
+  /** Cartão com o cadastro público do CNPJ (última consulta guardada na empresa). */
+  function cartaoPublicos(p) {
+    const end = p.endereco || {};
+    const sn = p.simples || {};
+    const ativa = String(p.situacaoCadastral || '').toUpperCase() === 'ATIVA';
+    const linha = (t, v) => (v === null || v === undefined || v === '' ? '' : `<dt>${esc(t)}</dt><dd>${v}</dd>`);
+    const endereco = [end.logradouro, end.numero, end.complemento, end.bairro, end.municipio && end.uf ? `${end.municipio}/${end.uf}` : end.municipio, end.cep && `CEP ${end.cep}`]
+      .filter(Boolean).map(esc).join(', ');
+    const simples = sn.mei === true ? 'MEI' : sn.optanteSimples === true ? `Optante desde ${fmt.data(sn.dataOpcaoSimples)}`
+      : sn.optanteSimples === false ? `Não optante${sn.dataExclusaoSimples ? ` (excluída em ${fmt.data(sn.dataExclusaoSimples)})` : ''}` : '';
+    const qsa = p.qsa || [];
+    return `<div class="card"><div class="card-cab"><h3>Dados públicos do CNPJ</h3>
+        <span class="etq ${ativa ? 'etq-verde' : 'etq-vermelho'}">${esc(p.situacaoCadastral || 'Situação não informada')}</span></div>
+      ${!ativa && p.situacaoCadastral ? `<div class="aviso">Situação cadastral <strong>${esc(p.situacaoCadastral)}</strong>${p.motivoSituacaoCadastral ? ` (${esc(p.motivoSituacaoCadastral)})` : ''}
+        ${p.dataSituacaoCadastral ? ` desde ${esc(fmt.data(p.dataSituacaoCadastral))}` : ''}: confira antes de emitir ou simular operações.</div>` : ''}
+      <dl class="dl">
+        ${linha('Razão social', esc(p.razaoSocial))}${linha('Nome fantasia', esc(p.nomeFantasia))}
+        ${linha('Abertura', esc(fmt.data(p.dataAbertura)))}${linha('Natureza jurídica', esc(p.naturezaJuridica))}${linha('Porte', esc(p.porte))}
+        ${linha('Capital social', p.capitalSocial !== null && p.capitalSocial !== undefined ? esc(fmt.moeda(p.capitalSocial)) : '')}
+        ${linha('CNAE principal', p.cnaePrincipal ? `<code>${esc(p.cnaePrincipal.codigo)}</code> ${esc(p.cnaePrincipal.descricao || '')}` : '')}
+        ${linha('CNAEs secundários', (p.cnaesSecundarios || []).length ? `<details><summary>${p.cnaesSecundarios.length} atividade(s)</summary><ul>${p.cnaesSecundarios.map((c) => `<li><code>${esc(c.codigo)}</code> ${esc(c.descricao || '')}</li>`).join('')}</ul></details>` : '')}
+        ${linha('Endereço', endereco)}${linha('Telefone', esc(p.telefone))}${linha('E-mail', esc(p.email))}
+        ${linha('Simples Nacional', esc(simples))}
+        ${linha('Regime declarado', p.regimeTributario ? `${esc(p.regimeTributario.forma || '–')} <span class="sutil">(${esc(p.regimeTributario.ano)})</span>` : '')}
+      </dl>
+      ${qsa.length ? `<h4 style="margin:14px 0 6px">Quadro societário (QSA)</h4>
+        <div class="tabela-wrap" style="max-height:none"><table class="tab"><thead><tr><th>Nome</th><th>Qualificação</th><th>Entrada</th><th>Faixa etária</th></tr></thead><tbody>
+        ${qsa.map((s) => `<tr><td>${esc(s.nome)}${s.representanteLegal ? `<div class="sutil">Representante: ${esc(s.representanteLegal)}</div>` : ''}</td>
+          <td>${esc(s.qualificacao || '–')}</td><td>${esc(fmt.data(s.dataEntrada))}</td><td>${esc(s.faixaEtaria || '–')}</td></tr>`).join('')}</tbody></table></div>`
+        : '<p class="sutil">Quadro societário não informado pela base pública (comum em empresário individual e MEI).</p>'}
+      <p class="sutil" style="margin:10px 0 0">${esc(p.fonte || 'Base pública do CNPJ')} · consultado em ${esc(fmt.data(p.consultadoEm))} ${esc(String(p.consultadoEm || '').substring(11, 16))}.
+        Os dados são gravados com o cadastro ao salvar.</p></div>`;
+  }
+
   // ------------------------------------------------------------------ cadastro (abrir, incluir e editar)
 
   async function formulario(el, id) {
@@ -86,9 +120,14 @@
           ${comp.campo('Razão social *', `<input name="razaoSocial" value="${v(e && e.razaoSocial)}" maxlength="150">`)}
           ${comp.campo('Nome fantasia', `<input name="nomeFantasia" value="${v(e && e.nomeFantasia)}" maxlength="150">`)}
         </div>
+        <div class="acoes" data-consulta-acoes hidden style="margin-top:8px">
+          <button class="btn btn-sec btn-peq" type="button" data-consultar>${Hub.icone('busca')} Consultar CNPJ na base pública</button>
+          <span class="sutil">Busca razão social, situação cadastral, CNAE, endereço, Simples/MEI e quadro societário.</span></div>
+        <div data-consulta-st></div>
         <div data-loc style="margin-top:12px"></div>
         <span class="ajuda sutil">Município do estabelecimento: usado como local da operação nos simuladores do regime normal e no pedágio.</span>
       </div>
+      <div data-publicos></div>
       <div class="card"><h3>Regime tributário</h3>
         <div class="grade g3">
           ${comp.campo('Regime *', `<select name="regime"><option value="">A definir</option>
@@ -164,6 +203,51 @@
       }
     })();
 
+    // ---------------------------------------------------------------- consulta pública de CNPJ
+    let publicos = (e && e.dadosCadastrais) || null;
+    const areaPub = el.querySelector('[data-publicos]');
+    const stConsulta = el.querySelector('[data-consulta-st]');
+    mostrarPublicos();
+    api.get('/hub/empresas/consulta-cnpj').then((r) => { el.querySelector('[data-consulta-acoes]').hidden = !(r.ok && r.data.disponivel); });
+
+    function mostrarPublicos() {
+      areaPub.innerHTML = publicos ? cartaoPublicos(publicos) : '';
+    }
+
+    el.querySelector('[data-consultar]').onclick = async (ev) => {
+      const cnpj = (f.cnpj.value || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+      if (cnpj.length !== 14) { stConsulta.innerHTML = '<div class="erro-caixa">Digite os 14 caracteres do CNPJ antes de consultar.</div>'; return; }
+      const b = ev.currentTarget;
+      b.disabled = true;
+      stConsulta.innerHTML = '<div class="carregando"><div class="giro"></div>Consultando o CNPJ...</div>';
+      const r = await api.get('/hub/empresas/consulta-cnpj/' + encodeURIComponent(cnpj));
+      b.disabled = false;
+      if (!r.ok) {
+        // erro de consulta não trava o cadastro: a mensagem explica e o formulário continua editável
+        stConsulta.innerHTML = Hub.problema(r, 'Consulta do CNPJ não concluída');
+        return;
+      }
+      stConsulta.innerHTML = '';
+      const p = r.data;
+      const end = p.endereco || {};
+      const preenchidos = [];
+      const substituir = !e || confirm('Atualizar razão social, nome fantasia e município com os dados públicos do CNPJ?\n(O regime e as demais particularidades só mudam se estiverem em branco.)');
+      if (substituir) {
+        if (p.razaoSocial) { f.razaoSocial.value = p.razaoSocial; preenchidos.push('razão social'); }
+        if (p.nomeFantasia) { f.nomeFantasia.value = p.nomeFantasia; preenchidos.push('nome fantasia'); }
+        if (end.uf && end.codigoMunicipioIbge) { loc.pronto.then(() => loc.definir(end.uf, end.codigoMunicipioIbge)); preenchidos.push('município'); }
+      }
+      if (!f.regime.value && p.regimeSugerido) {
+        f.regime.value = p.regimeSugerido.regime;
+        if (p.regimeSugerido.regimeApuracao) f.regimeApuracao.value = p.regimeSugerido.regimeApuracao;
+        ajustar();
+        preenchidos.push('regime');
+      }
+      publicos = p;
+      mostrarPublicos();
+      Hub.toast(preenchidos.length ? `Dados do CNPJ carregados (${preenchidos.join(', ')}). Confira e salve.` : 'Dados do CNPJ carregados. Confira e salve.');
+    };
+
     function dados() {
       const c = comp.lerCampos(f);
       const l = loc.valor();
@@ -180,6 +264,7 @@
         ibscbsForaSimples: !!c.ibscbsForaSimples, fatorR: !!c.fatorR, sublimiteExcedido: !!c.sublimiteExcedido,
         atividadeSimples: c.atividadeSimples || null, aliquotasSimples: aliquotas,
         documentoPadrao: c.documentoPadrao || null, cClassTribPadrao: c.cClassTribPadrao || null, observacoes: c.observacoes || null,
+        dadosCadastrais: publicos,
       };
     }
 

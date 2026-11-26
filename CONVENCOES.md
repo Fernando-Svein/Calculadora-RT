@@ -1,4 +1,4 @@
-# Convenções do HUB Fiscal
+# Convenções do Hub Fiscal
 
 Guia curto para manter o padrão do código. Vale para a `main` e para a branch `ubuntu-server`.
 
@@ -40,6 +40,18 @@ Guia curto para manter o padrão do código. Vale para a `main` e para a branch 
 - Operação nova que deve ser restrita: regra em `Ferramentas` (o proxy e a checagem de permissão usam `Ferramentas.caminhoCanonico()`). Área de administração: caminho em `/admin/**`.
 - Arquivo enviado pelo usuário: validar pelo conteúdo, não pela extensão; nunca servir de volta sem reprocessar (ver `marca/MarcaController`).
 - Consultas ao SQLite sempre com parâmetros (`?`), nunca concatenando texto.
+- Serviço externo (ex.: consulta de CNPJ): chamado só pelo servidor, com URL configurável no `application.yml`, tempo limite,
+  mensagens claras para falha/limite/inexistente e nunca bloqueando o preenchimento manual. Nos testes, use um mock local
+  (ver `testes/mock-cnpj.ps1`): a suíte nunca acessa a internet.
+- O hub não ganha privilégios: ações que exigem administrador do servidor (parar/religar serviços) viram um pedido em
+  arquivo atendido pelos scripts (ver `sistema/AtualizacaoManual`).
+
+## Robustez
+
+- Um arquivo ruim não derruba o lote: dado malformado (data, número de item, município) vira status/aviso no próprio item.
+  Nada de `substring`/`parseInt` direto em dado vindo de arquivo; valide antes (ex.: `Ufs.doMunicipio`, `LocalDate.parse` em `try`).
+- Arquivos grandes (SPED de centenas de MB): percorra o texto sem montar listas com todas as linhas e evite objetos por linha
+  que não serão usados (ver `SpedParser` e `ItemFiscal.semGrupos()`). Meça com um heap limitado (`-Xmx1200m`) antes de mudar.
 
 ## Antes de enviar uma mudança
 

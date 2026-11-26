@@ -47,6 +47,11 @@ public class LinhaAuditoria {
     public BigDecimal calcPIBSMun;
     public BigDecimal calcVIBSMun;
 
+    // CBS do mesmo cálculo oficial com a alíquota do cenário (ex.: 11,3% – TCU), reescalada no hub; o IBS não muda.
+    // Só informativo: o status (OK/Divergente) continua comparando o XML com a alíquota oficial.
+    public BigDecimal cenPCBS;
+    public BigDecimal cenVCBS;
+
     public List<String> diferencas = new ArrayList<>();
     public List<String> mensagens = new ArrayList<>();
     public String memoriaCalculo;

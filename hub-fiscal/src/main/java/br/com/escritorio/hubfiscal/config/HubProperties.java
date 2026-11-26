@@ -16,6 +16,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param cenarioCbs                alíquota alternativa de CBS para simulações (sem {@code aliquota}, o seletor não aparece)
  * @param arquivoLogo               logo do escritório enviada pelo administrador (tela Sistema → Logo do escritório)
  * @param bancoEmpresas             arquivo SQLite com as empresas atendidas e suas particularidades (criado automaticamente)
+ * @param atualizacaoManual         botão "Atualizar agora" da Situação do sistema: {@code auto} (Windows dispara
+ *                                  {@code scripts\hub.ps1 verificar}; Linux grava o pedido que o systemd atende como root),
+ *                                  {@code pedido} (só grava o pedido; usado nos testes) ou {@code desativada}
+ * @param consultaCnpjUrl           API pública de consulta de CNPJ, com {@code {cnpj}} no lugar do número
+ *                                  (padrão BrasilAPI); {@code desativada} desliga o botão "Consultar CNPJ"
  */
 @ConfigurationProperties(prefix = "hub")
 public record HubProperties(
@@ -28,7 +33,9 @@ public record HubProperties(
         String arquivoUltimaAtualizacao,
         CenarioCbs cenarioCbs,
         String arquivoLogo,
-        String bancoEmpresas) {
+        String bancoEmpresas,
+        String atualizacaoManual,
+        String consultaCnpjUrl) {
 
     /**
      * Cenário de simulação da CBS com alíquota diferente da oficial (ex.: alíquota estimada para o regime
@@ -56,6 +63,12 @@ public record HubProperties(
         }
         if (bancoEmpresas == null || bancoEmpresas.isBlank()) {
             bancoEmpresas = "../dados/hub-empresas.db";
+        }
+        if (atualizacaoManual == null || atualizacaoManual.isBlank()) {
+            atualizacaoManual = "auto";
+        }
+        if (consultaCnpjUrl == null || consultaCnpjUrl.isBlank()) {
+            consultaCnpjUrl = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}";
         }
         if (paralelismo <= 0) {
             paralelismo = 8;

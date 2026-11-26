@@ -30,10 +30,12 @@ public class SistemaController {
     private final BaseOficial base;
     private final Path arquivoAtualizacao;
     private final Path arquivoAgendamento;
+    private final AtualizacaoManual atualizacaoManual;
 
-    public SistemaController(ApiReceitaClient api, BaseOficial base, HubProperties props) {
+    public SistemaController(ApiReceitaClient api, BaseOficial base, HubProperties props, AtualizacaoManual atualizacaoManual) {
         this.api = api;
         this.base = base;
+        this.atualizacaoManual = atualizacaoManual;
         this.arquivoAtualizacao = Path.of(props.arquivoUltimaAtualizacao());
         // ao lado do resultado da verificação (pasta logs): gravado pelos scripts ao agendar a atualização diária
         Path pasta = this.arquivoAtualizacao.toAbsolutePath().getParent();
@@ -51,6 +53,7 @@ public class SistemaController {
         Object atualizacao = ultimaAtualizacao();
         r.put("atualizacao", atualizacao);
         r.put("base", datasDaBase(atualizacao));
+        r.put("atualizacaoManual", atualizacaoManual.situacao());
         // a tela mostra os comandos do sistema do servidor (.bat no Windows, hub.sh no Linux)
         r.put("servidorLinux", !System.getProperty("os.name", "").toLowerCase().contains("win"));
         return r;

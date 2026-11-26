@@ -1,5 +1,5 @@
 ﻿<#
-  Funções comuns dos testes do HUB Fiscal: sessão HTTP (cookies + token CSRF) e registro de resultados.
+  Funções comuns dos testes do Hub Fiscal: sessão HTTP (cookies + token CSRF) e registro de resultados.
   Usa HttpClient em vez de Invoke-WebRequest: com -WebSession, o Invoke-WebRequest guarda os -Headers
   na sessão e os reenvia nas chamadas seguintes, o que mascara testes de CSRF.
 #>

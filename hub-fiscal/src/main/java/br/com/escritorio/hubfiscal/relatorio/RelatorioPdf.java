@@ -101,7 +101,7 @@ public final class RelatorioPdf {
                 // logo ilegível: segue sem ela
             }
         }
-        texto("HUB Fiscal", normal, 8.5f, xTitulo, topo - 9, TEXTO_SUAVE);
+        texto("Hub Fiscal", normal, 8.5f, xTitulo, topo - 9, TEXTO_SUAVE);
         texto(d.titulo(), negrito, 15, xTitulo, topo - 27, AZUL);
         String gerado = "Gerado em " + d.geradoEm() + (d.geradoPor() == null ? "" : " por " + d.geradoPor());
         float wg = largura(gerado, normal, 8.5f);
@@ -282,7 +282,7 @@ public final class RelatorioPdf {
             try (PDPageContentStream c = new PDPageContentStream(doc, p, AppendMode.APPEND, true, true)) {
                 cs = c;
                 linhaHorizontal(MARGEM + 12, CINZA_LINHA, 0.5f);
-                texto(cortar("HUB Fiscal · " + titulo + " · Simulação para conferência: não substitui o documento fiscal",
+                texto(cortar("Hub Fiscal · " + titulo + " · Simulação para conferência: não substitui o documento fiscal",
                         normal, 7.5f, LARGURA_UTIL - 80), normal, 7.5f, MARGEM, MARGEM, TEXTO_SUAVE);
                 String pg = "Página " + (i + 1) + " de " + total;
                 texto(pg, normal, 7.5f, MARGEM + LARGURA_UTIL - largura(pg, normal, 7.5f), MARGEM, TEXTO_SUAVE);

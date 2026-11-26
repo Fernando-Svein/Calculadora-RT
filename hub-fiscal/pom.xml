@@ -11,7 +11,7 @@
 	<artifactId>hub-fiscal</artifactId>
 	<version>1.0.0</version>
 	<name>hub-fiscal</name>
-	<description>HUB Fiscal (interface interna sobre as calculadoras oficiais da Receita Federal)</description>
+	<description>Hub Fiscal (interface interna sobre as calculadoras oficiais da Receita Federal)</description>
 	<properties>
 		<java.version>25</java.version>
 		<poi.version>5.4.1</poi.version>

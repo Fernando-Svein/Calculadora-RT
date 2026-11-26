@@ -1,4 +1,4 @@
-# HUB Fiscal
+# Hub Fiscal
 
 Aplicação web interna do departamento fiscal, construída sobre as **calculadoras oficiais da Receita Federal/Serpro** (CBS, IBS e Imposto Seletivo – LC 214/2025). Atende clientes do **Regime Regular** e do **Simples Nacional**.
 
@@ -51,6 +51,14 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
   topo; a empresa escolhida preenche os campos (borda violeta) e aparece no resultado. Fica lembrada no navegador.
 - **Relatórios**: depois de calcular, "Relatório PDF" e "Relatório Excel" (empresa, resumo, tabela e observações). Os
   lotes continuam com a planilha própria.
+- **Importar XML/SPED no simulador**: o Simulador Regime Regular lê um ou mais XMLs (ou um SPED) e preenche data, local e
+  itens (NCM/NBS, CST, cClassTrib, quantidade e base). Item sem cClassTrib recebe a classificação sugerida pelo NCM/NBS,
+  marcada em amarelo como "sugerido – não veio do documento".
+- **Consultar CNPJ**: no cadastro da empresa, busca na base pública (BrasilAPI, `hub.consulta-cnpj-url`) razão social,
+  fantasia, situação cadastral, CNAEs, endereço, Simples/MEI, regime declarado e quadro societário. Falhas (CNPJ inexistente,
+  limite de consultas, serviço fora) aparecem com mensagem e o cadastro manual continua.
+- **Auditor com cenário TCU**: a CBS de cada item aparece calculada com a alíquota oficial (0,9% em 2026) e com a do cenário
+  (11,3%), lado a lado, na tela e no Excel; o status OK/Divergente segue a alíquota oficial.
 - **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária
   (`ativar-atualizacao-automatica.bat` no Windows; timer das 03:00 no Linux). Sem agendamento, mostra "não agendada".
 
@@ -60,8 +68,8 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
 2. Instale o **Git para Windows** (https://git-scm.com) na VM. A VM precisa de acesso ao `github.com` e ao Maven Central (`repo.maven.apache.org`).
 3. Rode `iniciar-hub.bat` uma vez para conferir que tudo sobe.
 4. Clique com o botão direito em `ativar-atualizacao-automatica.bat` → **Executar como administrador**. Isso cria duas tarefas no Agendador do Windows (conta SYSTEM, rodam sem ninguém logado):
-   - **HUB Fiscal - Iniciar** – liga as calculadoras e o hub quando a VM inicia;
-   - **HUB Fiscal - Atualizacao** – todo dia às 03:00 consulta o GitHub da Receita. Sem novidade, não mexe em nada. Com versão nova: para os serviços, atualiza, recria o banco, recompila e religa (alguns minutos). Se algo falhar, volta para a versão anterior e religa.
+   - **Hub Fiscal - Iniciar** – liga as calculadoras e o hub quando a VM inicia;
+   - **Hub Fiscal - Atualizacao** – todo dia às 03:00 consulta o GitHub da Receita. Sem novidade, não mexe em nada. Com versão nova: para os serviços, atualiza, recria o banco, recompila e religa (alguns minutos). Se algo falhar, volta para a versão anterior e religa.
 5. Libere a porta 8090 no firewall da VM.
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs\atualizacao.log`. Para mudar o horário: `powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 agendar -Hora 22:30`. Para remover as tarefas: `desativar-atualizacao-automatica.bat` (como administrador).
@@ -159,9 +167,10 @@ o hub em uso não são tocados. Exige as calculadoras no ar e o hub compilado. T
 | Referência | 36 respostas comparadas com `testes\referencia`: lotes (JSON e Excel célula a célula), consultas, repasse do proxy às calculadoras (incluindo POSTs de cálculo) e erros |
 | Funcional | arquivos inválidos (XML quebrado, XXE, vazio, binário), datas e parâmetros errados, limites |
 | Empresas | cadastro automático na importação (sem duplicar, CNPJ alfanumérico, CPF/CNPJ inválido ignorados), edição das particularidades e validações, permissões, relatório PDF e datas da base no status |
+| Simulador | importação de XML/SPED no simulador (cClassTrib do documento × sugerido), consulta de CNPJ com API simulada (`testes\mock-cnpj.ps1`: cadastro, QSA, cache, 404, 429, 502, CNPJ inválido) e auditor com a CBS a 0,9% e a 11,3% lado a lado |
 | Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, envio da logo (formatos, SVG, tamanho, permissão), força bruta |
 
-São 163 testes (36 + 44 + 33 + 50); a suíte de Segurança roda por último porque o teste de força bruta bloqueia novos logins. Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
+São 207 testes (36 + 59 + 33 + 29 + 50); a suíte de Segurança roda por último porque o teste de força bruta bloqueia novos logins. Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
 e um SPED fictícios para experimentar à mão as telas de lote. Quando uma mudança **intencional** alterar respostas, ou quando
 a Receita publicar uma base nova, confira as diferenças apontadas e, se estiverem certas, aprove as novas respostas com
 `testes\executar-testes.ps1 -GravarReferencia`.

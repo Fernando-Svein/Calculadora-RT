@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe Id="NFe35260355123456000130550010000000771000000771" versao="4.00">
+<ide><mod>55</mod><serie>1</serie><nNF>77</nNF><dhEmi>2026-03-10T10:00:00-03:00</dhEmi><tpNF>1</tpNF><cMunFG>3550308</cMunFG></ide>
+<emit><CNPJ>55123456000130</CNPJ><xNome>COMERCIAL EXEMPLO LTDA</xNome><enderEmit><cMun>3550308</cMun><UF>SP</UF></enderEmit><CRT>3</CRT></emit>
+<det nItem="1"><prod><cProd>A1</cProd><xProd>Parafuso</xProd><NCM>73181500</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10</qCom><vProd>1000.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>1000.00</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>1.00</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>1.00</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>9.00</vCBS></gCBS></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="2"><prod><cProd>M1</cProd><xProd>Medicamento</xProd><NCM>30049099</NCM><CFOP>5102</CFOP><uCom>CX</uCom><qCom>1</qCom><vProd>300.00</vProd></prod>
+<imposto><IBSCBS><CST>200</CST><cClassTrib>200030</cClassTrib><gIBSCBS><vBC>300.00</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><gRed><pRedAliq>60.00</pRedAliq><pAliqEfet>0.04</pAliqEfet></gRed><vIBSUF>0.12</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>0.12</vIBS><gCBS><pCBS>0.90</pCBS><gRed><pRedAliq>60.00</pRedAliq><pAliqEfet>0.36</pAliqEfet></gRed><vCBS>1.08</vCBS></gCBS></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="3"><prod><cProd>A2</cProd><xProd>Arruela (empate de arredondamento)</xProd><NCM>73181500</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>1</qCom><vProd>6465.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>6465.00</vBC><gIBSUF><pIBSUF>0.10</pIBSUF><vIBSUF>6.46</vIBSUF></gIBSUF><gIBSMun><pIBSMun>0.00</pIBSMun><vIBSMun>0.00</vIBSMun></gIBSMun><vIBS>6.46</vIBS><gCBS><pCBS>0.90</pCBS><vCBS>58.18</vCBS></gCBS></gIBSCBS></IBSCBS></imposto></det>
+</infNFe></NFe></nfeProc>

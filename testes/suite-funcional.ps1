@@ -107,3 +107,48 @@ Assert-Resposta $Suite 'método errado → 405' (Invoke-Hub $adm 'DELETE' '/hub/
 $r = Invoke-Hub $adm 'POST' '/hub/excel' '{"colunas":"nao-e-lista"}'
 Assert-Resposta $Suite 'JSON em formato errado → 400' $r 400 'formato inválido'
 Add-Resultado $Suite 'erros não expõem nomes de classes Java' (-not ((Get-Texto $r) -match 'Exception|java\.|br\.com\.')) (Get-Texto $r)
+
+# ---------------------------------------------------------------- botão "Atualizar agora" (Situação do sistema)
+# a cópia de teste usa "--hub.atualizacao-manual=pedido": só grava o pedido em $tmp, nenhum script é executado
+$pedidoArq = Join-Path $tmp 'pedido-atualizacao.json'
+$limF = Enter-Hub $UsuarioLimitado $SenhaLimitado
+Assert-Resposta $Suite 'atualizar agora: usuário comum não pode' (Invoke-Hub $limF 'POST' '/admin/sistema/atualizar-calculadoras') 403
+Assert-Resposta $Suite 'atualizar agora: sem token CSRF é recusado' (Invoke-Hub $adm 'POST' '/admin/sistema/atualizar-calculadoras' -SemToken) 403 'CSRF'
+Add-Resultado $Suite 'atualizar agora: nenhum pedido antes do clique' (-not (Test-Path $pedidoArq)) ''
+$r = Invoke-Hub $adm 'POST' '/admin/sistema/atualizar-calculadoras'
+Assert-Resposta $Suite 'atualizar agora: administrador registra o pedido' $r 202 '"pedidoEm"'
+Add-Resultado $Suite 'atualizar agora: pedido gravado ao lado do resultado da verificação' ((Test-Path $pedidoArq) -and (Get-Content $pedidoArq -Raw) -match '"por": "admin.teste"') ''
+Assert-Resposta $Suite 'atualizar agora: segundo clique é recusado enquanto o pedido está pendente' (Invoke-Hub $adm 'POST' '/admin/sistema/atualizar-calculadoras') 422 'já foi solicitada'
+$st = Get-Texto (Invoke-Hub $adm 'GET' '/hub/status') | ConvertFrom-Json
+Add-Resultado $Suite 'atualizar agora: status mostra o pedido pendente' ($st.atualizacaoManual.disponivel -and $st.atualizacaoManual.pedidoEm -and -not $st.atualizacaoManual.emAndamentoDesde) ($st.atualizacaoManual | ConvertTo-Json -Compress)
+Remove-Item $pedidoArq -Force
+'{"desde": "2026-01-01T00:00:00"}' | Set-Content (Join-Path $tmp 'atualizacao-em-andamento.json')
+Assert-Resposta $Suite 'atualizar agora: recusado com verificação em andamento' (Invoke-Hub $adm 'POST' '/admin/sistema/atualizar-calculadoras') 422 'em andamento'
+Remove-Item (Join-Path $tmp 'atualizacao-em-andamento.json') -Force
+
+# ---------------------------------------------------------------- regressões do QA (bugs corrigidos)
+$tmpQa = Join-Path $tmp 'qa'; New-Item -ItemType Directory -Force $tmpQa | Out-Null
+$spedTxt = [IO.File]::ReadAllText($sped, [Text.Encoding]::UTF8)
+# SPED com BOM: o registro 0000 (contribuinte e período) era descartado
+$spedBom = Join-Path $tmpQa 'sped-bom.txt'; [IO.File]::WriteAllText($spedBom, $spedTxt, (New-Object Text.UTF8Encoding($true)))
+Assert-Resposta $Suite 'SPED com BOM: lê o contribuinte do registro 0000' (Send-Arquivos $adm '/hub/lote/classificacao' @($spedBom)) 200 'EFD ICMS/IPI de EMPRESA TESTE LTDA'
+# acentos em ISO-8859-1 (padrão do SPED) e em UTF-8
+$spedAc = $spedTxt.Replace('|ARROZ POLIDO|', '|AÇÚCAR CRISTAL ÍNDIO|')
+$spedLatin = Join-Path $tmpQa 'sped-latin1.txt'; [IO.File]::WriteAllBytes($spedLatin, [Text.Encoding]::GetEncoding(28591).GetBytes($spedAc))
+$spedUtf = Join-Path $tmpQa 'sped-utf8.txt'; [IO.File]::WriteAllText($spedUtf, $spedAc, (New-Object Text.UTF8Encoding($false)))
+Assert-Resposta $Suite 'SPED em ISO-8859-1: acentos preservados' (Send-Arquivos $adm '/hub/lote/classificacao' @($spedLatin)) 200 'AÇÚCAR CRISTAL ÍNDIO'
+Assert-Resposta $Suite 'SPED em UTF-8: acentos preservados' (Send-Arquivos $adm '/hub/lote/classificacao' @($spedUtf)) 200 'AÇÚCAR CRISTAL ÍNDIO'
+# XMLs malformados: antes derrubavam a auditoria do lote inteiro (HTTP 500)
+$xmlBom = [IO.File]::ReadAllText((Join-Path $Dados 'nfe-auditoria-cenario.xml'))
+$ruins = [ordered]@{
+    'data-invalida' = @($xmlBom.Replace('2026-03-10T10:00:00-03:00', 'abc'), 'Data de emissão inválida')
+    'nitem-texto' = @($xmlBom.Replace('nItem="1"', 'nItem="x"'), 'nItem')
+    'municipio-curto' = @($xmlBom.Replace('<cMunFG>3550308</cMunFG>', '<cMunFG>5</cMunFG>'), '"totalDocumentos":2')
+}
+foreach ($k in $ruins.Keys) {
+    $arq = Join-Path $tmpQa "$k.xml"; [IO.File]::WriteAllText($arq, $ruins[$k][0], (New-Object Text.UTF8Encoding($false)))
+    Assert-Resposta $Suite "auditoria com XML malformado ($k) não derruba o lote" (Send-Arquivos $adm '/hub/lote/auditoria' @($arq, (Join-Path $Dados 'nfe-auditoria-cenario.xml'))) 200 $ruins[$k][1]
+}
+$r = Send-Arquivos $adm '/hub/lote/auditoria' @((Join-Path $tmpQa 'data-invalida.xml'), (Join-Path $Dados 'nfe-auditoria-cenario.xml'))
+$st = (Get-Texto $r | ConvertFrom-Json).contagemStatus
+Add-Resultado $Suite 'auditoria: o documento bom do mesmo lote continua auditado (3 OK + 3 não auditados)' ($st.OK -eq 3 -and $st.NAO_AUDITADO -eq 3) ($st | ConvertTo-Json -Compress)

@@ -36,7 +36,7 @@ public class EmpresaService {
     public record DadosEmpresa(String cnpj, String razaoSocial, String nomeFantasia, String uf, Integer municipio,
             String regime, String regimeApuracao, Boolean ibscbsForaSimples, Boolean fatorR, Boolean sublimiteExcedido,
             String atividadeSimples, Map<String, Map<String, String>> aliquotasSimples, String documentoPadrao,
-            String cClassTribPadrao, String observacoes) {
+            String cClassTribPadrao, String observacoes, Map<String, Object> dadosCadastrais) {
     }
 
     /** Empresa cadastrada automaticamente numa importação. */
@@ -191,7 +191,21 @@ public class EmpresaService {
                 simples && Boolean.TRUE.equals(d.ibscbsForaSimples()), simples && Boolean.TRUE.equals(d.fatorR()),
                 simples && Boolean.TRUE.equals(d.sublimiteExcedido()), simples ? atividade : null,
                 simples ? aliquotas(d.aliquotasSimples()) : new LinkedHashMap<>(), documento, cct,
-                texto(d.observacoes(), 2000), null, true, null, null);
+                texto(d.observacoes(), 2000), null, true, null, null, dadosCadastrais(d.dadosCadastrais(), cnpj));
+    }
+
+    /** Cadastro público (vindo da consulta de CNPJ): precisa ser do mesmo CNPJ e ter tamanho razoável. */
+    private static Map<String, Object> dadosCadastrais(Map<String, Object> m, String cnpj) {
+        if (m == null || m.isEmpty()) {
+            return null;
+        }
+        if (!cnpj.equals(normalizarCnpj(String.valueOf(m.get("cnpj"))))) {
+            throw new ErroNegocio("Os dados consultados são de outro CNPJ. Consulte de novo antes de salvar.");
+        }
+        if (String.valueOf(m).length() > 200_000) {
+            throw new ErroNegocio("Dados cadastrais grandes demais para guardar.");
+        }
+        return m;
     }
 
     /** Alíquotas do Simples por anexo: percentuais de 0 a 100 com até 6 casas, gravados com ponto decimal. */

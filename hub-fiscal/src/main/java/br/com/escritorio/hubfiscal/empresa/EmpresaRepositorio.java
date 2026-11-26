@@ -69,7 +69,42 @@ public class EmpresaRepositorio {
                   criado_em           TEXT NOT NULL,
                   atualizado_em       TEXT
                 )""");
+        // versão 2: cadastro público do CNPJ (botão "Consultar CNPJ")
+        if (!colunaExiste("dados_cadastrais")) {
+            executar("ALTER TABLE empresa ADD COLUMN dados_cadastrais TEXT");
+        }
         log.info("Banco de empresas: {}", arquivo);
+    }
+
+    private boolean colunaExiste(String coluna) {
+        try (Connection c = conectar(); ResultSet rs = c.createStatement().executeQuery("PRAGMA table_info(empresa)")) {
+            while (rs.next()) {
+                if (coluna.equalsIgnoreCase(rs.getString("name"))) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Erro no banco de empresas: " + e.getMessage(), e);
+        }
+    }
+
+    private static final TypeReference<Map<String, Object>> TIPO_MAPA = new TypeReference<>() {
+    };
+
+    private static Map<String, Object> lerMapa(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            return JSON.readValue(json, TIPO_MAPA);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String gravarMapa(Map<String, Object> m) {
+        return m == null || m.isEmpty() ? null : JSON.writeValueAsString(m);
     }
 
     private Connection conectar() throws SQLException {
@@ -102,7 +137,8 @@ public class EmpresaRepositorio {
                             rs.getInt("fator_r") == 1, rs.getInt("sublimite_excedido") == 1, rs.getString("atividade_simples"),
                             lerAliquotas(rs.getString("aliquotas_simples")), rs.getString("documento_padrao"),
                             rs.getString("cclasstrib_padrao"), rs.getString("observacoes"), rs.getString("origem"),
-                            rs.getInt("revisado") == 1, rs.getString("criado_em"), rs.getString("atualizado_em")));
+                            rs.getInt("revisado") == 1, rs.getString("criado_em"), rs.getString("atualizado_em"),
+                            lerMapa(rs.getString("dados_cadastrais"))));
                 }
             }
             return lista;
@@ -160,11 +196,12 @@ public class EmpresaRepositorio {
         executar("""
                 INSERT INTO empresa (cnpj, razao_social, nome_fantasia, uf, municipio, regime, regime_apuracao,
                   ibscbs_fora_simples, fator_r, sublimite_excedido, atividade_simples, aliquotas_simples, documento_padrao,
-                  cclasstrib_padrao, observacoes, origem, revisado, criado_em, atualizado_em)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'MANUAL', 1, ?, ?)""",
+                  cclasstrib_padrao, observacoes, origem, revisado, criado_em, atualizado_em, dados_cadastrais)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'MANUAL', 1, ?, ?, ?)""",
                 e.cnpj(), e.razaoSocial(), e.nomeFantasia(), e.uf(), e.municipio(), e.regime(), e.regimeApuracao(),
                 e.ibscbsForaSimples() ? 1 : 0, e.fatorR() ? 1 : 0, e.sublimiteExcedido() ? 1 : 0, e.atividadeSimples(),
-                gravarAliquotas(e.aliquotasSimples()), e.documentoPadrao(), e.cClassTribPadrao(), e.observacoes(), agora(), agora());
+                gravarAliquotas(e.aliquotasSimples()), e.documentoPadrao(), e.cClassTribPadrao(), e.observacoes(), agora(), agora(),
+                gravarMapa(e.dadosCadastrais()));
         return porCnpj(e.cnpj()).map(Empresa::id).orElseThrow();
     }
 
@@ -173,11 +210,13 @@ public class EmpresaRepositorio {
         executar("""
                 UPDATE empresa SET razao_social = ?, nome_fantasia = ?, uf = ?, municipio = ?, regime = ?, regime_apuracao = ?,
                   ibscbs_fora_simples = ?, fator_r = ?, sublimite_excedido = ?, atividade_simples = ?, aliquotas_simples = ?,
-                  documento_padrao = ?, cclasstrib_padrao = ?, observacoes = ?, revisado = 1, atualizado_em = ?
+                  documento_padrao = ?, cclasstrib_padrao = ?, observacoes = ?, revisado = 1, atualizado_em = ?,
+                  dados_cadastrais = COALESCE(?, dados_cadastrais)
                 WHERE id = ?""",
                 e.razaoSocial(), e.nomeFantasia(), e.uf(), e.municipio(), e.regime(), e.regimeApuracao(),
                 e.ibscbsForaSimples() ? 1 : 0, e.fatorR() ? 1 : 0, e.sublimiteExcedido() ? 1 : 0, e.atividadeSimples(),
-                gravarAliquotas(e.aliquotasSimples()), e.documentoPadrao(), e.cClassTribPadrao(), e.observacoes(), agora(), id);
+                gravarAliquotas(e.aliquotasSimples()), e.documentoPadrao(), e.cClassTribPadrao(), e.observacoes(), agora(),
+                gravarMapa(e.dadosCadastrais()), id);
     }
 
     public void excluir(long id) {

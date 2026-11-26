@@ -1,5 +1,5 @@
 ﻿<#
-  HUB Fiscal - gerenciamento dos serviços (Windows PowerShell 5.1+)
+  Hub Fiscal - gerenciamento dos serviços (Windows PowerShell 5.1+)
 
   Ações:
     iniciar     Inicia as calculadoras oficiais e o hub (compila o que faltar)
@@ -12,8 +12,8 @@
                 Se a atualização falhar, volta para a versão anterior e religa tudo.
                 Grava o resultado em logs\ultima-atualizacao.json (mostrado no hub).
     agendar     (servidor, como administrador) Cria as tarefas no Agendador do Windows:
-                  - "HUB Fiscal - Iniciar": liga os serviços quando o servidor inicia
-                  - "HUB Fiscal - Atualizacao": roda "verificar" todo dia no horário -Hora
+                  - "Hub Fiscal - Iniciar": liga os serviços quando o servidor inicia
+                  - "Hub Fiscal - Atualizacao": roda "verificar" todo dia no horário -Hora
                 e grava o horário em logs\agendamento-atualizacao.json (o hub mostra a próxima atualização)
     desagendar  Remove as duas tarefas (e o arquivo de horário)
 
@@ -72,7 +72,7 @@ $Servicos = @(
         Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8080/api/calculadora/dados-abertos/versao'; Log = 'regime-geral' },
     @{ Nome = 'Calculadora Simples Nacional'; Pasta = 'calculadora-rtc-simples-nacional'; Jar = 'api-simples-nacional.jar';
         Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8082/api/versao'; Log = 'simples-nacional' },
-    @{ Nome = 'HUB Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @(); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
+    @{ Nome = 'Hub Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @(); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
 )
 
 function Get-ProcessoServico($s) {
@@ -180,7 +180,7 @@ function Start-Servicos {
     $ips = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
         Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254*' } | Select-Object -ExpandProperty IPAddress
     Write-Host ""
-    Write-Host "HUB Fiscal disponível em:" -ForegroundColor Yellow
+    Write-Host "Hub Fiscal disponível em:" -ForegroundColor Yellow
     Write-Host "   http://localhost:8090   (neste computador)"
     foreach ($ip in $ips) { Write-Host "   http://$($ip):8090   (outros computadores da rede)" }
 }
@@ -239,6 +239,10 @@ function Invoke-Git([string]$Repo, [string[]]$Argumentos) {
 
 function Update-SeHouverNovidade {
     Start-Transcript -Path (Join-Path $Logs 'atualizacao.log') -Append | Out-Null
+    # o hub mostra "em andamento" enquanto este arquivo existir; o pedido feito pela tela (botão "Atualizar agora") é atendido aqui
+    $emAndamento = Join-Path $Logs 'atualizacao-em-andamento.json'
+    [ordered]@{ desde = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss') } | ConvertTo-Json | Set-Content -Path $emAndamento -Encoding UTF8
+    Remove-Item (Join-Path $Logs 'pedido-atualizacao.json') -Force -ErrorAction SilentlyContinue
     try {
         # servidores agendados antes desta versão: registra o horário da tarefa para o hub mostrar a próxima atualização
         $tarefa = Get-ScheduledTask -TaskName $NomesTarefas.Atualizar -ErrorAction SilentlyContinue
@@ -296,11 +300,12 @@ function Update-SeHouverNovidade {
         Save-Resultado 'falha' "Não foi possível verificar atualizações: $($_.Exception.Message)" @()
         Write-Falha $_.Exception.Message
     } finally {
+        Remove-Item $emAndamento -Force -ErrorAction SilentlyContinue
         Stop-Transcript | Out-Null
     }
 }
 
-$NomesTarefas = @{ Iniciar = 'HUB Fiscal - Iniciar'; Atualizar = 'HUB Fiscal - Atualizacao' }
+$NomesTarefas = @{ Iniciar = 'Hub Fiscal - Iniciar'; Atualizar = 'Hub Fiscal - Atualizacao' }
 
 function Register-Tarefas {
     $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -317,7 +322,7 @@ function Register-Tarefas {
     $gIni = New-ScheduledTaskTrigger -AtStartup
     $gIni.Delay = 'PT1M'
     Register-ScheduledTask -TaskName $NomesTarefas.Iniciar -Action (& $acao 'iniciar') -Trigger $gIni -Principal $quem -Settings $cfg `
-        -Description 'Liga as calculadoras oficiais e o HUB Fiscal quando o servidor inicia.' -Force | Out-Null
+        -Description 'Liga as calculadoras oficiais e o Hub Fiscal quando o servidor inicia.' -Force | Out-Null
     Write-Ok "Tarefa '$($NomesTarefas.Iniciar)' criada (ao iniciar o servidor)"
 
     $gAtu = New-ScheduledTaskTrigger -Daily -At $Hora

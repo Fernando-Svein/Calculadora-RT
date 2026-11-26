@@ -1,0 +1,41 @@
+{
+  "cnpj": "11222333000181",
+  "razao_social": "COMERCIAL EXEMPLO LTDA",
+  "nome_fantasia": "EXEMPLO ATACADO",
+  "descricao_situacao_cadastral": "ATIVA",
+  "data_situacao_cadastral": "2005-11-03",
+  "descricao_motivo_situacao_cadastral": "SEM MOTIVO",
+  "data_inicio_atividade": "2005-11-03",
+  "natureza_juridica": "Sociedade Empresária Limitada",
+  "porte": "DEMAIS",
+  "capital_social": 150000.0,
+  "cnae_fiscal": 4639701,
+  "cnae_fiscal_descricao": "Comércio atacadista de produtos alimentícios em geral",
+  "cnaes_secundarios": [
+    { "codigo": 4637107, "descricao": "Comércio atacadista de chocolates, confeitos, balas, bombons e semelhantes" },
+    { "codigo": 0, "descricao": "" }
+  ],
+  "descricao_tipo_de_logradouro": "RUA",
+  "logradouro": "DAS FLORES",
+  "numero": "100",
+  "complemento": "SALA 2",
+  "bairro": "CENTRO",
+  "cep": "20040002",
+  "municipio": "RIO DE JANEIRO",
+  "uf": "RJ",
+  "codigo_municipio_ibge": 3304557,
+  "ddd_telefone_1": "2122223333",
+  "email": null,
+  "opcao_pelo_simples": false,
+  "data_opcao_pelo_simples": null,
+  "data_exclusao_do_simples": null,
+  "opcao_pelo_mei": false,
+  "regime_tributario": [
+    { "ano": 2023, "forma_de_tributacao": "LUCRO REAL" },
+    { "ano": 2025, "forma_de_tributacao": "LUCRO PRESUMIDO" }
+  ],
+  "qsa": [
+    { "nome_socio": "MARIA DA SILVA", "qualificacao_socio": "Sócio-Administrador", "data_entrada_sociedade": "2005-11-03", "faixa_etaria": "Entre 41 a 50 anos", "nome_representante_legal": "" },
+    { "nome_socio": "JOAO PEREIRA", "qualificacao_socio": "Sócio", "data_entrada_sociedade": "2010-02-15", "faixa_etaria": "Entre 51 a 60 anos", "nome_representante_legal": "" }
+  ]
+}

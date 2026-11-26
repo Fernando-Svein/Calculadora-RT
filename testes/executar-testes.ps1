@@ -1,5 +1,5 @@
 ﻿<#
-  Testes automatizados do HUB Fiscal.
+  Testes automatizados do Hub Fiscal.
 
   Sobe uma cópia isolada do hub (porta 8091, banco de usuários temporário — os usuários reais não são
   tocados), cria usuários de teste e roda três suítes contra ela:
@@ -7,6 +7,7 @@
     - Funcional:  entradas inválidas, arquivos ruins e limites
     - Segurança:  permissões, CSRF, sessões, isolamento, cabeçalhos e força bruta
     - Empresas:   cadastro automático na importação (sem duplicar), edição das particularidades, relatório PDF
+    - Simulador:  importação de XML/SPED no simulador, consulta de CNPJ (API simulada) e auditor com 0,9% × 11,3%
   No fim desliga a cópia e apaga os arquivos temporários. O hub em uso (porta 8090) continua no ar.
 
   Pré-requisitos: as calculadoras da Receita no ar (iniciar-hub.bat) e o hub compilado
@@ -53,9 +54,15 @@ Write-Etapa "Subindo uma cópia do hub para teste (porta $Porta)"
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ('hub-testes-' + [guid]::NewGuid().ToString('N').Substring(0, 8))
 New-Item -ItemType Directory $tmp | Out-Null
 Copy-Item $jar (Join-Path $tmp 'hub-fiscal-teste.jar')   # cópia: não trava o jar usado pelo hub em produção
+# API pública de CNPJ simulada (mock): os testes nunca acessam o serviço real
+$PortaMockCnpj = $Porta + 2
+$mockCnpj = Start-Process powershell -PassThru -WindowStyle Hidden -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+    ("`"$PSScriptRoot\mock-cnpj.ps1`""), '-Porta', $PortaMockCnpj, '-Dados', "`"$Dados`""
 $proc = Start-Process -FilePath (Join-Path $jdk.FullName 'bin\java.exe') -PassThru -WindowStyle Hidden `
     -WorkingDirectory (Join-Path $Raiz 'hub-fiscal') `
-    -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db", "--hub.arquivo-logo=$tmp\logo.png", "--hub.banco-empresas=$tmp\empresas.db" `
+    -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db", "--hub.arquivo-logo=$tmp\logo.png", "--hub.banco-empresas=$tmp\empresas.db", `
+        "--hub.arquivo-ultima-atualizacao=$tmp\ultima-atualizacao.json", "--hub.atualizacao-manual=pedido", `
+        "--hub.consulta-cnpj-url=http://127.0.0.1:$PortaMockCnpj/cnpj/{cnpj}" `
     -RedirectStandardOutput (Join-Path $tmp 'hub.log') -RedirectStandardError (Join-Path $tmp 'hub.err')
 
 $codigoSaida = 1
@@ -84,7 +91,7 @@ try {
 
     # cada suíte roda até o fim; um erro inesperado vira falha registrada e as demais suítes continuam
     # Segurança por último: o teste de força bruta bloqueia novos logins deste computador por 15 minutos
-    foreach ($suite in @(@('Referência', 'suite-referencia.ps1'), @('Funcional', 'suite-funcional.ps1'), @('Empresas', 'suite-empresas.ps1'), @('Segurança', 'suite-seguranca.ps1'))) {
+    foreach ($suite in @(@('Referência', 'suite-referencia.ps1'), @('Funcional', 'suite-funcional.ps1'), @('Empresas', 'suite-empresas.ps1'), @('Simulador', 'suite-simulador.ps1'), @('Segurança', 'suite-seguranca.ps1'))) {
         Write-Etapa "Suíte: $($suite[0])"
         try {
             if ($suite[1] -eq 'suite-referencia.ps1') { . (Join-Path $PSScriptRoot $suite[1]) -GravarReferencia:$GravarReferencia }
@@ -110,6 +117,7 @@ try {
     }
 } finally {
     Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    Stop-Process -Id $mockCnpj.Id -Force -ErrorAction SilentlyContinue
     Start-Sleep -Milliseconds 500
     Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 }

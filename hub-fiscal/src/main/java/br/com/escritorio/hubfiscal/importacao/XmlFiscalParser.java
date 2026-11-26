@@ -50,7 +50,26 @@ public final class XmlFiscalParser {
         return false;
     }
 
-    private static DocumentBuilder builder() throws Exception {
+    /**
+     * Um leitor por thread, reaproveitado entre arquivos (o DocumentBuilder não é thread-safe; reset() limpa o estado).
+     * Criar a fábrica a cada XML custava a busca da implementação e a configuração em cada um dos milhares de arquivos
+     * de um ZIP.
+     */
+    private static final ThreadLocal<DocumentBuilder> LEITOR = ThreadLocal.withInitial(() -> {
+        try {
+            return novoBuilder();
+        } catch (Exception e) {
+            throw new IllegalStateException("Leitor de XML indisponível: " + e.getMessage(), e);
+        }
+    });
+
+    private static DocumentBuilder builder() {
+        DocumentBuilder b = LEITOR.get();
+        b.reset();
+        return b;
+    }
+
+    private static DocumentBuilder novoBuilder() throws Exception {
         DocumentBuilderFactory f = DocumentBuilderFactory.newInstance();
         f.setNamespaceAware(true);
         f.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);

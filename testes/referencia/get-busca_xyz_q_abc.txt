@@ -1,4 +1,0 @@
-HTTP 400
-Content-Type: application/problem+json
-
-{"detail":"Tipo de busca inválido: use ncm ou nbs.","instance":"/hub/busca/xyz","status":400,"title":"Parâmetro inválido"}

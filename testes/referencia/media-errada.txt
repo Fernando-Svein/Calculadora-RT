@@ -1,4 +1,0 @@
-HTTP 415
-Content-Type: application/problem+json
-
-{"detail":"Content-Type 'text/plain;charset=utf-8' is not supported.","instance":"/hub/excel","status":415,"title":"Unsupported Media Type"}

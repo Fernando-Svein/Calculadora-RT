@@ -27,7 +27,7 @@ spring:
       max-request-size: 600MB
 
 # Configuração do hub: URLs das calculadoras e caminhos de arquivos ficam só aqui (ver HubProperties).
-# Caminhos relativos partem da pasta hub-fiscal, onde scripts\hub.ps1 inicia o serviço.
+# Caminhos relativos partem da pasta hub-fiscal, onde o serviço systemd "hubfiscal" inicia o hub.
 hub:
   # Endereços das calculadoras oficiais da Receita Federal (rodando localmente, só em 127.0.0.1)
   api-regime-geral: http://127.0.0.1:8080/api
@@ -40,7 +40,7 @@ hub:
   retencao-resultados-minutos: 240
   # Usuários e senhas do hub (senhas com BCrypt). Faça backup deste arquivo.
   banco-usuarios: ../dados/hub-usuarios.db
-  # Resultado da última verificação de atualização das calculadoras (gravado por scripts\hub.ps1 verificar)
+  # Resultado da última verificação de atualização das calculadoras (gravado por scripts/linux/hub.sh verificar)
   arquivo-ultima-atualizacao: ../logs/ultima-atualizacao.json
   # Cenário de simulação da CBS (seletor no topo do hub). As simulações de 2026 são calculadas pela calculadora
   # oficial (alíquota de teste) e o hub reescala só a CBS para esta alíquota; a partir de 2027 ela é enviada

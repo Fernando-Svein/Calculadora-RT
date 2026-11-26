@@ -1,12 +1,6 @@
-# scripts do Windows precisam de CRLF; o wrapper do Maven para Linux precisa de LF
-*.bat   text eol=crlf
-*.cmd   text eol=crlf
-*.ps1   text eol=crlf
+# Linux: scripts e o wrapper do Maven com fim de linha LF
 mvnw    text eol=lf
 *.sh    text eol=lf
 *.jar   binary
 *.xlsx  binary
-
-# dados e respostas de referência dos testes: bytes exatos (sem conversão de fim de linha)
-testes/dados/** -text
-testes/referencia/** -text
+*.pdf   binary

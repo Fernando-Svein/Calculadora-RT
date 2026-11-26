@@ -1,4 +1,0 @@
-HTTP 400
-Content-Type: application/problem+json
-
-{"detail":"Data inválida em 'data': 31-12-2026. Use o formato AAAA-MM-DD (ex.: 2026-11-24).","instance":"/hub/ncm/10063021","status":400,"title":"Parâmetro inválido"}

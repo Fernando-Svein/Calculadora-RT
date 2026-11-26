@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Hub Fiscal no Linux – funções usadas por instalar.sh e hub.sh (não execute este arquivo direto).
 #
-# Mesma lógica do scripts\hub.ps1 do Windows: as calculadoras da Receita são clonadas sem modificação,
+# Mesma lógica da versão Windows (scripts\hub.ps1, branch main): as calculadoras da Receita são clonadas sem modificação,
 # o banco oficial é gerado pelo Flyway do próprio repositório da Receita e os três serviços rodam com
 # Java 25. No Linux, cada serviço é uma unidade do systemd que roda com o usuário "hubfiscal"
 # (sem login e sem privilégio de administrador) e volta sozinha se cair ou se a VM reiniciar.

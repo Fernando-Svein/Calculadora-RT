@@ -1,4 +1,0 @@
-HTTP 200
-Content-Type: application/json
-
-{"tipo":"NCM","codigo":"99999999","data":"<HOJE>","tipoDfe":null,"valida":false,"mensagem":"NCM 99999999 não existe na tabela oficial.","descricao":null,"descricaoCompleta":null,"lc116":null,"impostoSeletivo":false,"especificas":[],"situacionais":[],"observacoes":[]}

@@ -1,149 +1,108 @@
-# Hub Fiscal – Reforma Tributária do Consumo
+# Hub Fiscal – Reforma Tributária do Consumo (Ubuntu Server)
 
 Aplicação web interna do departamento fiscal, construída sobre as **calculadoras oficiais da Receita Federal/Serpro** (CBS, IBS e Imposto Seletivo – LC 214/2025). Atende clientes do **Regime Regular** e do **Simples Nacional**.
 
-## Como usar (dia a dia)
+> Esta é a branch **`ubuntu-server`**: a versão para rodar num servidor Ubuntu. Os scripts e testes do Windows ficam na branch `main`.
+> O código do hub e das telas é o mesmo nas duas; mudanças feitas na `main` são trazidas para cá com `git merge main`.
 
-| Ação | Como fazer |
+## Instalação (Ubuntu Server 24.04 LTS)
+
+Requisitos da VM: 4 vCPU, 6 a 8 GB de RAM, 40 GB de disco e acesso à internet (`github.com` e `repo.maven.apache.org`).
+
+```bash
+sudo git clone -b ubuntu-server https://github.com/Fernando-Svein/Calculadora-RT.git /opt/hub-fiscal
+sudo bash /opt/hub-fiscal/scripts/linux/instalar.sh          # 10 a 20 minutos
+sudo bash /opt/hub-fiscal/scripts/linux/hub.sh criar-admin     # cria o administrador do hub
+```
+
+O instalador:
+
+- instala `git`, `curl` e `jq` e baixa o Java 25 (Eclipse Temurin) para `tools/`;
+- cria o usuário de sistema `hubfiscal` (sem login), dono dos arquivos e dos processos;
+- baixa as calculadoras oficiais do GitHub da Receita, gera o banco oficial (Flyway) e compila os três serviços;
+- registra três serviços no systemd, que sobem com a VM e voltam sozinhos se caírem:
+  `hubfiscal-calc-rg` (127.0.0.1:8080), `hubfiscal-calc-sn` (127.0.0.1:8082) e `hubfiscal` (porta 8090);
+- agenda `hubfiscal-atualizacao.timer`: todo dia às 03:00 verifica se a Receita publicou versão nova das calculadoras;
+- se o firewall `ufw` estiver ativo, libera a porta 8090 só para redes internas.
+
+Acesse `http://<ip-do-servidor>:8090`. As calculadoras atendem só a própria VM; da rede, só o hub, que exige login.
+Ajuste o fuso para as datas e o horário da atualização: `sudo timedatectl set-timezone America/Sao_Paulo`.
+
+## Operação
+
+Todos os comandos: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`
+
+| Comando | O que faz |
 |---|---|
-| Ligar tudo | Dê dois cliques em `iniciar-hub.bat` |
-| Desligar | `parar-hub.bat` |
-| Atualizar as calculadoras da Receita | `atualizar-calculadoras.bat` (baixa a versão nova, recria o banco e recompila) |
-| Conferir se está tudo funcionando | `testar-hub.bat` (testes automatizados; o hub em uso continua no ar) |
-| Acessar | `http://localhost:8090` neste computador, ou `http://IP-DESTE-PC:8090` nos demais (o endereço aparece ao iniciar) |
+| `status` | Situação dos três serviços, versão da base oficial e próxima verificação de atualização |
+| `iniciar` / `parar` / `reiniciar` | Liga, desliga ou reinicia os três serviços |
+| `logs [hub\|regime-geral\|simples-nacional]` | Acompanha o log (Ctrl+C para sair) |
+| `criar-admin` | Cria o administrador inicial (só enquanto não há usuários) |
+| `verificar` | Atualiza as calculadoras só se houver versão nova; se falhar, volta à anterior (é o que roda às 03:00) |
+| `atualizar` | Força a atualização das calculadoras: git pull, banco novo, compilação e reinício |
+| `atualizar-hub` | Baixa a versão nova do Hub Fiscal desta branch, recompila e reinicia só o hub |
 
-Para que outros computadores acessem, libere a **porta 8090 (TCP, entrada)** no Firewall do Windows desta máquina. As calculadoras (portas 8080 e 8082) escutam só em `127.0.0.1`: os demais computadores usam apenas o hub, que exige login e repassa as chamadas.
+O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs/atualizacao.log`.
+
+**Backup:** inclua `/opt/hub-fiscal/dados/hub-usuarios.db` (usuários e senhas). O resto se recria a partir dos repositórios.
+Se perder o acesso de todos os administradores: `hub.sh parar`, renomeie esse arquivo, `hub.sh iniciar` e rode `hub.sh criar-admin`.
 
 ## Acesso (login e senha)
 
-O hub exige login. Na **primeira vez**, abra `http://localhost:8090` **no próprio servidor** e crie a conta de administrador
-(por segurança essa tela não funciona a partir de outros computadores). Depois, em **Sistema → Usuários** (ou no menu do
-usuário, no canto superior direito), o administrador cadastra a equipe:
+Depois do `criar-admin`, o administrador cadastra a equipe em **Sistema → Usuários**:
 
 - cada usuário novo recebe uma **senha provisória**, mostrada uma única vez, que ele troca no primeiro acesso;
-- perfis: **Usuário** (usa as ferramentas que o administrador liberar para ele) e **Administrador** (todas as ferramentas e gestão de usuários);
-- **Desativar** bloqueia o acesso na hora (inclusive de quem está logado); **Redefinir senha** gera nova provisória;
-- senhas com no mínimo 8 caracteres, letras e números, guardadas com BCrypt; 5 erros seguidos bloqueiam o usuário por 15 minutos,
-  e 20 erros do mesmo computador bloqueiam esse computador por 15 minutos; trocar a senha encerra as outras sessões do usuário;
-  a sessão expira após 8 horas sem uso.
-
-Os usuários ficam em `dados\hub-usuarios.db` – **inclua esse arquivo no backup** do servidor. Se perder o acesso de todos
-os administradores, pare o hub, renomeie esse arquivo e inicie de novo: o primeiro acesso volta a ser oferecido no servidor.
-
-## Instalação no servidor (VM Windows)
-
-1. Copie a pasta inteira do projeto para a VM (ex.: `C:\HubFiscal`) — inclui `tools\` com o Java 25 portátil.
-2. Instale o **Git para Windows** (https://git-scm.com) na VM. A VM precisa de acesso ao `github.com` e ao Maven Central (`repo.maven.apache.org`).
-3. Rode `iniciar-hub.bat` uma vez para conferir que tudo sobe.
-4. Clique com o botão direito em `ativar-atualizacao-automatica.bat` → **Executar como administrador**. Isso cria duas tarefas no Agendador do Windows (conta SYSTEM, rodam sem ninguém logado):
-   - **Hub Fiscal - Iniciar** – liga as calculadoras e o hub quando a VM inicia;
-   - **Hub Fiscal - Atualizacao** – todo dia às 03:00 consulta o GitHub da Receita. Sem novidade, não mexe em nada. Com versão nova: para os serviços, atualiza, recria o banco, recompila e religa (alguns minutos). Se algo falhar, volta para a versão anterior e religa.
-5. Libere a porta 8090 no firewall da VM.
-
-O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs\atualizacao.log`. Para mudar o horário: `powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 agendar -Hora 22:30`. Para remover as tarefas: `desativar-atualizacao-automatica.bat` (como administrador).
+- perfis: **Usuário** (usa as ferramentas liberadas para ele) e **Administrador** (todas as ferramentas e gestão de usuários);
+- **Desativar** bloqueia o acesso na hora; **Redefinir senha** gera nova provisória;
+- senhas com no mínimo 8 caracteres, letras e números (BCrypt); 5 erros seguidos bloqueiam o usuário por 15 minutos e 20 erros
+  do mesmo computador bloqueiam esse computador por 15 minutos; a sessão expira após 8 horas sem uso.
 
 ## O que o hub oferece
 
-**Consultas e tabelas**
-- Classificar NCM/NBS: cClassTrib possíveis pelos anexos da LC 214/2025, Imposto Seletivo, fundamentação e alerta de combustíveis
-- Tabela cClassTrib/CST, Imposto Seletivo, filtro por fornecedor/adquirente e fundamentação legal
-- Alíquotas de referência, atividades do Simples (cAtivSN), ferramentas da NFS-e, catálogos de erros e demais dados abertos
+**Consultas e tabelas:** classificar NCM/NBS (cClassTrib, anexos da LC 214/2025, Imposto Seletivo, fundamentação), tabela cClassTrib/CST,
+alíquotas de referência, atividades do Simples, ferramentas da NFS-e, códigos de erro e demais dados abertos.
 
-**Calculadoras**
-- Simulador Regime Regular: vários itens, base direta ou pelos componentes da NF-e, IS, compra governamental, geração e validação do XML do grupo IBS/CBS
-- Bases de cálculo (unificada NF-e/NFC-e, mercadorias, IS, NFS-e) e pedágio
-- Simulador Simples Nacional (todos os documentos, anexos, fator r, ISS)
-- Comparador: IBS/CBS dentro do Simples × pelo regime regular
+**Calculadoras:** simulador Regime Regular (vários itens, base pelos componentes da NF-e, IS, compra governamental, XML do grupo IBS/CBS),
+bases de cálculo, pedágio, simulador Simples Nacional e comparador Simples × regime regular.
 
-**Cenário de alíquota da CBS (seletor "CBS" no topo)**
-- *Oficial*: o resultado da calculadora da Receita (em 2026, a alíquota de teste de 0,9%).
-- *Cenário* (ex.: "Cenário TCU – 11,3%"): no Simulador Regime Regular e no Pedágio, a operação é calculada pela calculadora
-  oficial e o hub recalcula só a CBS (alíquota do cenário × (1 − redução) × base), porque a calculadora não aceita outra
-  alíquota antes de 2027 (erro REG-036). De 2027 em diante a alíquota vai preenchida no campo "CBS %" e quem calcula é a
-  calculadora. O resultado mostra um aviso de simulação.
-- Não se aplica a: XML gerado (sempre com a alíquota legal), auditoria de notas (compara com a alíquota em vigor) e Simples
-  Nacional (CBS dentro do DAS).
-- A alíquota e o nome ficam em `hub.cenario-cbs` no `application.yml`; apagando a linha `aliquota`, o seletor some.
+**Cenário de CBS (seletor "CBS" no topo):** simulações com 11,3% (TCU) sem alterar o cálculo oficial. Em 2026 o hub recalcula só a CBS
+da resposta oficial; a partir de 2027 a alíquota vai como nominal para a calculadora. XML gerado e auditoria seguem a alíquota oficial.
+Configuração em `hub.cenario-cbs` no `application.yml`.
 
-**Processamento em lote (com planilha Excel)**
-- Classificar cadastro: SPED (EFD ICMS/IPI e EFD Contribuições), XML de NF-e/NFC-e/NFS-e ou ZIP. Sugere o cClassTrib, confere o usado nas notas e marca Divergente/Revisar/Sugerido/Conferido
-- Auditar XML: recalcula na calculadora oficial o IBS/CBS destacado e aponta divergências de base, alíquota, valor e classificação
+**Processamento em lote (com Excel):** classificar cadastro a partir de SPED/XML e auditar o IBS/CBS destacado nos XMLs.
 
 ## Estrutura
 
 ```
-Calculadora RT/
+/opt/hub-fiscal/
 ├─ calculadora-rtc-regime-regular/    repositório oficial da Receita (não alterar) – 127.0.0.1:8080
 ├─ calculadora-rtc-simples-nacional/  repositório oficial da Receita (não alterar) – 127.0.0.1:8082
 ├─ hub-fiscal/                        aplicação do escritório (Spring Boot 4 + telas HTML/JS) – porta 8090
-│  └─ src/main/
-│     ├─ resources/application.yml    configuração: URLs das calculadoras, caminhos, paralelismo
-│     ├─ resources/static/            telas (HTML/CSS/JS sem etapa de build; um arquivo por tela em js/modulos)
-│     └─ java/br/com/escritorio/hubfiscal/
-│        ├─ infra/          integração com as calculadoras: ApiReceitaClient (único cliente HTTP),
-│        │                  EndpointsReceita (caminhos usados pelo servidor), J (leitura do JSON), Paralelo, Valores
-│        ├─ proxy/          repasse /proxy/rg/** e /proxy/sn/** das telas para as calculadoras
-│        ├─ catalogo/       consultas: NCM/NBS → cClassTrib (BaseOficial lê o SQLite oficial; CatalogoService combina com a API)
-│        ├─ importacao/     leitura de SPED, XML (NF-e, NFC-e, NFS-e) e ZIP
-│        ├─ classificacao/  regras da classificação em lote e planilha
-│        ├─ auditoria/      recálculo dos XMLs na calculadora e planilha
-│        ├─ lote/           endpoints dos lotes; excel/  exportação genérica e Planilha (Apache POI)
-│        ├─ seguranca/      login, usuários, permissões por ferramenta; sistema/  situação do sistema
-│        └─ config/         HubProperties, tratamento de erros
-├─ testes/                            testes automatizados (ver "Testes")
-├─ docs-api/                          contrato OpenAPI das calculadoras (referência)
-├─ scripts/hub.ps1                    iniciar / parar / status / atualizar / agendar
-├─ tools/jdk-25*                      Java 25 portátil (exigido pelas calculadoras)
-└─ logs/                              logs dos três serviços
+│  └─ src/main/resources/application.yml   URLs das calculadoras, caminhos, paralelismo, cenário de CBS
+├─ scripts/linux/                     instalar.sh, hub.sh e comum.sh
+├─ dados/                             hub-usuarios.db (fazer backup)
+├─ logs/                              logs dos três serviços e das atualizações
+├─ docs/                              documentação completa em PDF
+└─ tools/                             Java 25 portátil
 ```
 
-Fluxo: tela → hub (8090) → `ApiReceitaClient` → calculadora oficial. Os lotes leem os arquivos (`importacao`), classificam ou auditam (`classificacao`/`auditoria`, que chamam a calculadora com no máximo `hub.paralelismo` chamadas simultâneas) e devolvem JSON para a tela e a planilha Excel.
-
-Os repositórios da Receita são usados **sem modificação**, para que as atualizações sejam um simples `git pull`. O hub lê o banco oficial (SQLite) apenas em modo leitura, para as consultas que as APIs não oferecem prontas (ex.: "quais cClassTrib valem para este NCM?"), reproduzindo a mesma regra de vínculo da calculadora oficial.
+Fluxo: tela → hub (8090) → calculadora oficial. Os repositórios da Receita são usados **sem modificação**, para que as atualizações
+sejam um simples `git pull`. O hub lê o banco oficial (SQLite) apenas em modo leitura.
 
 ## Limites conhecidos
 
-- As sugestões de classificação consideram NCM/NBS, documento e CFOP; requisitos externos (destinatário, finalidade, regimes especiais) exigem análise do responsável.
-- A partir de 2027 a base oficial não traz alíquotas de referência; os simuladores usam alíquotas informadas e marcam o resultado como simulado. Pelo mesmo motivo, o pedágio só calcula datas de 2026.
-- A base oficial não vincula combustíveis (monofásico 620xxx) a NCM; o hub emite um alerta para esses NCMs.
-- O SPED não traz NBS: serviços vindos só do SPED aparecem como "Sem NCM/NBS".
-- Na base oficial, os números de anexo dos vínculos de NBS são inconsistentes; o hub mostra o vínculo NBS → cClassTrib, mas não o texto do anexo.
+- A partir de 2027 a base oficial não traz alíquotas de referência; os simuladores usam alíquotas informadas e marcam o resultado como simulado. O pedágio só calcula datas de 2026.
+- As sugestões de classificação consideram NCM/NBS, documento e CFOP; requisitos externos exigem análise do responsável.
 - O hub usa HTTP: use apenas na rede interna.
 
 ## Desenvolvimento
 
-```powershell
-# compilar o hub (gera hub-fiscal\target\hub-fiscal.jar)
-$env:JAVA_HOME = (Resolve-Path tools\jdk-25*).Path
-cd hub-fiscal
-.\mvnw.cmd clean package
+As mudanças no hub são feitas e testadas na branch `main` (que tem os testes automatizados) e trazidas para esta branch:
 
-# aplicar: reinicia os três serviços com o jar novo
-cd ..
-powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 reiniciar
-powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 status
+```bash
+git checkout ubuntu-server
+git merge main      # se a main mexeu num arquivo do Windows removido aqui: git rm <arquivo> e conclua o merge
+git push
 ```
 
-## Testes
-
-`testar-hub.bat` (ou `powershell -ExecutionPolicy Bypass -File testes\executar-testes.ps1`) sobe uma cópia isolada do hub
-na porta 8091, com usuários de teste num banco temporário, roda as suítes abaixo e desliga a cópia. Os usuários reais e
-o hub em uso não são tocados. Exige as calculadoras no ar e o hub compilado. Termina com código 0 quando tudo passa.
-
-| Suíte | O que confere |
-|---|---|
-| Referência | 36 respostas comparadas com `testes\referencia`: lotes (JSON e Excel célula a célula), consultas, repasse do proxy às calculadoras (incluindo POSTs de cálculo) e erros |
-| Funcional | arquivos inválidos (XML quebrado, XXE, vazio, binário), datas e parâmetros errados, limites |
-| Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, força bruta |
-
-Arquivos de entrada (fictícios) ficam em `testes\dados`. Quando uma mudança **intencional** alterar respostas, ou quando
-a Receita publicar uma base nova, confira as diferenças apontadas e, se estiverem certas, aprove as novas respostas com
-`testes\executar-testes.ps1 -GravarReferencia`.
-
-Fluxo para mudar o código: `parar-hub.bat` → compilar (ver "Desenvolvimento") → `iniciar-hub.bat` → `testar-hub.bat`.
-O hub precisa estar parado para compilar (o jar fica em uso), e os testes precisam das calculadoras no ar.
-
-Convenções:
-- Endpoint novo da calculadora usado pelo servidor → constante em `infra/EndpointsReceita`; URL ou caminho de arquivo → `application.yml` + `HubProperties`.
-- Telas: sem `<script>` inline nem `onclick=` (a política CSP bloqueia); use arquivos `.js` e atributos `data-*`.
-- Ao alterar arquivos em `static/`, aumente o `?v=` em `index.html`/`login.html` para os navegadores não usarem cópia antiga.
+No servidor, aplique com `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh atualizar-hub`.

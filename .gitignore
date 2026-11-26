@@ -1,8 +1,8 @@
-# Java portátil (baixado automaticamente por scripts\hub.ps1)
+# Java portátil (baixado automaticamente por scripts/linux/instalar.sh)
 /tools/
 
 # Calculadoras oficiais da Receita: têm repositório próprio no GitHub da Receita
-# e são clonadas automaticamente por scripts\hub.ps1 na primeira execução
+# e são clonadas automaticamente por scripts/linux/instalar.sh
 /calculadora-rtc-regime-regular/
 /calculadora-rtc-simples-nacional/
 

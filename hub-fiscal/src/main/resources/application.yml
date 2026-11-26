@@ -41,11 +41,12 @@ hub:
   # Usuários e senhas do hub (senhas com BCrypt). Faça backup deste arquivo.
   banco-usuarios: ../dados/hub-usuarios.db
   # Empresas atendidas e suas particularidades (regime, município, alíquotas do Simples...). Cadastradas
-  # automaticamente na importação de SPED/XML e editadas na tela Cadastros → Empresas. Faça backup deste arquivo.
+  # ao importar SPED/XML (o usuário confirma quais) e editadas na tela Cadastros → Empresas. Faça backup deste arquivo.
   banco-empresas: ../dados/hub-empresas.db
   # Consulta pública de CNPJ no cadastro de empresas (botão "Consultar CNPJ"); o servidor precisa de acesso à internet.
-  # Só o CNPJ consultado é enviado. Para desligar: consulta-cnpj-url: desativada
-  consulta-cnpj-url: https://brasilapi.com.br/api/cnpj/v1/{cnpj}
+  # Só o CNPJ consultado é enviado. Serviços em ordem, separados por vírgula: se um falhar, tenta o seguinte
+  # (a BrasilAPI responde 503 para alguns CNPJs que a minhareceita.org, a fonte dela, devolve). Para desligar: desativada
+  consulta-cnpj-url: https://brasilapi.com.br/api/cnpj/v1/{cnpj},https://minhareceita.org/{cnpj}
   # Resultado da última verificação de atualização das calculadoras (gravado por scripts\hub.ps1 verificar)
   arquivo-ultima-atualizacao: ../logs/ultima-atualizacao.json
   # Botão "Atualizar agora" (Sistema > Situação do sistema, só administradores): auto | desativada

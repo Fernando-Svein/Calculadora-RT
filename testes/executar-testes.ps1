@@ -62,7 +62,7 @@ $proc = Start-Process -FilePath (Join-Path $jdk.FullName 'bin\java.exe') -PassTh
     -WorkingDirectory (Join-Path $Raiz 'hub-fiscal') `
     -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db", "--hub.arquivo-logo=$tmp\logo.png", "--hub.banco-empresas=$tmp\empresas.db", `
         "--hub.arquivo-ultima-atualizacao=$tmp\ultima-atualizacao.json", "--hub.atualizacao-manual=pedido", `
-        "--hub.consulta-cnpj-url=http://127.0.0.1:$PortaMockCnpj/cnpj/{cnpj}" `
+        "--hub.consulta-cnpj-url=http://127.0.0.1:$PortaMockCnpj/cnpj/{cnpj},http://127.0.0.1:$PortaMockCnpj/reserva/{cnpj}" `
     -RedirectStandardOutput (Join-Path $tmp 'hub.log') -RedirectStandardError (Join-Path $tmp 'hub.err')
 
 $codigoSaida = 1

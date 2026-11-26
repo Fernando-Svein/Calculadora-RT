@@ -1,12 +1,17 @@
 package br.com.escritorio.hubfiscal.empresa;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +25,10 @@ import br.com.escritorio.hubfiscal.importacao.DocumentoFiscal;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
 import br.com.escritorio.hubfiscal.importacao.SpedParser.ResultadoSped;
 
-/** Cadastro de empresas: validação, cadastro automático na importação e manutenção das particularidades. */
+/**
+ * Cadastro de empresas: validação, empresas encontradas na importação (o usuário escolhe quais adicionar; cada uma é
+ * cadastrada com a consulta pública do CNPJ) e manutenção das particularidades.
+ */
 @Service
 public class EmpresaService {
 
@@ -37,10 +45,6 @@ public class EmpresaService {
             String regime, String regimeApuracao, Boolean ibscbsForaSimples, Boolean fatorR, Boolean sublimiteExcedido,
             String atividadeSimples, Map<String, Map<String, String>> aliquotasSimples, String documentoPadrao,
             String cClassTribPadrao, String observacoes, Map<String, Object> dadosCadastrais) {
-    }
-
-    /** Empresa cadastrada automaticamente numa importação. */
-    public record EmpresaNova(long id, String cnpj, String razaoSocial, String origem) {
     }
 
     private final EmpresaRepositorio repo;
@@ -76,14 +80,128 @@ public class EmpresaService {
         repo.excluir(id);
     }
 
-    // ------------------------------------------------------------------ cadastro automático
+    /** Exclusão de várias empresas (seleção na lista). Devolve quantas foram excluídas. */
+    public int excluirVarias(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new ErroNegocio("Selecione ao menos uma empresa.");
+        }
+        if (ids.size() > 5_000) {
+            throw new ErroNegocio("Seleção grande demais (máximo de 5 mil empresas por vez).");
+        }
+        int n = 0;
+        for (Long id : new java.util.LinkedHashSet<>(ids)) {
+            if (id != null && repo.porId(id).isPresent()) {
+                repo.excluir(id);
+                n++;
+            }
+        }
+        log.info("{} empresa(s) excluída(s) pela seleção da lista", n);
+        return n;
+    }
+
+    // ------------------------------------------------------------------ empresas encontradas na importação
+
+    /** Empresa de um arquivo importado que ainda não está no cadastro (dados lidos do próprio arquivo). */
+    public record EmpresaEncontrada(String cnpj, String razaoSocial, String nomeFantasia, String uf, Integer municipio,
+            String regime, String regimeApuracao, String origem) {
+    }
+
+    /** Resultado do cadastro de uma empresa encontrada: consulta = "OK" ou o motivo de não ter consultado a API. */
+    public record ResultadoCadastro(String cnpj, String razaoSocial, Long id, String situacao, String consulta) {
+    }
+
+    private record Pendentes(long usuario, List<EmpresaEncontrada> empresas, Instant criadoEm) {
+    }
+
+    /** A tela pergunta logo após a importação; depois disso a lista é descartada. */
+    private static final Duration VALIDADE_PENDENTES = Duration.ofHours(2);
+    private static final int LIMITE_PENDENTES = 500;
+    private final Map<String, Pendentes> pendentes = new ConcurrentHashMap<>();
 
     /**
-     * Cadastra as empresas dos arquivos importados que ainda não estão no cadastro: o contribuinte do SPED
-     * (registro 0000) e o emitente de cada XML. CPF, CNPJ inválido e CNPJ já cadastrado são ignorados.
-     * Não altera empresas existentes.
+     * Separa as empresas dos arquivos que ainda não estão no cadastro, sem gravar nada: a tela pergunta ao usuário quais
+     * adicionar ({@link #cadastrarEncontradas}). Devolve o código da lista, ou vazio se não houver empresa nova.
      */
-    public List<EmpresaNova> cadastrarDaImportacao(Importacao imp) {
+    public Optional<String> guardarEncontradas(Importacao imp, long usuario) {
+        Instant agora = Instant.now();
+        pendentes.values().removeIf(p -> p.criadoEm().plus(VALIDADE_PENDENTES).isBefore(agora));
+        List<EmpresaEncontrada> novas = encontradas(imp);
+        if (novas.isEmpty()) {
+            return Optional.empty();
+        }
+        String token = UUID.randomUUID().toString();
+        pendentes.put(token, new Pendentes(usuario, novas.size() > LIMITE_PENDENTES ? List.copyOf(novas.subList(0, LIMITE_PENDENTES)) : novas, agora));
+        return Optional.of(token);
+    }
+
+    /** Empresas encontradas guardadas para o usuário (só ele vê a própria lista). */
+    public List<EmpresaEncontrada> encontradasGuardadas(String token, long usuario) {
+        Pendentes p = pendentes.get(token);
+        if (p == null || p.usuario() != usuario || p.criadoEm().plus(VALIDADE_PENDENTES).isBefore(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "A lista de empresas desta importação expirou. Importe os arquivos de novo.");
+        }
+        return p.empresas();
+    }
+
+    /**
+     * Cadastra as empresas escolhidas, cada uma com a consulta completa do CNPJ na API pública (situação, CNAEs,
+     * endereço, Simples/MEI, regime declarado e quadro societário). Se a consulta falhar, a empresa entra com os dados
+     * do arquivo e o motivo volta para a tela; com o limite de consultas atingido, as seguintes não são consultadas.
+     */
+    public List<ResultadoCadastro> cadastrarEncontradas(String token, List<String> cnpjs, long usuario, ConsultaCnpjService consulta) {
+        List<EmpresaEncontrada> lista = encontradasGuardadas(token, usuario);
+        if (cnpjs == null || cnpjs.isEmpty()) {
+            throw new ErroNegocio("Selecione ao menos uma empresa para adicionar.");
+        }
+        Set<String> escolhidas = new java.util.HashSet<>();
+        cnpjs.forEach(c -> escolhidas.add(normalizarCnpj(c)));
+        List<ResultadoCadastro> r = new ArrayList<>();
+        String semConsulta = consulta.disponivel() ? null : "consulta de CNPJ desativada neste servidor";
+        for (EmpresaEncontrada e : lista) {
+            if (!escolhidas.contains(e.cnpj())) {
+                continue;
+            }
+            if (repo.porCnpj(e.cnpj()).isPresent()) {
+                r.add(new ResultadoCadastro(e.cnpj(), e.razaoSocial(), repo.porCnpj(e.cnpj()).get().id(), "JA_CADASTRADA", null));
+                continue;
+            }
+            Map<String, Object> pub = null;
+            String motivo = semConsulta;
+            if (motivo == null) {
+                try {
+                    pub = consulta.consultar(e.cnpj());
+                } catch (ResponseStatusException ex) {
+                    motivo = ex.getReason();
+                    if (ex.getStatusCode().value() == 429) {
+                        semConsulta = "limite de consultas do serviço atingido; consulte depois em Cadastros → Empresas";
+                    }
+                } catch (RuntimeException ex) {
+                    motivo = ex.getMessage();
+                }
+            }
+            Map<?, ?> end = pub == null ? null : (Map<?, ?>) pub.get("endereco");
+            Map<?, ?> sug = pub == null ? null : (Map<?, ?>) pub.get("regimeSugerido");
+            String razao = pub != null && pub.get("razaoSocial") != null ? String.valueOf(pub.get("razaoSocial")) : e.razaoSocial();
+            String fantasia = pub != null && pub.get("nomeFantasia") != null ? String.valueOf(pub.get("nomeFantasia")) : e.nomeFantasia();
+            String uf = end != null && end.get("uf") != null ? ufValida(String.valueOf(end.get("uf"))) : e.uf();
+            Integer mun = end != null && end.get("codigoMunicipioIbge") instanceof Number n ? n.intValue() : e.municipio();
+            // regime: o do arquivo (CRT da nota, EFD Contribuições) vale mais; sem ele, o indicado pela base pública
+            String regime = e.regime() != null ? e.regime() : sug == null ? null : (String) sug.get("regime");
+            String apuracao = e.regimeApuracao() != null ? e.regimeApuracao()
+                    : sug != null && "NORMAL".equals(regime) ? (String) sug.get("regimeApuracao") : null;
+            repo.inserirSeNovo(e.cnpj(), limitar(razao, 150), limitar(fantasia, 150), uf, mun, regime, apuracao, e.origem(), pub);
+            Long id = repo.porCnpj(e.cnpj()).map(Empresa::id).orElse(null);
+            r.add(new ResultadoCadastro(e.cnpj(), razao, id, "CADASTRADA", pub != null ? "OK" : motivo));
+        }
+        log.info("Importação: {} empresa(s) adicionada(s) ao cadastro pelo usuário", r.stream().filter(x -> "CADASTRADA".equals(x.situacao())).count());
+        return r;
+    }
+
+    /**
+     * Empresas dos arquivos que não estão no cadastro: o contribuinte do SPED (registro 0000) e o emitente de cada XML.
+     * CPF, CNPJ inválido e CNPJ já cadastrado ficam de fora.
+     */
+    List<EmpresaEncontrada> encontradas(Importacao imp) {
         Map<String, String[]> candidatas = new LinkedHashMap<>(); // cnpj → razão, fantasia, uf, município, regime, apuração, origem
         for (ResultadoSped s : imp.speds) {
             String cnpj = normalizarCnpj(s.cnpj());
@@ -108,16 +226,16 @@ public class EmpresaService {
             candidatas.put(cnpj, new String[] { d.emitenteNome.trim(), d.emitenteFantasia, ufValida(d.emitenteUf),
                     d.emitenteMunicipio == null ? null : String.valueOf(d.emitenteMunicipio), regimeDoDocumento(d), null, "XML" });
         }
-        List<EmpresaNova> novas = new ArrayList<>();
+        Set<String> cadastrados = new java.util.HashSet<>();
+        repo.listar().forEach(e -> cadastrados.add(e.cnpj()));
+        List<EmpresaEncontrada> novas = new ArrayList<>();
         for (Map.Entry<String, String[]> c : candidatas.entrySet()) {
+            if (cadastrados.contains(c.getKey())) {
+                continue;
+            }
             String[] v = c.getValue();
             Integer mun = v[3] != null && v[3].matches("\\d{7}") ? Integer.valueOf(v[3]) : null;
-            if (repo.inserirSeNovo(c.getKey(), limitar(v[0], 150), limitar(v[1], 150), v[2], mun, v[4], v[5], v[6])) {
-                repo.porCnpj(c.getKey()).ifPresent(e -> novas.add(new EmpresaNova(e.id(), e.cnpj(), e.razaoSocial(), e.origem())));
-            }
-        }
-        if (!novas.isEmpty()) {
-            log.info("Importação: {} empresa(s) cadastrada(s) automaticamente", novas.size());
+            novas.add(new EmpresaEncontrada(c.getKey(), limitar(v[0], 150), limitar(v[1], 150), v[2], mun, v[4], v[5], v[6]));
         }
         return novas;
     }

@@ -17,7 +17,7 @@
     grupo: 'Cadastros',
     ordem: 1,
     etiquetas: ['CNPJ', 'cliente', 'regime', 'particularidades'],
-    descricao: 'Empresas atendidas e suas particularidades (regime, município, alíquotas do DAS). Usadas pelos simuladores; cadastradas automaticamente na importação de SPED/XML.',
+    descricao: 'Empresas atendidas e suas particularidades (regime, município, alíquotas do DAS). Usadas pelos simuladores; ao importar SPED/XML, o hub pergunta quais adicionar (com consulta do CNPJ).',
     render(el, params) {
       if (params.id || params.nova) return formulario(el, params.id ? Number(params.id) : null);
       return lista(el, params);
@@ -28,20 +28,47 @@
 
   async function lista(el, params) {
     el.innerHTML = comp.cabecalho('Empresas',
-      'Empresas atendidas pelo escritório. Ao importar um SPED ou XML num processamento em lote, a empresa do arquivo é cadastrada ' +
-      'automaticamente com o CNPJ e a razão social; complete aqui o regime e as demais particularidades usadas nos simuladores.') +
+      'Empresas atendidas pelo escritório. Ao importar um SPED ou XML, o hub pergunta se as empresas dos arquivos que ainda não estão ' +
+      'aqui devem ser adicionadas (já com a consulta do CNPJ); complete o regime e as demais particularidades usadas nos simuladores.') +
       `<div class="card"><div class="card-cab"><h3>Empresas cadastradas</h3>
         <div class="acoes"><label class="check"><input type="checkbox" data-conferir ${params.conferir ? 'checked' : ''}> Somente as que faltam conferir</label>
         <button class="btn btn-peq" type="button" data-nova>${Hub.icone('mais')} Nova empresa</button></div></div>
+        <div class="barra-selecao" data-barra-sel>
+          <label class="check"><input type="checkbox" data-sel-todas> Selecionar todas as exibidas</label>
+          <span class="sutil" data-sel-qtd>Nenhuma selecionada</span>
+          <button class="btn btn-perigo btn-peq" type="button" data-excluir-sel disabled>Excluir selecionadas</button>
+        </div>
         <div data-tab></div></div>`;
     el.querySelector('[data-nova]').onclick = () => Hub.ir('empresas', { nova: 1 });
     const alvo = el.querySelector('[data-tab]');
     Hub.carregando(alvo, 'Carregando empresas...');
     const empresas = await E().listar(true);
-    const tab = comp.tabela(alvo, {
+    // seleção múltipla: guardada pelo id (vale mesmo trocando de página ou filtro)
+    const selecionadas = new Set();
+    const qtd = el.querySelector('[data-sel-qtd]');
+    const btnExcluir = el.querySelector('[data-excluir-sel]');
+    const todas = el.querySelector('[data-sel-todas]');
+    const atualizarSelecao = () => {
+      qtd.textContent = selecionadas.size ? `${selecionadas.size} selecionada(s)` : 'Nenhuma selecionada';
+      btnExcluir.disabled = !selecionadas.size;
+      const exibidas = tab ? tab.linhas() : [];
+      todas.checked = exibidas.length > 0 && exibidas.every((e) => selecionadas.has(e.id));
+      todas.indeterminate = !todas.checked && exibidas.some((e) => selecionadas.has(e.id));
+    };
+    alvo.addEventListener('change', (ev) => {
+      const cb = ev.target.closest('[data-sel-id]');
+      if (!cb) return;
+      const id = Number(cb.dataset.selId);
+      if (cb.checked) selecionadas.add(id); else selecionadas.delete(id);
+      atualizarSelecao();
+    });
+    let tab = null;
+    tab = comp.tabela(alvo, {
       placeholder: 'Filtrar por nome, CNPJ, regime ou UF...',
       vazio: 'Nenhuma empresa cadastrada. Use "Nova empresa" ou importe um SPED/XML em Processamento em lote.',
       colunas: [
+        { titulo: 'Selecionar', excel: false, ordenar: false,
+          render: (e) => `<input type="checkbox" data-sel-id="${esc(e.id)}" ${selecionadas.has(e.id) ? 'checked' : ''} aria-label="Selecionar ${esc(e.razaoSocial)}">` },
         { titulo: 'Razão social', campo: 'razaoSocial', render: (e) => `<strong>${esc(e.razaoSocial)}</strong>${e.nomeFantasia ? `<div class="sutil">${esc(e.nomeFantasia)}</div>` : ''}` },
         { titulo: 'CNPJ', exportar: (e) => fmt.cnpj(e.cnpj), render: (e) => `<code>${esc(fmt.cnpj(e.cnpj))}</code>` },
         { titulo: 'Regime', exportar: (e) => E().regimeTexto(e) },
@@ -56,9 +83,27 @@
       exportar: { arquivo: 'empresas', titulo: 'Empresas cadastradas' },
     });
     const chk = el.querySelector('[data-conferir]');
-    const filtrar = () => tab.filtrar(chk.checked ? (e) => !e.revisado : null);
+    const filtrar = () => { tab.filtrar(chk.checked ? (e) => !e.revisado : null); atualizarSelecao(); };
     chk.onchange = filtrar;
     filtrar();
+    // "selecionar todas" vale para as linhas exibidas (com o filtro e a busca aplicados), inclusive de outras páginas
+    todas.onchange = () => {
+      tab.linhas().forEach((e) => { if (todas.checked) selecionadas.add(e.id); else selecionadas.delete(e.id); });
+      alvo.querySelectorAll('[data-sel-id]').forEach((cb) => { cb.checked = selecionadas.has(Number(cb.dataset.selId)); });
+      atualizarSelecao();
+    };
+    alvo.addEventListener('input', () => setTimeout(atualizarSelecao, 250)); // busca da tabela muda as exibidas
+    btnExcluir.onclick = async () => {
+      const nomes = empresas.filter((e) => selecionadas.has(e.id)).map((e) => e.razaoSocial);
+      if (!confirm(`Excluir ${nomes.length} empresa(s) do cadastro?\n\n${nomes.slice(0, 15).join('\n')}${nomes.length > 15 ? `\n... e mais ${nomes.length - 15}` : ''}\n\n` +
+        'As particularidades informadas serão perdidas. Isso não pode ser desfeito.')) return;
+      btnExcluir.disabled = true;
+      const r = await api.post('/hub/empresas/excluir', { ids: [...selecionadas] });
+      if (!r.ok) { Hub.modal(Hub.problema(r, 'Não foi possível excluir')); atualizarSelecao(); return; }
+      E().invalidar();
+      Hub.toast(`${r.data.excluidas} empresa(s) excluída(s).`);
+      lista(el, { conferir: chk.checked ? 1 : undefined });
+    };
   }
 
   /** Cartão com o cadastro público do CNPJ (última consulta guardada na empresa). */
@@ -110,7 +155,7 @@
     const docs = Object.entries(E().DOCUMENTOS);
     el.innerHTML = comp.cabecalho(e ? e.razaoSocial : 'Nova empresa',
       e ? `CNPJ ${esc(fmt.cnpj(e.cnpj))} · ${esc(E().ORIGENS[e.origem] || e.origem)} em ${esc(fmt.data(e.criadoEm))}` : 'Cadastro manual de uma empresa atendida.') +
-      `${e && !e.revisado ? `<div class="aviso"><strong>Cadastro criado automaticamente</strong> a partir de ${e.origem === 'SPED' ? 'um SPED' : 'um XML'}:
+      `${e && !e.revisado ? `<div class="aviso"><strong>Cadastro adicionado a partir de uma importação</strong> de ${e.origem === 'SPED' ? 'um SPED' : 'um XML'}:
           confira o regime e preencha as particularidades. Ao salvar, o cadastro passa a constar como conferido.</div>` : ''}
       <form data-f novalidate>
       <div class="card"><h3>Identificação</h3>
@@ -296,7 +341,7 @@
     if (excluir) {
       excluir.onclick = async () => {
         if (!confirm(`Excluir o cadastro de ${e.razaoSocial}? As particularidades informadas serão perdidas. ` +
-          'Se um SPED/XML desta empresa for importado de novo, ela volta a ser cadastrada automaticamente (sem as particularidades).')) return;
+          'Se um SPED/XML desta empresa for importado de novo, o hub volta a perguntar se ela deve ser adicionada.')) return;
         const r = await api.del('/hub/empresas/' + e.id);
         if (!r.ok) { Hub.modal(Hub.problema(r, 'Não foi possível excluir')); return; }
         E().invalidar();

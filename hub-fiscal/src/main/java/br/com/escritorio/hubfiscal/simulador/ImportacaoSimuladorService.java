@@ -172,12 +172,12 @@ public class ImportacaoSimuladorService {
     }
 
     /** Resumo das operações para a resposta (a tela escolhe qual carregar). */
-    public static Map<String, Object> resposta(List<OperacaoSimulador> ops, Importacao imp, int empresasNovas) {
+    public static Map<String, Object> resposta(List<OperacaoSimulador> ops, Importacao imp, String empresasEncontradas) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("operacoes", ops);
         m.put("arquivos", imp.arquivos);
         m.put("avisos", imp.avisos);
-        m.put("empresasNovas", empresasNovas);
+        m.put("empresasEncontradas", empresasEncontradas); // código da lista para a tela perguntar (null: nenhuma nova)
         return m;
     }
 }

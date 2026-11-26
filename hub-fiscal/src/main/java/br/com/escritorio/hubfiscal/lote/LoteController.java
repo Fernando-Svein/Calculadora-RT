@@ -25,7 +25,6 @@ import br.com.escritorio.hubfiscal.classificacao.ClassificacaoExcel;
 import br.com.escritorio.hubfiscal.classificacao.ClassificacaoService;
 import br.com.escritorio.hubfiscal.classificacao.ResultadoClassificacao;
 import br.com.escritorio.hubfiscal.empresa.EmpresaService;
-import br.com.escritorio.hubfiscal.empresa.EmpresaService.EmpresaNova;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
 import br.com.escritorio.hubfiscal.infra.ResultadoStore;
@@ -57,19 +56,19 @@ public class LoteController {
         this.empresas = empresas;
     }
 
-    /** Cabeçalho com as empresas cadastradas automaticamente nesta importação (a tela avisa o usuário). */
-    static final String CABECALHO_EMPRESAS = "X-Hub-Empresas-Novas";
+    /** Cabeçalho com o código da lista de empresas dos arquivos que não estão no cadastro (a tela pergunta). */
+    static final String CABECALHO_EMPRESAS = "X-Hub-Empresas-Encontradas";
 
     /**
-     * Cadastra as empresas novas dos arquivos. Vai num cabeçalho (e não no corpo) para não mudar o resultado do
-     * lote; uma falha aqui não impede o processamento.
+     * Separa as empresas dos arquivos que ainda não estão no cadastro; nada é gravado: a tela pergunta ao usuário quais
+     * adicionar. Vai num cabeçalho (e não no corpo) para não mudar o resultado do lote; uma falha aqui não impede o
+     * processamento.
      */
-    private void cadastrarEmpresas(Importacao imp, HttpServletResponse resposta) {
+    private void separarEmpresas(Importacao imp, UsuarioSessao usuario, HttpServletResponse resposta) {
         try {
-            List<EmpresaNova> novas = empresas.cadastrarDaImportacao(imp);
-            resposta.setHeader(CABECALHO_EMPRESAS, String.valueOf(novas.size()));
+            empresas.guardarEncontradas(imp, usuario.id()).ifPresent(t -> resposta.setHeader(CABECALHO_EMPRESAS, t));
         } catch (RuntimeException e) {
-            log.warn("Cadastro automático de empresas falhou: {}", e.getMessage());
+            log.warn("Separação das empresas dos arquivos falhou: {}", e.getMessage());
         }
     }
 
@@ -79,7 +78,7 @@ public class LoteController {
             @RequestParam(required = false) LocalDate data, @AuthenticationPrincipal UsuarioSessao usuario,
             HttpServletResponse resposta) {
         Importacao imp = importacao.importar(arquivos);
-        cadastrarEmpresas(imp, resposta);
+        separarEmpresas(imp, usuario, resposta);
         ResultadoClassificacao r = classificacao.classificar(imp, data == null ? LocalDate.now() : data);
         r.id = store.guardar(r, usuario.id());
         return r;
@@ -96,7 +95,7 @@ public class LoteController {
     public ResultadoAuditoria auditar(@RequestParam("arquivos") List<MultipartFile> arquivos,
             @AuthenticationPrincipal UsuarioSessao usuario, HttpServletResponse resposta) {
         Importacao imp = importacao.importar(arquivos);
-        cadastrarEmpresas(imp, resposta);
+        separarEmpresas(imp, usuario, resposta);
         ResultadoAuditoria r = auditoria.auditar(imp);
         r.id = store.guardar(r, usuario.id());
         return r;

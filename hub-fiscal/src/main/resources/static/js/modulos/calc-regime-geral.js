@@ -454,9 +454,10 @@
         const r = await comp.enviarComProgresso(`/hub/simulador/importar?data=${encodeURIComponent(inpData.value || Hub.hoje())}`, fd);
         if (!r.ok) { importado.innerHTML = Hub.problema(r, 'Não foi possível importar'); return; }
         const ops = r.data.operacoes || [];
-        if (r.data.empresasNovas > 0) Hub.toast(`${r.data.empresasNovas} empresa(s) cadastrada(s) automaticamente a partir dos arquivos.`);
-        if (!ops.length) { importado.innerHTML = '<div class="aviso">Nenhum documento com itens foi encontrado nos arquivos.</div>'; return; }
-        if (ops.length === 1) { carregarOperacao(ops[0]); return; }
+        // depois de carregar o documento, pergunta se as empresas dos arquivos devem entrar no cadastro
+        const perguntarEmpresas = () => Hub.empresas.perguntarCadastro(r.data.empresasEncontradas);
+        if (!ops.length) { importado.innerHTML = '<div class="aviso">Nenhum documento com itens foi encontrado nos arquivos.</div>'; perguntarEmpresas(); return; }
+        if (ops.length === 1) { carregarOperacao(ops[0]); perguntarEmpresas(); return; }
         importado.innerHTML = '';
         // vários documentos: cada um é uma operação (data e local próprios); o usuário escolhe qual simular
         const c = Hub.modal(`<h2>Escolha o documento para simular</h2>
@@ -468,7 +469,7 @@
             <td class="num">${o.totalItens}</td><td class="num">${o.itens.filter((x) => x.origemClassificacao === 'SUGERIDO').length}</td>
             <td><button class="btn btn-peq" type="button" data-op="${i}">Carregar</button></td></tr>`).join('')}
           </tbody></table></div>`);
-        c.querySelectorAll('[data-op]').forEach((b) => { b.onclick = () => { Hub.fecharModal(); carregarOperacao(ops[Number(b.dataset.op)]); }; });
+        c.querySelectorAll('[data-op]').forEach((b) => { b.onclick = () => { Hub.fecharModal(); carregarOperacao(ops[Number(b.dataset.op)]); perguntarEmpresas(); }; });
       };
 
       function carregarOperacao(o) {

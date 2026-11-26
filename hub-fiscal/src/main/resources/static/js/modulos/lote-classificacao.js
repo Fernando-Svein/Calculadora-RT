@@ -53,14 +53,8 @@
       st.textContent = '';
       if (!r.ok) { res.innerHTML = Hub.problema(r); return; }
       cfg.mostrar(res, r.data);
-      // empresas dos arquivos que ainda não estavam no cadastro (cadastradas pelo servidor nesta importação)
-      const novas = Number(r.cabecalho && r.cabecalho('X-Hub-Empresas-Novas')) || 0;
-      if (novas > 0) {
-        res.prepend(Hub.el(`<div class="info-caixa"><strong>${novas} empresa(s) cadastrada(s) automaticamente</strong>
-          com o CNPJ e a razão social lidos dos arquivos. Confira o regime e as demais particularidades em
-          ${Hub.modulos.some((m) => m.rota === 'empresas') ? '<a href="#/empresas?conferir=1">Cadastros → Empresas</a>' : 'Cadastros → Empresas (peça acesso ao administrador)'}
-          antes de usá-las nos simuladores.</div>`));
-      }
+      // empresas dos arquivos que não estão no cadastro: pergunta quais adicionar (nada foi gravado ainda)
+      Hub.empresas.perguntarCadastro(r.cabecalho && r.cabecalho('X-Hub-Empresas-Encontradas'));
     };
   };
 

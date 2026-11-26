@@ -30,7 +30,7 @@ public final class Ferramentas {
     }
 
     public static final List<Ferramenta> TODAS = List.of(
-            new Ferramenta("empresas", "Empresas (incluir e editar)", "Cadastros"),
+            new Ferramenta("empresas", "Empresas (incluir, editar e excluir)", "Cadastros"),
             new Ferramenta("classificar-item", "Classificar NCM / NBS", "Consultas e tabelas"),
             new Ferramenta("tabela-cclasstrib", "Tabela cClassTrib e CST", "Consultas e tabelas"),
             new Ferramenta("aliquotas", "Alíquotas de referência", "Consultas e tabelas"),

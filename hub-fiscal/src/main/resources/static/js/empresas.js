@@ -65,7 +65,7 @@
     const onde = await local(e);
     const linhas = [nome(e), `CNPJ ${fmt.cnpj(e.cnpj)} · ${regimeTexto(e)}${onde ? ' · ' + onde : ''}`];
     if (usadas && usadas.length) linhas.push('Particularidades usadas no cálculo: ' + usadas.join('; ') + '.');
-    if (!e.revisado) linhas.push('Atenção: cadastro criado automaticamente na importação e ainda não conferido pelo escritório.');
+    if (!e.revisado) linhas.push('Atenção: cadastro vindo de uma importação e ainda não conferido pelo escritório.');
     return linhas;
   }
 
@@ -134,7 +134,7 @@
         info.innerHTML = lista.length
           ? 'Nenhuma empresa selecionada: o cálculo usa os valores genéricos digitados abaixo.'
           : `Nenhuma empresa cadastrada ainda. Cadastre em <a href="#/empresas">Cadastros → Empresas</a> ou importe um SPED/XML num
-             <a href="#/lote-classificacao">processamento em lote</a> (as empresas dos arquivos são cadastradas automaticamente).`;
+             <a href="#/lote-classificacao">processamento em lote</a> (o hub pergunta se as empresas dos arquivos devem ser adicionadas).`;
         return;
       }
       const e = atual;
@@ -142,7 +142,7 @@
       if (atual !== e) return; // trocou enquanto buscava o município
       info.innerHTML = `<div class="empresa-sim-dados"><strong>${esc(nome(e))}</strong>
           <span>CNPJ ${esc(fmt.cnpj(e.cnpj))}</span><span>${esc(regimeTexto(e))}</span>${onde ? `<span>${esc(onde)}</span>` : ''}
-          ${e.revisado ? '' : '<span class="etq etq-amarelo" title="Criada automaticamente na importação">Cadastro não conferido</span>'}
+          ${e.revisado ? '' : '<span class="etq etq-amarelo" title="Adicionada a partir de uma importação">Cadastro não conferido</span>'}
           <a href="#/empresas?id=${encodeURIComponent(e.id)}">Abrir cadastro</a></div>
         ${usadas.length ? `<div class="empresa-sim-usadas">Preenchido pelo cadastro (campos com borda colorida): ${esc(usadas.join('; '))}.</div>` : ''}
         ${!e.regime ? '<div class="empresa-sim-alerta">O regime tributário desta empresa ainda não foi informado: complete o cadastro para que a simulação use o regime correto.</div>' : ''}
@@ -183,6 +183,67 @@
     };
   }
 
+  // ------------------------------------------------------------------ empresas encontradas na importação
+
+  /**
+   * Depois de importar SPED/XML: pergunta se as empresas dos arquivos que não estão no cadastro devem ser adicionadas.
+   * Cada empresa escolhida é cadastrada com a consulta completa do CNPJ (situação, CNAEs, endereço, quadro societário).
+   * Sem a ferramenta "Empresas", só avisa. token: código devolvido pela importação (nada foi gravado ainda).
+   */
+  async function perguntarCadastro(token) {
+    if (!token) return;
+    const r = await api.get('/hub/empresas/encontradas/' + encodeURIComponent(token));
+    if (!r.ok || !Array.isArray(r.data) || !r.data.length) return;
+    const lista = r.data;
+    if (!Hub.modulos.some((m) => m.rota === 'empresas')) {
+      Hub.toast(`${lista.length} empresa(s) dos arquivos não estão no cadastro. Peça a quem tem acesso a Cadastros → Empresas para incluí-las.`);
+      return;
+    }
+    const origem = { SPED: 'SPED (contribuinte)', XML: 'XML (emitente)' };
+    const c = Hub.modal(`<h2>Adicionar empresas ao cadastro?</h2>
+      <p>Os arquivos trazem ${lista.length === 1 ? 'uma empresa que ainda não está' : `${lista.length} empresas que ainda não estão`} no cadastro.
+        Marque as que deseja adicionar: cada uma é cadastrada com a <strong>consulta completa do CNPJ</strong> na base pública
+        (situação cadastral, CNAEs, endereço, Simples/MEI e quadro societário).</p>
+      ${lista.some((e) => e.origem === 'XML') ? '<p class="sutil">Nos XMLs, a empresa considerada é o <strong>emitente</strong>: em notas de compra, é o fornecedor. Desmarque quem não for cliente do escritório.</p>' : ''}
+      <label class="check" style="margin:6px 0"><input type="checkbox" data-todas checked> Marcar todas</label>
+      <div class="tabela-wrap" style="max-height:45vh"><table class="tab"><thead><tr><th></th><th>Razão social</th><th>CNPJ</th><th>Origem</th><th>UF</th><th>Regime no arquivo</th></tr></thead><tbody>
+      ${lista.map((e, i) => `<tr><td><input type="checkbox" data-cnpj="${esc(e.cnpj)}" checked aria-label="Adicionar ${esc(e.razaoSocial)}"></td>
+        <td>${esc(e.razaoSocial)}${e.nomeFantasia ? `<div class="sutil">${esc(e.nomeFantasia)}</div>` : ''}</td>
+        <td><code>${esc(fmt.cnpj(e.cnpj))}</code></td><td>${esc(origem[e.origem] || e.origem)}</td><td>${esc(e.uf || '–')}</td>
+        <td>${esc(e.regime ? regimeTexto(e) : 'não informado')}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div data-res-cad></div>
+      <div class="acoes" style="margin-top:12px"><button class="btn" type="button" data-adicionar>Adicionar selecionadas</button>
+        <button class="btn btn-sec" type="button" data-agora-nao>Agora não</button><span class="sutil" data-qtd></span></div>`);
+    const caixas = () => Array.from(c.querySelectorAll('[data-cnpj]'));
+    const contar = () => { c.querySelector('[data-qtd]').textContent = `${caixas().filter((x) => x.checked).length} de ${lista.length} selecionada(s)`; };
+    c.querySelector('[data-todas]').onchange = (e) => { caixas().forEach((x) => { x.checked = e.target.checked; }); contar(); };
+    caixas().forEach((x) => { x.onchange = contar; });
+    contar();
+    c.querySelector('[data-agora-nao]').onclick = Hub.fecharModal;
+    c.querySelector('[data-adicionar]').onclick = async (ev) => {
+      const cnpjs = caixas().filter((x) => x.checked).map((x) => x.dataset.cnpj);
+      if (!cnpjs.length) { Hub.toast('Marque ao menos uma empresa.', 'erro'); return; }
+      const b = ev.currentTarget;
+      b.disabled = true;
+      const res = c.querySelector('[data-res-cad]');
+      res.innerHTML = `<div class="carregando"><div class="giro"></div>Cadastrando e consultando ${cnpjs.length} CNPJ(s) na base pública...</div>`;
+      const rr = await api.post('/hub/empresas/encontradas/' + encodeURIComponent(token), { cnpjs });
+      if (!rr.ok) { res.innerHTML = Hub.problema(rr, 'Empresas não adicionadas'); b.disabled = false; return; }
+      invalidar();
+      const ok = rr.data.filter((x) => x.situacao === 'CADASTRADA');
+      const semConsulta = ok.filter((x) => x.consulta !== 'OK');
+      res.innerHTML = `<div class="${semConsulta.length ? 'aviso' : 'ok-caixa'}"><strong>${ok.length} empresa(s) adicionada(s)</strong>
+        ${ok.length - semConsulta.length ? ` – ${ok.length - semConsulta.length} com os dados da consulta do CNPJ` : ''}.
+        ${semConsulta.length ? `<br>Sem consulta (ficaram com os dados do arquivo; use "Consultar CNPJ" no cadastro depois):<ul>${semConsulta.map((x) => `<li>${esc(x.razaoSocial)} – ${esc(x.consulta || '')}</li>`).join('')}</ul>` : ''}
+        ${rr.data.some((x) => x.situacao === 'JA_CADASTRADA') ? '<br>Algumas já estavam cadastradas e não foram alteradas.' : ''}
+        <br>Confira o regime e as particularidades em <a href="#/empresas?conferir=1" data-fechar-cad>Cadastros → Empresas</a>.</div>`;
+      res.querySelector('[data-fechar-cad]').onclick = Hub.fecharModal;
+      c.querySelector('[data-adicionar]').hidden = true;
+      c.querySelector('[data-agora-nao]').textContent = 'Fechar';
+    };
+  }
+
   /** Faixa no topo do resultado: deixa claro para qual empresa a simulação foi feita. */
   function faixaResultado(e) {
     return e
@@ -192,6 +253,7 @@
 
   Hub.empresas = {
     listar, invalidar, seletor, regimeTexto, ehSimples, nome, linhasRelatorio, nomeMunicipio, definir, desmarcar, abrirCadastro, faixaResultado,
+    perguntarCadastro,
     REGIMES, APURACOES, CRT, OP_SIMP_NAC, ORIGENS, DOCUMENTOS,
   };
 })();

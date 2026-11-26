@@ -68,7 +68,7 @@ public record HubProperties(
             atualizacaoManual = "auto";
         }
         if (consultaCnpjUrl == null || consultaCnpjUrl.isBlank()) {
-            consultaCnpjUrl = "https://brasilapi.com.br/api/cnpj/v1/{cnpj}";
+            consultaCnpjUrl = "https://brasilapi.com.br/api/cnpj/v1/{cnpj},https://minhareceita.org/{cnpj}";
         }
         if (paralelismo <= 0) {
             paralelismo = 8;

@@ -63,6 +63,17 @@ Add-Resultado $Suite 'CNPJ: dados públicos e QSA gravados no cadastro da empres
 $outro = $corpo.Replace('"cnpj":"11222333000181"', '"cnpj":"45678912000155"')
 Assert-Resposta $Suite 'CNPJ: dados de outro CNPJ não são gravados' (Invoke-Hub $adm 'PUT' "/hub/empresas/$($emp.id)" $outro) 422 'outro CNPJ'
 
+# serviço reserva: o principal responde 503 (como a BrasilAPI faz com alguns CNPJs) e o seguinte da lista atende
+$r = Invoke-Hub $adm 'GET' '/hub/empresas/consulta-cnpj/33999888000177'
+$cont = Invoke-RestMethod "$mockUrl/contagem/33999888000177"
+Add-Resultado $Suite 'CNPJ: principal com 503 → consulta atendida pelo serviço reserva' ((Get-Status $r) -eq 200 -and (Get-Json $r).razaoSocial -eq 'COMERCIAL EXEMPLO LTDA' -and $cont.consultas -eq 1 -and $cont.reserva -eq 1) "HTTP $(Get-Status $r), principal=$($cont.consultas), reserva=$($cont.reserva)"
+Add-Resultado $Suite 'CNPJ inexistente: os dois serviços consultados antes de responder 404' ((Invoke-RestMethod "$mockUrl/contagem/45678912000155").reserva -ge 1) ''
+
+# importação no simulador também pergunta sobre as empresas novas (nada é cadastrado sozinho)
+$antesSim = @((Get-Texto (Invoke-Hub $adm 'GET' '/hub/empresas') | ConvertFrom-Json) | ForEach-Object { $_ }).Count
+$j = Get-Json (Send-Arquivos $adm '/hub/simulador/importar' @((Join-Path $Dados 'nfe-auditoria-cenario.xml')))
+$depoisSim = @((Get-Texto (Invoke-Hub $adm 'GET' '/hub/empresas') | ConvertFrom-Json) | ForEach-Object { $_ }).Count
+Add-Resultado $Suite 'importar no simulador: devolve as empresas encontradas sem cadastrar' ($j.empresasEncontradas -and $antesSim -eq $depoisSim) "token=$($j.empresasEncontradas), antes=$antesSim, depois=$depoisSim"
 # ---------------------------------------------------------------- auditor: CBS com 0,9% (oficial) e 11,3% (cenário TCU)
 $r = Send-Arquivos $adm '/hub/lote/auditoria' @((Join-Path $Dados 'nfe-auditoria-cenario.xml'))
 $a = Get-Json $r

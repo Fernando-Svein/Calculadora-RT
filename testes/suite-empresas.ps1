@@ -1,5 +1,5 @@
 ﻿<#
-  Suíte de empresas e relatórios: cadastro automático na importação (sem duplicar), cadastro e edição das
+  Suíte de empresas e relatórios: empresas encontradas na importação (o usuário confirma; consulta do CNPJ), cadastro, edição e exclusão das
   particularidades, permissões, relatório PDF dos simuladores e datas da base no status.
   Usa o banco de empresas temporário da cópia de teste (o cadastro real não é tocado).
 #>
@@ -10,36 +10,45 @@ $cpl = Enter-Hub $UsuarioCompleto $SenhaCompleto
 $spedEmp = Join-Path $Dados 'empresa-sped-contribuicoes.txt'
 $nfeEmp = Join-Path $Dados 'empresa-nfe-simples.xml'
 
-function Get-Novas($r) {
+function Get-Encontradas($r) {
     $v = $null
-    if ($r.Headers.TryGetValues('X-Hub-Empresas-Novas', [ref]$v)) { [int]($v | Select-Object -First 1) } else { -1 }
+    if ($r.Headers.TryGetValues('X-Hub-Empresas-Encontradas', [ref]$v)) { [string]($v | Select-Object -First 1) } else { $null }
 }
 # PS 5.1: ConvertFrom-Json devolve o array JSON como um objeto só; os parênteses o desmembram em itens
 function Get-Empresas { (Get-Texto (Invoke-Hub $adm 'GET' '/hub/empresas') | ConvertFrom-Json) | ForEach-Object { $_ } }
+function Get-Lista($r) { (Get-Texto $r | ConvertFrom-Json) | ForEach-Object { $_ } }
 
-# ---------------------------------------------------------------- cadastro automático
+# ---------------------------------------------------------------- empresas encontradas na importação (o usuário confirma)
 $antes = @(Get-Empresas)
-Add-Resultado $Suite 'arquivos de teste antigos (CNPJ com dígito inválido) não geram cadastro' `
-    (-not ($antes | Where-Object cnpj -eq '12345678000199')) "cadastradas: $(($antes | ForEach-Object cnpj) -join ', ')"
-
 $r = Send-Arquivos $adm '/hub/lote/classificacao?data=2026-03-10' @($spedEmp, $nfeEmp)
-Add-Resultado $Suite 'importação cadastra as 2 empresas novas (SPED + emitente do XML)' ((Get-Status $r) -eq 200 -and (Get-Novas $r) -eq 2) "HTTP $(Get-Status $r), novas=$(Get-Novas $r)"
+$token = Get-Encontradas $r
+Add-Resultado $Suite 'importação não cadastra sozinha: separa as empresas novas para o usuário decidir' ((Get-Status $r) -eq 200 -and $token -and @(Get-Empresas).Count -eq $antes.Count) "HTTP $(Get-Status $r), token=$token, antes=$($antes.Count), depois=$(@(Get-Empresas).Count)"
+$enc = @(Get-Lista (Invoke-Hub $adm 'GET' "/hub/empresas/encontradas/$token"))
+$eSped = $enc | Where-Object cnpj -eq '11222333000181'; $eXml = $enc | Where-Object cnpj -eq '12ABC34501DE35'
+Add-Resultado $Suite 'encontradas: contribuinte do SPED e emitente do XML, com os dados dos arquivos' ($enc.Count -eq 2 -and $eSped.regime -eq 'NORMAL' -and $eSped.regimeApuracao -eq 'LUCRO_PRESUMIDO' -and $eXml.regime -eq 'SIMPLES' -and $eXml.nomeFantasia -eq 'Padaria Exemplo') ($enc | ConvertTo-Json -Compress)
+Add-Resultado $Suite 'encontradas: destinatário da NF-e e CNPJ inválido ficam de fora' (-not ($enc | Where-Object cnpj -in '98765432000198', '12345678000199')) ''
+Assert-Resposta $Suite 'encontradas: a lista é só de quem importou' (Invoke-Hub $lim 'GET' "/hub/empresas/encontradas/$token") 404 'expirou'
+Assert-Resposta $Suite 'encontradas: usuário sem a ferramenta Empresas não adiciona' (Invoke-Hub $lim 'POST' "/hub/empresas/encontradas/$token" '{"cnpjs":["11222333000181"]}') 403 'SEM_PERMISSAO'
+Assert-Resposta $Suite 'encontradas: confirmar sem escolher nenhuma é recusado' (Invoke-Hub $adm 'POST' "/hub/empresas/encontradas/$token" '{"cnpjs":[]}') 422 'Selecione'
+$res = @(Get-Lista (Invoke-Hub $adm 'POST' "/hub/empresas/encontradas/$token" '{"cnpjs":["11.222.333/0001-81","12ABC34501DE35"]}'))
+$rS = $res | Where-Object cnpj -eq '11222333000181'; $rX = $res | Where-Object cnpj -eq '12ABC34501DE35'
+Add-Resultado $Suite 'adicionar: as duas cadastradas; a do SPED com a consulta do CNPJ (OK)' ($rS.situacao -eq 'CADASTRADA' -and $rS.consulta -eq 'OK' -and $rX.situacao -eq 'CADASTRADA') ($res | ConvertTo-Json -Compress)
+Add-Resultado $Suite 'adicionar: sem resultado na API, entra com os dados do arquivo e explica o motivo' ($rX.consulta -like '*não encontrado*') "$($rX.consulta)"
 $lista = @(Get-Empresas)
 $sped = $lista | Where-Object cnpj -eq '11222333000181'
 $xml = $lista | Where-Object cnpj -eq '12ABC34501DE35'
-Add-Resultado $Suite 'SPED Contribuições: razão social, UF, município e regime normal / Lucro Presumido (0110 = 2)' `
-    ($sped -and $sped.razaoSocial -ceq 'COMERCIAL EXEMPLO LTDA' -and $sped.uf -eq 'RJ' -and $sped.municipio -eq 3304557 -and
-     $sped.regime -eq 'NORMAL' -and $sped.regimeApuracao -eq 'LUCRO_PRESUMIDO' -and $sped.origem -eq 'SPED' -and -not $sped.revisado) ($sped | ConvertTo-Json -Compress)
+Add-Resultado $Suite 'SPED + consulta: razão social, fantasia e endereço da API; regime normal / Lucro Presumido do arquivo (0110 = 2)' `
+    ($sped -and $sped.razaoSocial -ceq 'COMERCIAL EXEMPLO LTDA' -and $sped.nomeFantasia -eq 'EXEMPLO ATACADO' -and $sped.uf -eq 'RJ' -and $sped.municipio -eq 3304557 -and
+     $sped.regime -eq 'NORMAL' -and $sped.regimeApuracao -eq 'LUCRO_PRESUMIDO' -and $sped.origem -eq 'SPED' -and -not $sped.revisado) ($sped | ConvertTo-Json -Depth 2 -Compress)
+Add-Resultado $Suite 'consulta completa gravada no cadastro (situação, CNAE e quadro societário)' ($sped.dadosCadastrais.situacaoCadastral -eq 'ATIVA' -and @($sped.dadosCadastrais.qsa).Count -eq 2 -and "$($sped.dadosCadastrais.cnaePrincipal.codigo)" -eq '4639701') ''
 Add-Resultado $Suite 'NF-e: CNPJ alfanumérico, nome fantasia, município e CRT 1 = Simples Nacional' `
     ($xml -and $xml.nomeFantasia -eq 'Padaria Exemplo' -and $xml.uf -eq 'MG' -and $xml.municipio -eq 3106200 -and $xml.regime -eq 'SIMPLES' -and $xml.origem -eq 'XML') ($xml | ConvertTo-Json -Compress)
-Add-Resultado $Suite 'destinatário da NF-e não é cadastrado' (-not ($lista | Where-Object cnpj -eq '98765432000198')) ''
-
+$res2 = @(Get-Lista (Invoke-Hub $adm 'POST' "/hub/empresas/encontradas/$token" '{"cnpjs":["11222333000181"]}'))
+Add-Resultado $Suite 'confirmar de novo não duplica (já cadastrada)' ($res2[0].situacao -eq 'JA_CADASTRADA' -and @(Get-Empresas).Count -eq $lista.Count) ($res2 | ConvertTo-Json -Compress)
 $r = Send-Arquivos $adm '/hub/lote/auditoria' @($nfeEmp, $spedEmp)
-$depois = @(Get-Empresas)
-Add-Resultado $Suite 'mesmo CNPJ importado de novo não duplica o cadastro' ((Get-Novas $r) -eq 0 -and $depois.Count -eq $lista.Count) "novas=$(Get-Novas $r), antes=$($lista.Count), depois=$($depois.Count)"
+Add-Resultado $Suite 'importar de novo: nenhuma empresa nova para perguntar' (-not (Get-Encontradas $r)) "token=$(Get-Encontradas $r)"
 $r = Send-Arquivos $lim '/hub/lote/classificacao' @($nfeEmp)
-Add-Resultado $Suite 'usuário sem a ferramenta de lote não cadastra empresas pelo lote' ((Get-Status $r) -eq 403) "HTTP $(Get-Status $r)"
-
+Add-Resultado $Suite 'usuário sem a ferramenta de lote não importa' ((Get-Status $r) -eq 403) "HTTP $(Get-Status $r)"
 # ---------------------------------------------------------------- abrir e editar o cadastro
 $alt = @{ razaoSocial = 'PADARIA EXEMPLO ME'; nomeFantasia = 'Padaria Exemplo'; uf = 'MG'; municipio = 3106200; regime = 'SIMPLES'
     fatorR = $true; ibscbsForaSimples = $false; sublimiteExcedido = $false; atividadeSimples = '01'; documentoPadrao = '65'; cClassTribPadrao = '000001'
@@ -78,7 +87,11 @@ Assert-Resposta $Suite 'alteração sem token CSRF é recusada' (Invoke-Hub $adm
 Assert-Resposta $Suite 'sem login não consulta empresas' (Invoke-Hub (New-SessaoHub) 'GET' '/hub/empresas') 401
 Assert-Resposta $Suite 'exclusão' (Invoke-Hub $adm 'DELETE' "/hub/empresas/$idManual") 204
 Assert-Resposta $Suite 'excluída não abre mais' (Invoke-Hub $adm 'GET' "/hub/empresas/$idManual") 404
-
+$ids = foreach ($c in '77123456000173', '77123456000254') { (Get-Texto (Invoke-Hub $adm 'POST' '/hub/empresas' (@{ cnpj = $c; razaoSocial = "EXCLUIR $c" } | ConvertTo-Json -Compress)) | ConvertFrom-Json).id }
+Assert-Resposta $Suite 'excluir selecionadas: usuário sem a ferramenta Empresas não pode' (Invoke-Hub $lim 'POST' '/hub/empresas/excluir' (@{ ids = @($ids) } | ConvertTo-Json -Compress)) 403 'SEM_PERMISSAO'
+Assert-Resposta $Suite 'excluir selecionadas: duas empresas de uma vez' (Invoke-Hub $adm 'POST' '/hub/empresas/excluir' (@{ ids = @($ids) } | ConvertTo-Json -Compress)) 200 '"excluidas":2'
+Add-Resultado $Suite 'excluir selecionadas: não aparecem mais na lista' (-not (Get-Empresas | Where-Object { $_.id -in $ids })) ''
+Assert-Resposta $Suite 'excluir selecionadas: seleção vazia é recusada' (Invoke-Hub $adm 'POST' '/hub/empresas/excluir' '{"ids":[]}') 422 'Selecione'
 # ---------------------------------------------------------------- relatório PDF dos simuladores
 $pedido = @{ titulo = 'Simulação – Regime Regular'; arquivo = 'simulacao-teste'
     empresa = @('PADARIA EXEMPLO ME', 'CNPJ 12.ABC.345/01DE-35 · Simples Nacional · Belo Horizonte/MG')

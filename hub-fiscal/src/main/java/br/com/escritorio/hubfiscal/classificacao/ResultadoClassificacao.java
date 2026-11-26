@@ -17,4 +17,6 @@ public class ResultadoClassificacao {
     public int totalItens;
     public Map<String, Integer> contagemStatus = new LinkedHashMap<>();
     public List<LinhaClassificacao> linhas = new ArrayList<>();
+    /** Vendas por NCM/NBS e empresa (aba "Vendas por NCM" da tela e da planilha). */
+    public br.com.escritorio.hubfiscal.importacao.VendasPorNcm.Resumo vendasPorNcm;
 }

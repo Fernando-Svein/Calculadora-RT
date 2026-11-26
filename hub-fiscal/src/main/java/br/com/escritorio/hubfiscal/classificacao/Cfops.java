@@ -27,6 +27,23 @@ public final class Cfops {
         return cfop != null && !cfop.isEmpty() && "567".indexOf(cfop.charAt(0)) >= 0;
     }
 
+    /**
+     * CFOP de venda ou prestação (receita da operação): saídas 5/6/7 com final em
+     * 101–125 (vendas de produção e mercadorias), 251–258 (energia), 301–307 (comunicação), 351–360 (transporte),
+     * 401–405 (vendas com substituição tributária), 651–656 e 667 (combustíveis), 932 e 933 (prestação de serviço).
+     * Ficam de fora remessas, transferências, devoluções, bonificações, amostras, venda de ativo (551) e o 929
+     * (lançamento de nota também registrada no ECF, para não contar a venda duas vezes).
+     */
+    public static boolean venda(String cfop) {
+        if (cfop == null || cfop.length() != 4 || !saida(cfop) || !cfop.chars().allMatch(Character::isDigit)) {
+            return false;
+        }
+        int fim = Integer.parseInt(cfop.substring(1));
+        return fim >= 101 && fim <= 125 || fim >= 251 && fim <= 258 || fim >= 301 && fim <= 307
+                || fim >= 351 && fim <= 360 || fim >= 401 && fim <= 405 || fim >= 651 && fim <= 656 || fim == 667
+                || fim == 932 || fim == 933;
+    }
+
     public static boolean entrada(String cfop) {
         return cfop != null && !cfop.isEmpty() && "123".indexOf(cfop.charAt(0)) >= 0;
     }

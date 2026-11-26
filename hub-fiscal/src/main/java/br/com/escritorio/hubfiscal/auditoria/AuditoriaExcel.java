@@ -9,6 +9,7 @@ import java.util.Map;
 
 import br.com.escritorio.hubfiscal.excel.Planilha;
 import br.com.escritorio.hubfiscal.excel.Planilha.Coluna;
+import br.com.escritorio.hubfiscal.excel.VendasExcel;
 
 /** Gera a planilha Excel da auditoria de XML. */
 public final class AuditoriaExcel {
@@ -58,6 +59,7 @@ public final class AuditoriaExcel {
                     + "rejeitou o CST/cClassTrib/NCM do item (ex.: NCM fora do anexo)."
                     + (r.cenarioCbs == null ? "" : " As colunas do cenário mostram a CBS do mesmo cálculo com a alíquota do cenário, "
                             + "lado a lado com a oficial (o IBS não muda); são só simulação: o status compara o XML com a alíquota oficial.") });
+            VendasExcel.resumo(resumo, r.vendasPorNcm);
             Planilha.secoesArquivosEAvisos(resumo, r.arquivos, r.avisos);
             p.abaResumo("Resumo", "Auditoria IBS/CBS dos documentos fiscais", resumo);
 
@@ -97,6 +99,7 @@ public final class AuditoriaExcel {
                 linhas.add(v.toArray());
             }
             p.abaTabela("Itens", cols, linhas, 0);
+            VendasExcel.aba(p, r.vendasPorNcm);
             return p.bytes();
         }
     }

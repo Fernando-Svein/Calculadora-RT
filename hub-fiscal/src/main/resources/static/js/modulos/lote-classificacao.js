@@ -58,6 +58,69 @@
     };
   };
 
+  /**
+   * Quadro "Vendas por NCM" abaixo do resultado (classificação e auditoria): valor vendido por empresa e NCM/NBS,
+   * com o total no fim e o que ficou de fora (entradas, remessas, devoluções...). Mesmos números da aba da planilha.
+   */
+  Hub.vendasPorNcm = (res, v) => {
+    if (!v) return;
+    const empresas = v.empresas || [];
+    const varias = empresas.length > 1;
+    const quadro = Hub.el(`<div class="card vendas-ncm"><div class="card-cab"><h2>Vendas por NCM</h2>
+        <span class="sutil">Também na aba "Vendas por NCM" da planilha Excel</span></div>
+      <div class="kpis">
+        <div class="kpi destaque"><small>Total vendido (líquido)</small><strong>${fmt.moeda(v.valorLiquido)}</strong></div>
+        <div class="kpi"><small>Itens vendidos</small><strong>${fmt.num(v.itens)}</strong></div>
+        <div class="kpi"><small>NCM/NBS diferentes</small><strong>${fmt.num(new Set(v.linhas.map((l) => l.ncm)).size)}</strong></div>
+        <div class="kpi"><small>Descontos</small><strong>${fmt.moeda(v.descontos)}</strong></div>
+      </div>
+      ${varias ? `<div class="campo" style="max-width:520px;margin-bottom:10px"><label>Empresa</label><select data-emp-vendas>
+        <option value="">Todas (${empresas.length})</option>${empresas.map((e) => `<option value="${esc(e.empresaCnpj)}">${esc(e.empresaNome || '')} – ${esc(fmt.cnpj(e.empresaCnpj))}</option>`).join('')}
+        </select></div>` : ''}
+      <div data-tab-vendas></div>
+      <div class="vendas-total" data-total-vendas></div>
+      <details style="margin-top:10px"><summary>O que entra no total</summary><ul>${(v.observacoes || []).map((o) => `<li>${esc(o)}</li>`).join('')}</ul></details>
+    </div>`);
+    res.appendChild(quadro);
+    if (!v.linhas.length) {
+      quadro.querySelector('[data-tab-vendas]').innerHTML = '<p class="sutil">Nenhuma venda nos arquivos (só entradas, remessas ou devoluções).</p>';
+      return;
+    }
+    const tab = comp.tabela(quadro.querySelector('[data-tab-vendas]'), {
+      placeholder: 'Buscar NCM ou descrição...',
+      porPagina: 50,
+      colunas: [
+        ...(varias ? [{ titulo: 'Empresa', campo: 'empresaNome' }] : []),
+        { titulo: 'NCM/NBS', campo: 'ncm', render: (l) => (l.ncm ? `<code>${esc(l.ncm)}</code>` : '<span class="sutil">sem NCM</span>') },
+        { titulo: 'Descrição', campo: 'descricao', render: (l) => `<span class="desc-curta" title="${esc(l.descricao || '')}">${esc(l.descricao || '')}</span>` },
+        { titulo: 'Itens', campo: 'itens', tipo: 'num' },
+        { titulo: 'Quantidade', campo: 'quantidade', tipo: 'num' },
+        { titulo: 'Unid.', campo: 'unidade' },
+        { titulo: 'Valor dos produtos', campo: 'valorBruto', tipo: 'moeda' },
+        { titulo: 'Descontos', campo: 'descontos', tipo: 'moeda' },
+        { titulo: 'Valor vendido', campo: 'valorLiquido', tipo: 'moeda' },
+        { titulo: '% da empresa', campo: 'percentual', tipo: 'pct' },
+      ],
+      linhas: v.linhas,
+    });
+    const total = quadro.querySelector('[data-total-vendas]');
+    const somar = () => {
+      const sel = quadro.querySelector('[data-emp-vendas]');
+      const cnpj = sel ? sel.value : '';
+      const ls = tab.linhas(); // linhas exibidas (empresa escolhida e busca)
+      const soma = (k) => ls.reduce((s, l) => s + Number(l[k] || 0), 0);
+      const filtrado = ls.length !== v.linhas.length;
+      total.innerHTML = `<span><strong>${filtrado ? 'Total exibido' : 'Total geral'}</strong> · ${fmt.num(ls.length)} NCM/NBS · ${fmt.num(soma('itens'))} itens</span>
+        <span>Produtos ${fmt.moeda(soma('valorBruto'))}</span><span>Descontos ${fmt.moeda(soma('descontos'))}</span>
+        <span class="vendas-total-valor">Vendido ${fmt.moeda(soma('valorLiquido'))}</span>
+        ${cnpj ? '<span class="sutil">(empresa selecionada)</span>' : ''}`;
+    };
+    const sel = quadro.querySelector('[data-emp-vendas]');
+    if (sel) sel.onchange = () => { tab.filtrar(sel.value ? (l) => String(l.empresaCnpj) === sel.value : null); somar(); };
+    quadro.querySelector('[data-tab-vendas] input[type=search]').addEventListener('input', () => setTimeout(somar, 250));
+    somar();
+  };
+
   /** Contadores por status (clicáveis para filtrar a tabela). */
   Hub.contadoresStatus = (alvo, contagem, rotulos, tabela, campo = 'status') => {
     alvo.innerHTML = `<div class="contadores">${Object.entries(contagem).map(([k, v]) =>
@@ -151,6 +214,7 @@
           });
           Hub.contadoresStatus(res.querySelector('[data-cont]'), d.contagemStatus, ROTULOS, tab);
           res.querySelector('[data-xlsx]').onclick = () => Hub.baixarUrl(`/hub/lote/classificacao/${d.id}/excel`, 'classificacao.xlsx');
+          Hub.vendasPorNcm(res, d.vendasPorNcm);
         },
       });
     },

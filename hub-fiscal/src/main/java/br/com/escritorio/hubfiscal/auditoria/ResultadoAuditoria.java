@@ -21,4 +21,6 @@ public class ResultadoAuditoria {
     public Map<String, String> arquivos = new LinkedHashMap<>();
     public List<String> avisos = new ArrayList<>();
     public List<LinhaAuditoria> linhas = new ArrayList<>();
+    /** Vendas por NCM/NBS e empresa dos XMLs (aba "Vendas por NCM" da tela e da planilha). */
+    public br.com.escritorio.hubfiscal.importacao.VendasPorNcm.Resumo vendasPorNcm;
 }

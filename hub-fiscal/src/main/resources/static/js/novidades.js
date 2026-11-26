@@ -79,6 +79,9 @@
       'Cadastros → Empresas → Nova empresa: digite o CNPJ e clique em <strong>Consultar CNPJ na base pública</strong>. Razão social, fantasia, município e regime são preenchidos e aparecem situação cadastral, CNAEs, endereço e quadro societário.',
       'CNPJ inexistente ou limite de consultas: aparece a explicação e o cadastro manual continua.',
     ]],
+    ['8. Vendas por NCM', [
+      'Classificar cadastro ou Auditar XML: abaixo do resultado, o quadro <strong>Vendas por NCM</strong> mostra o valor vendido por empresa e NCM, com o total geral (também na aba da planilha). Em "O que entra no total" aparecem os itens que ficaram de fora (entradas, remessas, devoluções...).',
+    ]],
     ['7. Auditor com 0,9% e 11,3%', [
       'Auditar XML com <code>testes/dados/nfe-auditoria-cenario.xml</code>: a CBS aparece calculada com a alíquota oficial (0,9%: R$ 68,26) e com o Cenário TCU (11,3%: R$ 857,10), lado a lado na tela e no Excel.',
     ]],

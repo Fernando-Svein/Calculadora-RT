@@ -67,6 +67,8 @@ Por segurança o hub não guarda o arquivo enviado: confere o formato pelos byte
 abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px. O arquivo fica em
 `/opt/hub-fiscal/dados/logo.png` (configurável em `hub.arquivo-logo`) – inclua no backup junto com os usuários.
 
+> **Manual de instalação, operação e atualização (VM, comandos, problemas resolvidos):** [docs/MANUAL-OPERACAO.md](docs/MANUAL-OPERACAO.md)
+
 ## Empresas, simuladores e relatórios
 
 - **Cadastros → Empresas**: empresas atendidas e suas particularidades (regime, Lucro Real/Presumido, município, alíquotas
@@ -84,6 +86,8 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
 - **Consultar CNPJ**: no cadastro da empresa, busca na base pública (BrasilAPI, `hub.consulta-cnpj-url`) razão social,
   fantasia, situação cadastral, CNAEs, endereço, Simples/MEI, regime declarado e quadro societário. Falhas (CNPJ inexistente,
   limite de consultas, serviço fora) aparecem com mensagem e o cadastro manual continua. A VM precisa de acesso à internet.
+- **Vendas por NCM**: na classificação de cadastro e na auditoria de XML, quadro abaixo do resultado (e aba na planilha) com o
+  valor vendido por empresa e NCM, o total geral e o que ficou de fora (entradas, remessas, devoluções...).
 - **Auditor com cenário TCU**: a CBS de cada item aparece calculada com a alíquota oficial (0,9% em 2026) e com a do cenário
   (11,3%), lado a lado, na tela e no Excel; o status OK/Divergente segue a alíquota oficial.
 - **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária (timer

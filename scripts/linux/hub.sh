@@ -78,8 +78,12 @@ criar_admin() {
   local cookies corpo resposta codigo token cabecalho
   cookies=$(mktemp)
   trap 'rm -f "$cookies"' RETURN
-  resposta=$(curl -s -m 10 -c "$cookies" -b "$cookies" http://127.0.0.1:8090/auth/csrf) || morrer "Não foi possível falar com o hub."
-  token=$(jq -r '.token' <<<"$resposta"); cabecalho=$(jq -r '.header' <<<"$resposta")
+  curl -s -m 10 -c "$cookies" -b "$cookies" http://127.0.0.1:8090/auth/csrf >/dev/null || morrer "Não foi possível falar com o hub."
+  # o hub compara o cabeçalho com o valor do cookie XSRF-TOKEN (como o navegador faz), não com o token do JSON
+  token=$(awk -F'\t' '$6 == "XSRF-TOKEN" { print $7 }' "$cookies" | tail -n 1)
+  token=$(printf '%b' "${token//%/\\x}")   # desfaz a codificação de URL, se houver
+  [[ -n "$token" ]] || morrer "O hub não devolveu o cookie de segurança (XSRF-TOKEN)."
+  cabecalho=X-XSRF-TOKEN
   corpo=$(jq -n --arg u "$usuario" --arg n "$nome" --arg s "$senha" '{usuario: $u, nome: $n, senha: $s}')
   resposta=$(curl -s -m 10 -c "$cookies" -b "$cookies" -H "Content-Type: application/json" -H "$cabecalho: $token" \
     -d "$corpo" -w $'\n%{http_code}' http://127.0.0.1:8090/auth/primeiro-acesso)

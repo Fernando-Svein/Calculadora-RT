@@ -44,7 +44,7 @@ Todos os comandos: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs/atualizacao.log`.
 
-**Backup:** inclua a pasta `/opt/hub-fiscal/dados/` (usuários, senhas e logo). O resto se recria a partir dos repositórios.
+**Backup:** inclua a pasta `/opt/hub-fiscal/dados/` (usuários, senhas, empresas e logo). O resto se recria a partir dos repositórios.
 Se perder o acesso de todos os administradores: `hub.sh parar`, renomeie esse arquivo, `hub.sh iniciar` e rode `hub.sh criar-admin`.
 
 ## Acesso (login e senha)
@@ -66,6 +66,20 @@ transparente). Ela aparece para todos no cabeçalho do menu, na tela de login e 
 Por segurança o hub não guarda o arquivo enviado: confere o formato pelos bytes (SVG é recusado, pois pode conter scripts),
 abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px. O arquivo fica em
 `/opt/hub-fiscal/dados/logo.png` (configurável em `hub.arquivo-logo`) – inclua no backup junto com os usuários.
+
+## Empresas, simuladores e relatórios
+
+- **Cadastros → Empresas**: empresas atendidas e suas particularidades (regime, Lucro Real/Presumido, município, alíquotas
+  do DAS por anexo, fator r, sublimite, atividade, documento e cClassTrib usuais). Ao importar um SPED ou XML num
+  processamento em lote, a empresa do arquivo (contribuinte do SPED ou emitente do XML) é cadastrada automaticamente com
+  CNPJ e razão social, marcada como "A conferir"; o mesmo CNPJ nunca é cadastrado duas vezes. Incluir e editar exige a
+  ferramenta "Empresas". Ficam em `/opt/hub-fiscal/dados/hub-empresas.db` (`hub.banco-empresas`) – inclua no backup.
+- **Empresa da simulação**: todos os simuladores (Regime Regular, Simples, Comparador, Pedágio e Bases) têm o seletor no
+  topo; a empresa escolhida preenche os campos (borda violeta) e aparece no resultado. Fica lembrada no navegador.
+- **Relatórios**: depois de calcular, "Relatório PDF" e "Relatório Excel" (empresa, resumo, tabela e observações). Os
+  lotes continuam com a planilha própria.
+- **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária (timer
+  das 03:00). O horário é registrado pelo `instalar.sh` e pelo `hub.sh atualizar-hub`/`verificar`; sem ele, aparece "não agendada".
 
 ## O que o hub oferece
 
@@ -90,7 +104,7 @@ Configuração em `hub.cenario-cbs` no `application.yml`.
 ├─ hub-fiscal/                        aplicação do escritório (Spring Boot 4 + telas HTML/JS) – porta 8090
 │  └─ src/main/resources/application.yml   URLs das calculadoras, caminhos, paralelismo, cenário de CBS
 ├─ scripts/linux/                     instalar.sh, hub.sh e comum.sh
-├─ dados/                             hub-usuarios.db (fazer backup)
+├─ dados/                             hub-usuarios.db, hub-empresas.db e logo.png (fazer backup)
 ├─ logs/                              logs dos três serviços e das atualizações
 ├─ docs/                              documentação completa em PDF
 └─ tools/                             Java 25 portátil

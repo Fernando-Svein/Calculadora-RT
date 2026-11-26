@@ -19,6 +19,12 @@ public class DocumentoFiscal {
     public String emitenteNome;
     public String emitenteUf;
     public String emitenteCrt;
+    /** Nome fantasia do emitente (xFant), quando informado. */
+    public String emitenteFantasia;
+    /** Código IBGE do município do emitente (enderEmit/cMun na NF-e; enderNac/cMun na NFS-e). */
+    public Integer emitenteMunicipio;
+    /** NFS-e: situação do prestador no Simples (opSimpNac: 1 não optante, 2 MEI, 3 ME/EPP). */
+    public String emitenteOpSimpNac;
     public String destinatarioCnpj;
     public String destinatarioNome;
     /** Situação especial detectada (protocolo com cStat diferente de autorizado). */

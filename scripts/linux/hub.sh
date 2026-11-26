@@ -26,7 +26,7 @@ principal() {
     logs) logs "${2:-hub}" ;;
     criar-admin) criar_admin ;;
     atualizar) exigir_root "$@"; atualizar ;;
-    verificar) exigir_root "$@"; verificar 2>&1 | tee -a "$LOGS/atualizacao.log" ;;
+    verificar) exigir_root "$@"; gravar_agendamento; verificar 2>&1 | tee -a "$LOGS/atualizacao.log" ;;
     atualizar-hub) exigir_root "$@"; atualizar_hub ;;
     ajuda | -h | --help) sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
     *) falha "Comando desconhecido: $comando"; sed -n '6,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
@@ -174,6 +174,7 @@ atualizar_hub() {
   git -c safe.directory="$RAIZ" -C "$RAIZ" pull --ff-only || morrer "git pull falhou"
   chown -R "$USUARIO_SERVICO:$USUARIO_SERVICO" "$RAIZ"
   systemctl daemon-reload
+  gravar_agendamento
   compilar hub-fiscal "HUB Fiscal" || morrer "Compilação do hub falhou. O hub continua rodando a versão anterior; não reinicie a VM antes de corrigir (sudo bash $0 atualizar-hub de novo)."
   etapa "Reiniciando o hub"
   systemctl restart hubfiscal

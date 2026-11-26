@@ -12,6 +12,9 @@ HOME_SERVICO=/var/lib/hubfiscal
 LOGS="$RAIZ/logs"
 JAVA_HOME_HUB="$RAIZ/tools/java-atual"   # link para a pasta do JDK 25 baixado
 ARQUIVO_RESULTADO="$LOGS/ultima-atualizacao.json"
+# horário da verificação diária: o hub lê este arquivo para mostrar a próxima atualização no topo das telas
+ARQUIVO_AGENDAMENTO="$LOGS/agendamento-atualizacao.json"
+HORARIO_ATUALIZACAO="03:00"
 
 # Repositórios oficiais da Receita: usados sem modificação (só clone e git pull)
 REPOS=(calculadora-rtc-regime-regular calculadora-rtc-simples-nacional)
@@ -56,6 +59,18 @@ maven() {  # maven <pasta> <argumentos...>
 git_servico() {  # git_servico <pasta> <argumentos...>
   local pasta=$1; shift
   como_servico git -C "$RAIZ/$pasta" "$@"
+}
+
+# Registra o horário do timer de atualização para o hub (só se o timer estiver habilitado)
+gravar_agendamento() {
+  if ! systemctl is-enabled --quiet hubfiscal-atualizacao.timer 2>/dev/null; then
+    rm -f "$ARQUIVO_AGENDAMENTO"
+    return 0
+  fi
+  mkdir -p "$LOGS"
+  local tmp="$ARQUIVO_AGENDAMENTO.tmp"
+  printf '{"horario": "%s", "sistema": "linux", "tarefa": "hubfiscal-atualizacao.timer", "gravadoEm": "%s"}\n' \
+    "$HORARIO_ATUALIZACAO" "$(date +%Y-%m-%dT%H:%M:%S)" >"$tmp" && chmod 644 "$tmp" && mv -f "$tmp" "$ARQUIVO_AGENDAMENTO"
 }
 
 # ---------------------------------------------------------------- Java 25 (Eclipse Temurin, portátil)

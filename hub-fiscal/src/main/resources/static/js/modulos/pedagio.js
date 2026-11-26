@@ -35,7 +35,8 @@
         'Calcula a CBS e o IBS da tarifa de pedágio, distribuindo o IBS entre os municípios e estados de cada trecho pela extensão. ' +
         'A calculadora oficial de pedágio usa as alíquotas de referência da base: hoje só há alíquotas cadastradas para 2026 ' +
         '(datas de 2027 em diante retornam "alíquota não encontrada").') +
-        `<div class="card"><h3>Operação</h3><div class="grade g4">
+        `<div data-empresa></div>
+        <div class="card"><h3>Operação</h3><div class="grade g4">
           ${comp.campo('Data de emissão *', `<input type="date" name="data" value="${dataPadrao}">`)}
           ${comp.campo('CST *', '<input name="cst" value="000">')}
           ${comp.campo('Classificação tributária (cClassTrib) *', '<input name="cClassTrib" value="000002">')}
@@ -57,7 +58,29 @@
       };
       el.querySelector('[data-add]').onclick = addTrecho;
       addTrecho();
+      // empresa da simulação (concessionária): município de origem e cClassTrib usual vêm do cadastro
+      const emp = Hub.empresas.seletor(el.querySelector('[data-empresa]'), {
+        raiz: el,
+        aoMudar: (e) => {
+          if (!e) return {};
+          const D = Hub.empresas.definir;
+          const usadas = [];
+          if (e.uf && e.municipio) {
+            usadas.push('município do estabelecimento como origem');
+            orig.pronto.then(() => orig.definir(e.uf, e.municipio)).then(() => {
+              D(el.querySelector('[data-orig] [data-uf]'), e.uf);
+              D(el.querySelector('[data-orig] [data-mun]'), e.municipio);
+            });
+          }
+          if (e.cClassTribPadrao && D(el.querySelector('[name=cClassTrib]'), e.cClassTribPadrao)) {
+            D(el.querySelector('[name=cst]'), e.cClassTribPadrao.substring(0, 3));
+            usadas.push('cClassTrib usual ' + e.cClassTribPadrao);
+          }
+          return { usadas, aviso: e.regime && e.regime !== 'NORMAL' ? 'A calculadora de pedágio segue o regime regular; esta empresa está cadastrada como ' + esc(Hub.empresas.regimeTexto(e)) + '.' : '' };
+        },
+      });
       el.querySelector('[data-calc]').onclick = async () => {
+        const ctx = { empresa: emp.empresa(), usadas: emp.usadas(), origem: orig.valor() };
         const f = comp.lerCampos(el.querySelector('.card'));
         const o = orig.valor();
         const corpo = {
@@ -82,12 +105,43 @@
           if (!c.ok) { res.innerHTML = Hub.problema(c, 'Não foi possível aplicar o cenário de CBS'); return; }
           r.data = c.data;
         }
-        res.innerHTML = `<div class="card"><div class="card-cab"><h2>Resultado</h2><button class="btn btn-sec btn-peq" data-json>Ver resposta técnica</button></div>
+        res.innerHTML = `<div class="card"><div class="card-cab"><h2>Resultado</h2><div class="acoes">${Hub.relatorio.botoes()}
+            <button class="btn btn-sec btn-peq" data-json>Ver resposta técnica</button></div></div>
+          ${Hub.empresas.faixaResultado(ctx.empresa)}
           ${r.aviso ? `<div class="aviso">${esc(Hub.avisoSimulado(r.aviso))}</div>` : ''}${Hub.cenarioCbs.aviso(r.data)}${totais(r.data)}<div data-tab></div></div>`;
         const dados = r.data;
         const lista2 = Array.isArray(dados) ? dados : (dados.trechos || dados.objetos || [dados]);
-        comp.jsonTabela(res.querySelector('[data-tab]'), lista2, { busca: false, exportar: { arquivo: 'pedagio', titulo: 'Cálculo de pedágio' } });
+        // a exportação da tabela agora sai pelos botões "Relatório PDF / Excel" (com empresa e resumo)
+        const tab = comp.jsonTabela(res.querySelector('[data-tab]'), lista2, { busca: false });
         res.querySelector('[data-json]').onclick = () => comp.verJson(dados, 'Resposta – pedágio');
+        Hub.relatorio.ligar(res, async () => {
+          const x = tab.exportacao();
+          const t = dados.total || {};
+          const v = (g) => (t[g] ? Number(t[g].valorDevido || 0) : null);
+          return {
+            titulo: 'Simulação – Pedágio (CBS e IBS por trecho)',
+            arquivo: 'simulacao-pedagio',
+            empresa: await Hub.empresas.linhasRelatorio(ctx.empresa, ctx.usadas),
+            resumo: [
+              ['Data de emissão', fmt.data(f.data)],
+              ['Município de origem', ctx.origem.nomeMunicipio ? `${ctx.origem.nomeMunicipio}/${ctx.origem.uf}` : String(ctx.origem.municipio || '–')],
+              ['CST / cClassTrib', `${f.cst} / ${f.cClassTrib}`],
+              ['Trechos', String(corpo.trechos.length)],
+              ['Base de cálculo (tarifa)', fmt.moeda(dados.baseCalculo ?? corpo.baseCalculo)],
+              ['CBS devida', fmt.moeda(v('cbsTotal'))],
+              ['IBS estadual devido', fmt.moeda(v('ibsEstadualTotal'))],
+              ['IBS municipal devido', fmt.moeda(v('ibsMunicipalTotal'))],
+              ['Total de tributos', fmt.moeda((v('cbsTotal') || 0) + (v('ibsEstadualTotal') || 0) + (v('ibsMunicipalTotal') || 0))],
+            ].concat(dados.cenarioCbs ? [['Cenário de CBS', `${dados.cenarioCbs.rotulo}: ${String(dados.cenarioCbs.aliquota).replace('.', ',')}%`]] : []),
+            colunas: x.colunas,
+            linhas: x.linhas,
+            observacoes: [
+              r.aviso ? Hub.avisoSimulado(r.aviso) : null,
+              dados.cenarioCbs ? 'Cenário de CBS: simulação com alíquota diferente da oficial. Não usar em documento fiscal.' : null,
+              'Valores calculados pela calculadora oficial de pedágio da Receita Federal (rateio do IBS pela extensão de cada trecho).',
+            ],
+          };
+        });
       };
     },
   });

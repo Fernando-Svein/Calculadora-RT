@@ -18,7 +18,8 @@
         'Simulação simplificada para o optante do Simples Nacional que pode recolher o IBS e a CBS pelo regime regular. ' +
         'Compara o valor recolhido, os créditos sobre compras e o crédito que cada opção transfere aos clientes contribuintes. ' +
         'Os dois cenários são calculados nas calculadoras oficiais.') +
-        `<div class="card"><h3>Dados do período</h3>
+        `<div data-empresa></div>
+        <div class="card"><h3>Dados do período</h3>
           <div class="grade g4">
             ${comp.campo('Data de referência *', `<input type="date" name="data" min="2027-01-01" value="${dataInicial}">`)}
             ${comp.campo('Tipo de receita', '<select name="tipo"><option value="55">Venda de mercadorias (NF-e)</option><option value="91">Prestação de serviços (NFS-e)</option></select>')}
@@ -61,17 +62,65 @@
       const res = el.querySelector('[data-res]');
       let atividades = [];
 
+      let emp = null;
       async function carregar() {
         atividades = await Hub.atividadesSimples(inpData.value, selTipo.value);
+        const antes = selAtiv.value;
         selAtiv.innerHTML = atividades.map((a) => `<option value="${a.codigo}">${a.codigo} – ${esc(a.descricao.substring(0, 80))}</option>`).join('');
+        if (antes && atividades.some((a) => a.codigo === antes)) selAtiv.value = antes;
+        const e = emp && emp.empresa();
+        if (e && e.atividadeSimples) Hub.empresas.definir(selAtiv, e.atividadeSimples);
         selAtiv.onchange();
+      }
+      /** Anexo efetivo da atividade escolhida (depende do fator r). */
+      function anexoAtual() {
+        const a = atividades.find((x) => x.codigo === selAtiv.value);
+        if (!a) return null;
+        return a.sujeitaFatorR ? (el.querySelector('[name=fatorR]').checked ? a.anexoComFatorR : a.anexoSemFatorR) : a.anexoSemFatorR;
+      }
+      /** Com empresa selecionada, as parcelas de CBS/IBS do DAS vêm do cadastro, conforme o anexo da atividade. */
+      function aliquotasDaEmpresa() {
+        const e = emp && emp.empresa();
+        const p = e && e.aliquotasSimples && e.aliquotasSimples[anexoAtual()];
+        if (!p) return false;
+        Hub.empresas.definir(el.querySelector('[name=pCBSSN]'), p.cbs && String(p.cbs).replace('.', ','));
+        Hub.empresas.definir(el.querySelector('[name=pIBSSN]'), p.ibs && String(p.ibs).replace('.', ','));
+        return true;
       }
       selAtiv.onchange = () => {
         const a = atividades.find((x) => x.codigo === selAtiv.value);
         el.querySelector('[name=anexo]').value = a ? (a.sujeitaFatorR ? `${a.anexoSemFatorR} ou ${a.anexoComFatorR} (fator r)` : a.rotuloAnexo) : '';
+        aliquotasDaEmpresa();
       };
+      el.querySelector('[name=fatorR]').addEventListener('change', aliquotasDaEmpresa);
       inpData.onchange = carregar;
       selTipo.onchange = carregar;
+
+      function aplicarEmpresa(e) {
+        if (!e) return {};
+        const D = Hub.empresas.definir;
+        const usadas = [];
+        if (e.uf && e.municipio) {
+          usadas.push('município do estabelecimento');
+          loc.pronto.then(() => loc.definir(e.uf, e.municipio)).then(() => {
+            D(el.querySelector('[data-loc] [data-uf]'), e.uf);
+            D(el.querySelector('[data-loc] [data-mun]'), e.municipio);
+          });
+        }
+        if (['55', '91'].includes(e.documentoPadrao) && D(selTipo, e.documentoPadrao)) usadas.push('tipo de receita pelo documento usual');
+        if (D(el.querySelector('[name=cClassTrib]'), e.cClassTribPadrao)) usadas.push('cClassTrib usual ' + e.cClassTribPadrao);
+        if (Hub.empresas.ehSimples(e)) {
+          D(el.querySelector('[name=fatorR]'), !!e.fatorR);
+          usadas.push(`fator r ${e.fatorR ? 'igual ou maior que 28%' : 'abaixo de 28%'}`);
+        }
+        if (e.atividadeSimples) usadas.push('atividade ' + e.atividadeSimples);
+        if (Object.keys(e.aliquotasSimples || {}).length) usadas.push('alíquotas do DAS do anexo da atividade');
+        carregar();
+        let aviso = '';
+        if (e.regime && !Hub.empresas.ehSimples(e)) aviso = 'O comparador é para optantes do Simples Nacional; esta empresa está cadastrada como ' + esc(Hub.empresas.regimeTexto(e)) + '.';
+        return { usadas, aviso };
+      }
+      emp = Hub.empresas.seletor(el.querySelector('[data-empresa]'), { raiz: el, aoMudar: aplicarEmpresa });
       carregar();
 
       el.querySelector('[data-calc]').onclick = async () => {
@@ -90,6 +139,7 @@
         const anexo = a.sujeitaFatorR ? (f.fatorR ? a.anexoComFatorR : a.anexoSemFatorR) : a.anexoSemFatorR;
         const nfse = f.tipo === '91';
         const nom = (f.nom || '').replace(/\D/g, '');
+        const ctx = { empresa: emp.empresa(), usadas: emp.usadas() };
         Hub.carregando(res, 'Calculando os dois cenários nas calculadoras oficiais...');
 
         // Cenário A – Simples
@@ -131,7 +181,8 @@
         const credClientesA = totA * b2b;
         const credClientesB = debB * b2b;
         const linha = (t, a, b, dica) => `<tr><td>${t}${dica ? `<div class="sutil" style="font-size:11.5px">${dica}</div>` : ''}</td><td class="num">${fmt.moeda(a)}</td><td class="num">${fmt.moeda(b)}</td></tr>`;
-        res.innerHTML = `<div class="card"><h2>Comparação</h2>
+        res.innerHTML = `<div class="card"><div class="card-cab"><h2>Comparação</h2><div class="acoes">${Hub.relatorio.botoes()}</div></div>
+          ${Hub.empresas.faixaResultado(ctx.empresa)}
           ${errA.length || errB.length ? `<div class="aviso">Há avisos/erros nos cálculos: ${[...errA, ...errB].map((e) => esc(e.code + ' ' + e.detail)).join(' | ')}</div>` : ''}
           <div class="tabela-wrap" style="max-height:none"><table class="tab"><thead><tr><th></th><th class="num">A – dentro do Simples</th><th class="num">B – regime regular</th></tr></thead><tbody>
             ${linha('IBS/CBS sobre o faturamento', totA, debB, `Alíquota efetiva A: ${fmt.pct((totA / fat) * 100)} · B: ${fmt.pct(aliqEfetB * 100)}`)}
@@ -150,6 +201,37 @@
         </div>`;
         res.querySelector('[data-ja]').onclick = () => comp.verJson({ envio: opSn, resposta: ra.data }, 'Cenário A – Simples');
         res.querySelector('[data-jb]').onclick = () => comp.verJson({ envio: opRg, resposta: rb.data }, 'Cenário B – Regime regular');
+        Hub.relatorio.ligar(res, async () => ({
+          titulo: 'Comparador – IBS/CBS no Simples × no regime regular',
+          arquivo: 'comparador-simples-regular',
+          empresa: await Hub.empresas.linhasRelatorio(ctx.empresa, ctx.usadas),
+          resumo: [
+            ['Data de referência', fmt.data(f.data)],
+            ['Tipo de receita', nfse ? 'Prestação de serviços (NFS-e)' : 'Venda de mercadorias (NF-e)'],
+            ['Local', l.nomeMunicipio ? `${l.nomeMunicipio}/${l.uf}` : String(l.municipio)],
+            ['Faturamento do período', fmt.moeda(fat)],
+            ['Vendas para contribuintes (B2B)', fmt.pct(b2b * 100)],
+            ['Compras com crédito', fmt.moeda(compras)],
+            ['Classificação tributária (cClassTrib)', f.cClassTrib || '000001'],
+            ['Cenário A – atividade e anexo', `${f.cAtivSN} – Anexo ${anexo || '–'}${f.fatorR ? ' (fator r ≥ 28%)' : ''}`],
+            ['Cenário A – parcelas do DAS', `CBS ${String(f.pCBSSN).replace('.', ',')}% · IBS ${String(f.pIBSSN).replace('.', ',')}%`],
+            ['Cenário B – alíquotas nominais', `CBS ${fmt.pct(aliqNom.cbs)} · IBS estadual ${fmt.pct(aliqNom.ibsEstadual)} · IBS municipal ${fmt.pct(aliqNom.ibsMunicipal)}`],
+            ['Diferença a recolher (B − A)', fmt.moeda(recolherB - totA)],
+            ['Crédito adicional aos clientes (B − A)', fmt.moeda(credClientesB - credClientesA)],
+          ],
+          colunas: [{ titulo: 'Item', tipo: 'texto', largura: 46 }, { titulo: 'A – dentro do Simples', tipo: 'moeda', largura: 20 }, { titulo: 'B – regime regular', tipo: 'moeda', largura: 20 }],
+          linhas: [
+            ['IBS/CBS sobre o faturamento', totA, debB],
+            ['(−) Créditos sobre compras', 0, credCompras],
+            ['IBS/CBS a recolher', totA, recolherB],
+            ['Crédito transferido aos clientes contribuintes', credClientesA, credClientesB],
+          ].map((x) => [x[0], Number(x[1].toFixed(2)), Number(x[2].toFixed(2))]),
+          observacoes: [
+            ...[...errA, ...errB].map((e) => `${e.code} – ${e.detail}`),
+            'Simulação simplificada: não considera o efeito no DAS dos demais tributos, sublimites, regimes específicos, nem o fluxo de caixa do recolhimento na liquidação financeira (split payment).',
+            'Os dois cenários foram calculados nas calculadoras oficiais da Receita Federal.',
+          ],
+        }));
       };
     },
   });

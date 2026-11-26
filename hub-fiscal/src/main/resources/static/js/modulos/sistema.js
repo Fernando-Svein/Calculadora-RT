@@ -32,7 +32,7 @@
               <br>${s.servidorLinux ? 'No servidor, rode <code>sudo bash /opt/hub-fiscal/scripts/linux/hub.sh iniciar</code>.' : 'Inicie as calculadoras com o arquivo <code>iniciar-hub.bat</code> na pasta do projeto.'}</div>`}</div>`;
       };
       const b = s.bancoOficial || {};
-      res.innerHTML = `<div class="grade g2">${bloco('Calculadora – Regime Geral', s.regimeGeral, 'indigo')}${bloco('Calculadora – Simples Nacional', s.simplesNacional, 'verde')}</div>
+      res.innerHTML = `<div class="grade g2">${bloco('Calculadora – Regime Normal (Regime Regular)', s.regimeGeral, 'indigo')}${bloco('Calculadora – Simples Nacional', s.simplesNacional, 'verde')}</div>
         <div class="card servico" style="margin-top:18px"><div class="servico-cab"><span class="tile tile-azul">${Hub.icone('banco')}</span>
           <div style="flex:1"><h3>Banco de dados oficial</h3><span class="sutil">SQLite somente leitura</span></div>
           ${b.versao ? `<span class="etq etq-azul">${esc(b.versao)}</span>` : ''}</div>
@@ -41,11 +41,15 @@
           <dt>Conteúdo</dt><dd>${esc(b.descricao || '–')}</dd><dt>Arquivo</dt><dd><code>${esc(b.arquivo || '–')}</code></dd>
           <dt>Data do servidor</dt><dd>${fmt.data(s.dataServidor)}</dd></dl>
         </div>
-        ${blocoAtualizacao(s.atualizacao, s.servidorLinux)}`;
+        ${blocoAtualizacao(s.atualizacao, s.servidorLinux, s.base || {})}`;
     },
   });
 
-  function blocoAtualizacao(a, linux) {
+  function blocoAtualizacao(a, linux, base) {
+    const dh = (v) => (v ? new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '–');
+    const datas = `<dl class="dl"><dt>Base atualizada em</dt><dd>${esc(dh(base.ultimaAtualizacao))}</dd>
+        <dt>Próxima atualização</dt><dd>${base.proximaAtualizacao ? esc(dh(base.proximaAtualizacao)) + ` <span class="sutil">(todo dia às ${esc(base.horario)})</span>`
+          : '<span class="etq etq-amarelo">Não agendada</span>'}</dd></dl>`;
     const dica = linux
       ? `No servidor Linux a verificação já está agendada para toda madrugada (03:00): só atualiza quando a Receita publica versão nova.
         Para verificar na hora, rode <code>sudo bash /opt/hub-fiscal/scripts/linux/hub.sh verificar</code>; a situação dos serviços sai com <code>hub.sh status</code>.`
@@ -63,6 +67,7 @@
     return `<div class="card servico" style="margin-top:18px"><div class="servico-cab"><span class="tile tile-ambar">${Hub.icone('nuvem')}</span>
         <div style="flex:1"><h3>Atualização automática</h3><span class="sutil">GitHub da Receita Federal</span></div>
         <span class="etq ${cls}">${esc(txt)}</span></div>
+      ${datas}
       ${a ? `<dl class="dl"><dt>Última verificação</dt><dd>${esc(quando)}</dd><dt>Resultado</dt><dd>${esc(a.mensagem || '–')}</dd>
         ${repos.map((r) => `<dt>${esc(r.repo)}</dt><dd><code>${esc(String(r.novo || '').slice(0, 10))}</code>${r.commitsNovos ? ` · ${esc(r.commitsNovos)} commit(s) novo(s)` : ''}</dd>`).join('')}</dl>`
         : `<p class="sutil" style="margin:0 0 12px">Nenhuma verificação automática registrada neste servidor.</p>`}

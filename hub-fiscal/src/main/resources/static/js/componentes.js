@@ -128,25 +128,28 @@
     if (o.busca) {
       raiz.querySelector('input[type=search]').oninput = Hub.debounce((e) => { termo = e.target.value; aplicar(); }, 200);
     }
+    /** Colunas e linhas (as filtradas) no formato da exportação: usado pelo Excel e pelos relatórios PDF. */
+    function exportacao() {
+      const cols = o.colunas.filter((c) => c.excel !== false);
+      return {
+        colunas: cols.map((c) => ({
+          titulo: c.titulo,
+          tipo: c.tipo === 'moeda' ? 'moeda' : c.tipo === 'num' ? 'numero' : c.tipo === 'pct' ? 'percentual' : 'texto',
+          largura: c.largura,
+        })),
+        linhas: filtradas.map((l) => cols.map((c) => {
+          const v = valorBruto(c, l);
+          return v === undefined ? null : (typeof v === 'object' && v !== null ? JSON.stringify(v) : v);
+        })),
+      };
+    }
+
     if (o.exportar) {
       raiz.querySelector('[data-exp]').onclick = async (e) => {
         const botao = e.currentTarget;
         botao.disabled = true;
         try {
-          await Hub.exportarExcel({
-            titulo: o.exportar.titulo,
-            arquivo: o.exportar.arquivo,
-            resumo: o.exportar.resumo,
-            colunas: o.colunas.filter((c) => c.excel !== false).map((c) => ({
-              titulo: c.titulo,
-              tipo: c.tipo === 'moeda' ? 'moeda' : c.tipo === 'num' ? 'numero' : c.tipo === 'pct' ? 'percentual' : 'texto',
-              largura: c.largura,
-            })),
-            linhas: filtradas.map((l) => o.colunas.filter((c) => c.excel !== false).map((c) => {
-              const v = valorBruto(c, l);
-              return v === undefined ? null : (typeof v === 'object' && v !== null ? JSON.stringify(v) : v);
-            })),
-          });
+          await Hub.exportarExcel(Object.assign({ titulo: o.exportar.titulo, arquivo: o.exportar.arquivo, resumo: o.exportar.resumo }, exportacao()));
         } finally { botao.disabled = false; }
       };
     }
@@ -155,6 +158,7 @@
       atualizar(novas) { linhas = novas || []; aplicar(); },
       filtrar(fn) { filtroExtra = fn; aplicar(); },
       linhas: () => filtradas,
+      exportacao,
     };
   }
 
@@ -331,7 +335,7 @@
         let data = x.responseText;
         try { data = JSON.parse(x.responseText); } catch (e) { /* texto */ }
         if (Hub.tratarAuth(x.status, data)) return; // sessão encerrada: vai para o login
-        resolve({ ok: x.status >= 200 && x.status < 300, status: x.status, data });
+        resolve({ ok: x.status >= 200 && x.status < 300, status: x.status, data, cabecalho: (nome) => x.getResponseHeader(nome) });
       };
       x.onerror = () => resolve({ ok: false, status: 0, data: { title: 'Falha de conexão com o hub' } });
       x.send(formData);

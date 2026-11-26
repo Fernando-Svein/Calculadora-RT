@@ -30,6 +30,7 @@ public final class Ferramentas {
     }
 
     public static final List<Ferramenta> TODAS = List.of(
+            new Ferramenta("empresas", "Empresas (incluir e editar)", "Cadastros"),
             new Ferramenta("classificar-item", "Classificar NCM / NBS", "Consultas e tabelas"),
             new Ferramenta("tabela-cclasstrib", "Tabela cClassTrib e CST", "Consultas e tabelas"),
             new Ferramenta("aliquotas", "Alíquotas de referência", "Consultas e tabelas"),
@@ -64,6 +65,10 @@ public final class Ferramentas {
 
     /** A primeira regra que casar vale (as mais específicas vêm antes). */
     private static final List<Regra> REGRAS = List.of(
+            // empresas: a consulta (GET) é aberta porque os simuladores usam o seletor; alterar exige a ferramenta
+            new Regra("POST", "/hub/empresas", false, Set.of("empresas")),
+            new Regra("PUT", "/hub/empresas", false, Set.of("empresas")),
+            new Regra("DELETE", "/hub/empresas", false, Set.of("empresas")),
             new Regra(null, "/hub/lote/classificacao", false, Set.of("lote-classificacao")),
             new Regra(null, "/hub/lote/auditoria", false, Set.of("lote-auditoria")),
             new Regra("POST", RG + "/xml/validate", false, Set.of("xml-validar", "calc-rg")),

@@ -35,7 +35,8 @@
       el.innerHTML = comp.cabecalho('Simulador de operação – Regime Regular',
         'Calcula CBS, IBS (estadual e municipal) e Imposto Seletivo item a item na calculadora oficial do Regime Geral. ' +
         'Informe a base de cálculo ou os componentes da NF-e para que a calculadora monte a base.') +
-        `<div class="card">
+        `<div data-empresa></div>
+        <div class="card">
           <div class="card-cab"><h3>Operação</h3><div class="acoes">
             <button class="btn btn-sec btn-peq" data-exemplo>Carregar exemplo</button>
             <button class="btn btn-sec btn-peq" data-json-env>Ver dados técnicos</button></div></div>
@@ -78,7 +79,42 @@
       // 2027 em diante: a CBS do cenário (seletor no topo) vai como alíquota nominal, calculada pela própria calculadora
       Hub.cenarioCbs.ligarCampoNominal(el.querySelector('[name=aCbs]'), '8,8');
 
+      // empresa da simulação: município do estabelecimento, documento e cClassTrib usuais vêm do cadastro
+      let cctPadrao = null;
+      function aplicarEmpresa(e) {
+        cctPadrao = (e && e.cClassTribPadrao) || null;
+        if (!e) return {};
+        const D = Hub.empresas.definir;
+        const usadas = [];
+        if (e.uf && e.municipio) {
+          usadas.push('município do estabelecimento como local da operação');
+          loc.pronto.then(() => loc.definir(e.uf, e.municipio)).then(() => {
+            D(el.querySelector('[data-loc] [data-uf]'), e.uf);
+            D(el.querySelector('[data-loc] [data-mun]'), e.municipio);
+          });
+        }
+        if (D(el.querySelector('[name=tpDoc]'), e.documentoPadrao)) usadas.push('documento usual ' + (Hub.empresas.DOCUMENTOS[e.documentoPadrao] || e.documentoPadrao));
+        if (cctPadrao) {
+          lista.querySelectorAll('[name=cClassTrib]').forEach((i) => {
+            if (i.value) return;
+            D(i, cctPadrao);
+            D(i.closest('.item-bloco').querySelector('[name=cst]'), cctPadrao.substring(0, 3));
+          });
+          usadas.push(`cClassTrib usual ${cctPadrao} nos itens sem classificação`);
+        }
+        let aviso = '';
+        if (Hub.empresas.ehSimples(e) && !e.ibscbsForaSimples) {
+          aviso = 'Empresa do Simples Nacional: o IBS e a CBS dela são recolhidos no DAS. Para o valor devido, use o ' +
+            '<a href="#/calc-sn">Simulador Simples Nacional</a>; aqui o cálculo segue o regime regular.';
+        } else if (e.regime === 'MEI') {
+          aviso = 'MEI recolhe valores fixos no DAS-MEI e não calcula IBS/CBS por documento: este cálculo segue o regime regular.';
+        }
+        return { usadas, aviso };
+      }
+      const emp = Hub.empresas.seletor(el.querySelector('[data-empresa]'), { raiz: el, aoMudar: aplicarEmpresa });
+
       function novoItem(dados = {}) {
+        if (cctPadrao && !dados.cClassTrib) dados = Object.assign({ cClassTrib: cctPadrao, cst: cctPadrao.substring(0, 3) }, dados);
         const n = lista.children.length + 1;
         const b = Hub.el(`<div class="item-bloco">
           <div class="item-cab"><strong>Item <span data-num>${n}</span></strong><span class="espaco"></span>
@@ -239,6 +275,8 @@
         const { op, modo } = montarOperacao();
         if (!op.municipio) { Hub.toast('Selecione o município.', 'erro'); return; }
         if (!op.itens.length) { Hub.toast('Inclua ao menos um item.', 'erro'); return; }
+        // empresa e local no momento do cálculo (vão para a faixa do resultado e para os relatórios)
+        const ctx = { empresa: emp.empresa(), usadas: emp.usadas(), local: loc.valor(), tpDoc: el.querySelector('[name=tpDoc]').value };
         Hub.carregando(res, 'Calculando na calculadora oficial...');
         const url = modo === 'estrito' ? '/calculadora/regime-geral' : '/calculadora/observabilidade/regime-geral';
         const r = await api.post(api.rg(url), op);
@@ -249,10 +287,10 @@
           if (!c.ok) { res.innerHTML = Hub.problema(c, 'Não foi possível aplicar o cenário de CBS'); return; }
           r.data = c.data;
         }
-        mostrarResultado(op, r);
+        mostrarResultado(op, r, ctx);
       }
 
-      function mostrarResultado(op, r) {
+      function mostrarResultado(op, r, ctx) {
         const d = r.data;
         const tot = (d.total && d.total.tribCalc) || {};
         const ibscbs = tot.IBSCBSTot || {};
@@ -293,7 +331,9 @@
             <select data-xml-tipo style="width:auto" aria-label="Tipo de documento do XML"><option value="nfe">XML NF-e</option><option value="nfce">XML NFC-e</option>
               <option value="cte">XML CT-e</option><option value="bpe">XML BP-e</option><option value="nf3e">XML NF3e</option></select>
             <button class="btn btn-sec btn-peq" data-xml>Gerar XML do grupo IBS/CBS</button>
+            ${Hub.relatorio.botoes()}
             <button class="btn btn-sec btn-peq" data-json>Ver resposta técnica</button></div></div>
+          ${Hub.empresas.faixaResultado(ctx.empresa)}
           ${r.aviso ? `<div class="aviso">${esc(Hub.avisoSimulado(r.aviso))}</div>` : ''}
           ${Hub.cenarioCbs.aviso(d)}
           <div class="kpis">
@@ -304,7 +344,7 @@
             <div class="kpi destaque"><small>Total de tributos</small><strong>${fmt.moeda(Number(vCBS || 0) + Number(vIBS || 0) + Number(vIS || 0))}</strong></div>
           </div>
           <div data-tab></div><p class="sutil">Clique num item para ver a memória de cálculo e os erros.</p></div>`;
-        comp.tabela(res.querySelector('[data-tab]'), {
+        const tab = comp.tabela(res.querySelector('[data-tab]'), {
           busca: false,
           colunas: [
             { titulo: 'Item', campo: 'n', tipo: 'num' },
@@ -325,8 +365,7 @@
             { titulo: 'Erros', exportar: (l) => l.erros.map((e) => `${e.code}: ${e.detail}`).join(' | '), render: (l) => (l.erros.length ? `<span class="etq etq-vermelho">${l.erros.length}</span>` : '') },
           ],
           linhas,
-          exportar: { arquivo: 'simulacao-regime-regular', titulo: 'Simulação – Regime Regular', resumo: [['Município', String(op.municipio)], ['Data', op.dhFatoGerador], ['Base', String(base ?? '')], ['CBS', String(vCBS ?? '')], ['IBS', String(vIBS ?? '')]]
-            .concat(d.cenarioCbs ? [['Cenário CBS', `${d.cenarioCbs.rotulo}: ${d.cenarioCbs.aliquota}% (oficial ${d.cenarioCbs.aliquotaOficial ?? '-'}%) – simulação, não usar em documento fiscal`]] : []) },
+          // a exportação da tabela agora sai pelos botões "Relatório PDF / Excel" (com empresa e resumo)
           detalhe: (l) => {
             const mem = l.memoria && typeof l.memoria === 'object' ? Object.entries(l.memoria).map(([k, v]) => `<div class="memoria"><strong>${esc(Hub.rotulos.memoria(k))}:</strong> ${esc(v)}</div>`).join('') : '';
             const errs = l.erros.length ? `<div class="erro-caixa"><ul>${l.erros.map((e) => `<li><strong>${esc(e.code)}</strong> – ${esc(e.title || '')}: ${esc(e.detail)} <span class="sutil">${esc(Hub.rotulos.ponteiro(e.pointer))}</span></li>`).join('')}</ul></div>` : '';
@@ -335,6 +374,34 @@
         });
         res.querySelector('[data-json]').onclick = () => comp.verJson(d, 'Resposta da calculadora');
         res.querySelector('[data-xml]').onclick = () => gerarXml(op, res.querySelector('[data-xml-tipo]').value);
+        Hub.relatorio.ligar(res, async () => {
+          const x = tab.exportacao();
+          const total = Number(vCBS || 0) + Number(vIBS || 0) + Number(vIS || 0);
+          const comErro = linhas.filter((l) => l.erros.length);
+          return {
+            titulo: 'Simulação – Regime Regular (CBS, IBS e IS)',
+            arquivo: 'simulacao-regime-regular',
+            empresa: await Hub.empresas.linhasRelatorio(ctx.empresa, ctx.usadas),
+            resumo: [
+              ['Data e hora do fato gerador', `${fmt.data(op.dhFatoGerador)} ${op.dhFatoGerador.substring(11, 16)}`],
+              ['Local da operação', ctx.local.nomeMunicipio ? `${ctx.local.nomeMunicipio}/${ctx.local.uf} (IBGE ${ctx.local.municipio})` : String(op.municipio)],
+              ['Documento', ctx.tpDoc ? (Hub.empresas.DOCUMENTOS[ctx.tpDoc] || ctx.tpDoc) : 'Não informado'],
+              ['Itens calculados', `${linhas.length - comErro.length} de ${linhas.length}`],
+              ['Base IBS/CBS', fmt.moeda(base)],
+              ['CBS', fmt.moeda(vCBS)],
+              ['IBS (UF + Município)', fmt.moeda(vIBS)],
+            ].concat(vIS !== undefined ? [['Imposto Seletivo', fmt.moeda(vIS)]] : [], [['Total de tributos', fmt.moeda(total)]],
+              d.cenarioCbs ? [['Cenário de CBS', `${d.cenarioCbs.rotulo}: ${String(d.cenarioCbs.aliquota).replace('.', ',')}% (oficial ${String(d.cenarioCbs.aliquotaOficial ?? '-').replace('.', ',')}%)`]] : []),
+            colunas: x.colunas,
+            linhas: x.linhas,
+            observacoes: [
+              r.aviso ? Hub.avisoSimulado(r.aviso) : null,
+              d.cenarioCbs ? 'Cenário de CBS: simulação com alíquota diferente da oficial. Não usar em documento fiscal.' : null,
+              ...comErro.map((l) => `Item ${l.n}: ${l.erros.map((e) => `${e.code} – ${e.detail}`).join(' | ')}`),
+              'Valores calculados pela calculadora oficial da Receita Federal (Regime Regular).',
+            ],
+          };
+        });
       }
 
       async function gerarXml(op, tipo) {

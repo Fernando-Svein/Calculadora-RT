@@ -122,6 +122,8 @@ public final class XmlFiscalParser {
         d.emitenteNome = texto(emit, "xNome");
         d.emitenteUf = texto(primeiro(emit, "enderEmit"), "UF");
         d.emitenteCrt = texto(emit, "CRT");
+        d.emitenteFantasia = texto(emit, "xFant");
+        d.emitenteMunicipio = inteiro(texto(primeiro(emit, "enderEmit"), "cMun"));
         if (dest != null) {
             d.destinatarioCnpj = coalesce(texto(dest, "CNPJ"), coalesce(texto(dest, "CPF"), texto(dest, "idEstrangeiro")));
             d.destinatarioNome = texto(dest, "xNome");
@@ -240,6 +242,8 @@ public final class XmlFiscalParser {
         d.emitenteUf = texto(primeiro(emit, "enderNac"), "UF");
         String opSimp = texto(prest, "opSimpNac");
         d.emitenteCrt = opSimp == null ? null : "opSimpNac=" + opSimp;
+        d.emitenteOpSimpNac = opSimp;
+        d.emitenteMunicipio = inteiro(texto(primeiro(emit, "enderNac"), "cMun"));
         if (toma != null) {
             d.destinatarioCnpj = coalesce(texto(toma, "CNPJ"), texto(toma, "CPF"));
             d.destinatarioNome = texto(toma, "xNome");

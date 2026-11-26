@@ -60,8 +60,9 @@ principal() {
   systemctl daemon-reload
   systemctl enable hubfiscal-calc-rg hubfiscal-calc-sn hubfiscal hubfiscal-atualizacao.timer --quiet
   systemctl start hubfiscal-atualizacao.timer
+  gravar_agendamento
   ok "Serviços registrados e habilitados na inicialização da VM"
-  ok "Atualização automática agendada: todo dia às 03:00"
+  ok "Atualização automática agendada: todo dia às $HORARIO_ATUALIZACAO"
 
   liberar_firewall
 
@@ -119,10 +120,10 @@ TimeoutStartSec=2h
 EOF
   cat >/etc/systemd/system/hubfiscal-atualizacao.timer <<EOF
 [Unit]
-Description=HUB Fiscal - verificação diária de atualização das calculadoras (03:00)
+Description=HUB Fiscal - verificação diária de atualização das calculadoras ($HORARIO_ATUALIZACAO)
 
 [Timer]
-OnCalendar=*-*-* 03:00:00
+OnCalendar=*-*-* $HORARIO_ATUALIZACAO:00
 # se a VM estava desligada às 03:00, verifica quando ligar
 Persistent=true
 

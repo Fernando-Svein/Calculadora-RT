@@ -3,6 +3,7 @@
 
 window.Hub = (() => {
   const GRUPOS = [
+    'Cadastros',
     'Consultas e tabelas',
     'Calculadoras – Regime Regular',
     'Calculadoras – Simples Nacional',
@@ -186,14 +187,27 @@ window.Hub = (() => {
       pilBase.textContent = 'Hub sem resposta';
       return;
     }
+    Hub.statusSistema = r.data;
     const s = r.data;
     pilRG.classList.toggle('ok', !!s.regimeGeral.online);
     pilRG.classList.toggle('erro', !s.regimeGeral.online);
     pilSN.classList.toggle('ok', !!s.simplesNacional.online);
     pilSN.classList.toggle('erro', !s.simplesNacional.online);
-    const b = s.bancoOficial || {};
-    pilBase.textContent = b.versao ? `Base ${b.versao}` : 'Base indisponível';
-    pilBase.title = b.data ? `Banco oficial ${b.versao} de ${String(b.data).substring(0, 10)}` : (b.erro || '');
+    pilRG.title = s.regimeGeral.online ? 'Calculadora oficial do regime normal (Regime Regular) no ar' : 'Calculadora do regime normal fora do ar';
+    pilSN.title = s.simplesNacional.online ? 'Calculadora oficial do Simples Nacional no ar' : 'Calculadora do Simples Nacional fora do ar';
+    // datas da base (última atualização e próxima verificação diária), sem o número da versão
+    const b = s.base || {};
+    const data = (v) => (v ? fmt.data(v) : '–');
+    const hora = (v) => (v ? String(v).substring(11, 16) : '');
+    // rótulos longos e curtos: em telas até 1520 px só os curtos aparecem (as datas ficam sempre completas)
+    pilBase.innerHTML = `<span><span class="rot-longo">Base atualizada em </span><span class="rot-curto">Base </span><strong>${esc(data(b.ultimaAtualizacao))}</strong></span><span class="pil-sep">·</span><span><span class="rot-longo">Próxima: </span><span class="rot-curto">Próx.: </span><strong>${b.proximaAtualizacao
+      ? esc(`${data(b.proximaAtualizacao)} ${hora(b.proximaAtualizacao)}`) : 'não agendada'}</strong></span>`;
+    pilBase.classList.toggle('alerta', !b.agendada);
+    pilBase.title = [
+      b.bancoGeradoEm ? `Base oficial gerada em ${data(b.bancoGeradoEm)} às ${hora(b.bancoGeradoEm)}` : (s.bancoOficial && s.bancoOficial.erro) || 'Base oficial não encontrada',
+      b.verificadaEm ? `Última verificação diária sem erro: ${data(b.verificadaEm)} às ${hora(b.verificadaEm)}` : 'Nenhuma verificação diária registrada',
+      b.agendada ? `Verificação automática todo dia às ${b.horario}` : 'Atualização automática não agendada neste servidor (veja Situação do sistema)',
+    ].join('\n');
     [pilRG, pilSN, pilBase].forEach((p) => { p.onclick = () => ir('status'); });
   }
 
@@ -304,8 +318,10 @@ window.Hub = (() => {
       return m ? `${m[3]}/${m[2]}/${m[1]}` : String(v);
     },
     cnpj: (v) => {
+      // CNPJ numérico ou alfanumérico (12 posições com letras e dígitos + 2 dígitos verificadores)
+      const a = String(v || '').replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+      if (/^[0-9A-Z]{12}\d{2}$/.test(a)) return a.replace(/^(.{2})(.{3})(.{3})(.{4})(\d{2})$/, '$1.$2.$3/$4-$5');
       const d = String(v || '').replace(/\D/g, '');
-      if (d.length === 14) return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
       if (d.length === 11) return d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
       return v || '';
     },
@@ -555,8 +571,8 @@ window.Hub = (() => {
 
   // API pública usada pelos módulos (js/modulos/*.js) e por componentes.js
   return {
-    GRUPOS, modulos, registrar, iniciar, api, getCache, esc, fmt, hoje, dataHoraComFuso, numero, el,
-    debounce, semAcento, toast, modal, fecharModal, carregando, problema, baixarTexto, baixarUrl,
+    GRUPOS, modulos, registrar, iniciar, ir, api, getCache, esc, fmt, hoje, dataHoraComFuso, numero, el,
+    debounce, semAcento, toast, modal, fecharModal, carregando, problema, baixarBlob, baixarTexto, baixarUrl,
     exportarExcel, avisoSimulado, atual: () => moduloAtual, recentes,
     usuario: null, tokenCsrf, tratarAuth,
   };

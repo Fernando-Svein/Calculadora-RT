@@ -15,6 +15,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param arquivoUltimaAtualizacao  JSON gravado por {@code scripts\hub.ps1 verificar} (mostrado na situação do sistema)
  * @param cenarioCbs                alíquota alternativa de CBS para simulações (sem {@code aliquota}, o seletor não aparece)
  * @param arquivoLogo               logo do escritório enviada pelo administrador (tela Sistema → Logo do escritório)
+ * @param bancoEmpresas             arquivo SQLite com as empresas atendidas e suas particularidades (criado automaticamente)
  */
 @ConfigurationProperties(prefix = "hub")
 public record HubProperties(
@@ -26,7 +27,8 @@ public record HubProperties(
         String bancoUsuarios,
         String arquivoUltimaAtualizacao,
         CenarioCbs cenarioCbs,
-        String arquivoLogo) {
+        String arquivoLogo,
+        String bancoEmpresas) {
 
     /**
      * Cenário de simulação da CBS com alíquota diferente da oficial (ex.: alíquota estimada para o regime
@@ -51,6 +53,9 @@ public record HubProperties(
         }
         if (arquivoLogo == null || arquivoLogo.isBlank()) {
             arquivoLogo = "../dados/logo.png";
+        }
+        if (bancoEmpresas == null || bancoEmpresas.isBlank()) {
+            bancoEmpresas = "../dados/hub-empresas.db";
         }
         if (paralelismo <= 0) {
             paralelismo = 8;

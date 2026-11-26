@@ -37,10 +37,14 @@
     cadeado: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
     imagem: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.5-4.5L6 21"/>',
     sair: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/>',
+    empresa: '<path d="M3 21h18"/><path d="M5 21V5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v16"/><path d="M16 9h3a2 2 0 0 1 2 2v10"/><path d="M9 7h3M9 11h3M9 15h3"/>',
+    pdf: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h1.5a1.5 1.5 0 0 1 0 3H8v-3zM8 16v2"/><path d="M13 13v5M16 13h2M16 15.5h1.5"/>',
+    planilha: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
   };
 
   /** Ícone de cada grupo. */
   const ICONES_GRUPO = {
+    Cadastros: 'empresa',
     'Consultas e tabelas': 'livro',
     'Calculadoras – Regime Regular': 'calculadora',
     'Calculadoras – Simples Nacional': 'etiqueta',
@@ -55,10 +59,12 @@
     'atividades-simples': 'etiqueta', nfse: 'recibo', 'dados-abertos': 'banco', erros: 'alerta',
     'calc-rg': 'calculadora', bases: 'camadas', pedagio: 'estrada', 'calc-sn': 'calculadora', comparador: 'balanca',
     'lote-classificacao': 'importar', 'lote-auditoria': 'auditar', 'xml-validar': 'validar', status: 'pulso', ajuda: 'ajuda', usuarios: 'usuarios', logo: 'imagem',
+    empresas: 'empresa',
   };
 
   /** Cor de destaque de cada grupo do menu. */
   const CORES_GRUPO = {
+    Cadastros: 'violeta',
     'Consultas e tabelas': 'azul',
     'Calculadoras – Regime Regular': 'indigo',
     'Calculadoras – Simples Nacional': 'verde',

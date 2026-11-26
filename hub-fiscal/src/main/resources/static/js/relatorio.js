@@ -6,8 +6,6 @@
 'use strict';
 
 (() => {
-  const { esc } = Hub;
-
   /** Botões "Relatório PDF" e "Relatório Excel" (ligue-os com Hub.relatorio.ligar). */
   function botoes() {
     return `<button class="btn btn-sec btn-peq" type="button" data-rel-pdf>${Hub.icone('pdf')} Relatório PDF</button>
@@ -72,5 +70,5 @@
     };
   }
 
-  Hub.relatorio = { botoes, ligar, tabelaDePares, esc };
+  Hub.relatorio = { botoes, ligar, tabelaDePares };
 })();

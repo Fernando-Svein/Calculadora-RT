@@ -43,8 +43,13 @@ hub:
   # Empresas atendidas e suas particularidades (regime, município, alíquotas do Simples...). Cadastradas
   # automaticamente na importação de SPED/XML e editadas na tela Cadastros → Empresas. Faça backup deste arquivo.
   banco-empresas: ../dados/hub-empresas.db
+  # Consulta pública de CNPJ no cadastro de empresas (botão "Consultar CNPJ"); o servidor precisa de acesso à internet.
+  # Só o CNPJ consultado é enviado. Para desligar: consulta-cnpj-url: desativada
+  consulta-cnpj-url: https://brasilapi.com.br/api/cnpj/v1/{cnpj}
   # Resultado da última verificação de atualização das calculadoras (gravado por scripts/linux/hub.sh verificar)
   arquivo-ultima-atualizacao: ../logs/ultima-atualizacao.json
+  # Botão "Atualizar agora" (Sistema > Situação do sistema, só administradores): auto | desativada
+  atualizacao-manual: auto
   # Cenário de simulação da CBS (seletor no topo do hub). As simulações de 2026 são calculadas pela calculadora
   # oficial (alíquota de teste) e o hub reescala só a CBS para esta alíquota; a partir de 2027 ela é enviada
   # como alíquota nominal. XML gerado e auditoria de notas usam sempre a alíquota oficial.

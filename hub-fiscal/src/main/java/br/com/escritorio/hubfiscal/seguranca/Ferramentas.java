@@ -66,9 +66,11 @@ public final class Ferramentas {
     /** A primeira regra que casar vale (as mais específicas vêm antes). */
     private static final List<Regra> REGRAS = List.of(
             // empresas: a consulta (GET) é aberta porque os simuladores usam o seletor; alterar exige a ferramenta
+            new Regra("GET", "/hub/empresas/consulta-cnpj", false, Set.of("empresas")), // chama serviço externo
             new Regra("POST", "/hub/empresas", false, Set.of("empresas")),
             new Regra("PUT", "/hub/empresas", false, Set.of("empresas")),
             new Regra("DELETE", "/hub/empresas", false, Set.of("empresas")),
+            new Regra(null, "/hub/simulador/importar", false, Set.of("calc-rg")),
             new Regra(null, "/hub/lote/classificacao", false, Set.of("lote-classificacao")),
             new Regra(null, "/hub/lote/auditoria", false, Set.of("lote-auditoria")),
             new Regra("POST", RG + "/xml/validate", false, Set.of("xml-validar", "calc-rg")),

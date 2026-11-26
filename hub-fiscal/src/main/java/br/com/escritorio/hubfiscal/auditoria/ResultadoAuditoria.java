@@ -14,8 +14,10 @@ public class ResultadoAuditoria {
     public int totalDocumentos;
     public int totalItens;
     public Map<String, Integer> contagemStatus = new LinkedHashMap<>();
-    /** Somatórios: xmlVCBS, calcVCBS, xmlVIBS, calcVIBS (somente itens auditados). */
+    /** Somatórios: xmlVCBS, calcVCBS, cenVCBS, xmlVIBS, calcVIBS (somente itens auditados). */
     public Map<String, BigDecimal> totais = new LinkedHashMap<>();
+    /** Cenário de CBS aplicado lado a lado com a alíquota oficial (rótulo e alíquota), ou null se não configurado. */
+    public Map<String, Object> cenarioCbs;
     public Map<String, String> arquivos = new LinkedHashMap<>();
     public List<String> avisos = new ArrayList<>();
     public List<LinhaAuditoria> linhas = new ArrayList<>();

@@ -1,4 +1,4 @@
-# HUB Fiscal (Ubuntu Server)
+# Hub Fiscal (Ubuntu Server)
 
 Aplicação web interna do departamento fiscal, construída sobre as **calculadoras oficiais da Receita Federal/Serpro** (CBS, IBS e Imposto Seletivo – LC 214/2025). Atende clientes do **Regime Regular** e do **Simples Nacional**.
 
@@ -40,7 +40,7 @@ Todos os comandos: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`
 | `criar-admin` | Cria o administrador inicial (só enquanto não há usuários) |
 | `verificar` | Atualiza as calculadoras só se houver versão nova; se falhar, volta à anterior (é o que roda às 03:00) |
 | `atualizar` | Força a atualização das calculadoras: git pull, banco novo, compilação e reinício |
-| `atualizar-hub` | Baixa a versão nova do HUB Fiscal desta branch, recompila e reinicia só o hub |
+| `atualizar-hub` | Baixa a versão nova do Hub Fiscal desta branch, recompila e reinicia só o hub |
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs/atualizacao.log`.
 
@@ -78,8 +78,19 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
   topo; a empresa escolhida preenche os campos (borda violeta) e aparece no resultado. Fica lembrada no navegador.
 - **Relatórios**: depois de calcular, "Relatório PDF" e "Relatório Excel" (empresa, resumo, tabela e observações). Os
   lotes continuam com a planilha própria.
+- **Importar XML/SPED no simulador**: o Simulador Regime Regular lê um ou mais XMLs (ou um SPED) e preenche data, local e
+  itens (NCM/NBS, CST, cClassTrib, quantidade e base). Item sem cClassTrib recebe a classificação sugerida pelo NCM/NBS,
+  marcada em amarelo como "sugerido – não veio do documento".
+- **Consultar CNPJ**: no cadastro da empresa, busca na base pública (BrasilAPI, `hub.consulta-cnpj-url`) razão social,
+  fantasia, situação cadastral, CNAEs, endereço, Simples/MEI, regime declarado e quadro societário. Falhas (CNPJ inexistente,
+  limite de consultas, serviço fora) aparecem com mensagem e o cadastro manual continua. A VM precisa de acesso à internet.
+- **Auditor com cenário TCU**: a CBS de cada item aparece calculada com a alíquota oficial (0,9% em 2026) e com a do cenário
+  (11,3%), lado a lado, na tela e no Excel; o status OK/Divergente segue a alíquota oficial.
 - **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária (timer
   das 03:00). O horário é registrado pelo `instalar.sh` e pelo `hub.sh atualizar-hub`/`verificar`; sem ele, aparece "não agendada".
+- **Atualizar agora** (Sistema → Situação do sistema, só administradores): o hub grava um pedido e a unidade
+  `hubfiscal-atualizacao.path` do systemd roda a mesma verificação das 03:00. O hub continua sem privilégios. O gatilho é
+  instalado pelo `instalar.sh` e pelo `hub.sh atualizar-hub`.
 
 ## O que o hub oferece
 

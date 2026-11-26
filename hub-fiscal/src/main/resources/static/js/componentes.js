@@ -1,4 +1,4 @@
-/* HUB Fiscal – componentes reutilizáveis. */
+/* Hub Fiscal – componentes reutilizáveis. */
 'use strict';
 
 (() => {

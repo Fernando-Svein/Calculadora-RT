@@ -35,11 +35,29 @@ public class ItemFiscal {
     public BigDecimal quantidade;
     public BigDecimal valor;
 
-    /** Componentes de base (nomes do grupo gComponentesBC da calculadora). */
-    public Map<String, BigDecimal> componentes = new LinkedHashMap<>();
+    /** Componentes de base (nomes do grupo gComponentesBC da calculadora). Imutável e vazio nos itens do SPED. */
+    public Map<String, BigDecimal> componentes;
 
-    /** Grupo IBSCBS informado no documento (CST, cClassTrib, vBC, pCBS, vCBS...). */
-    public Map<String, String> ibscbs = new LinkedHashMap<>();
+    /** Grupo IBSCBS informado no documento (CST, cClassTrib, vBC, pCBS, vCBS...). Imutável e vazio nos itens do SPED. */
+    public Map<String, String> ibscbs;
+
+    /** Item de XML: componentes e grupo IBSCBS preenchidos pelo leitor. */
+    public ItemFiscal() {
+        this(true);
+    }
+
+    private ItemFiscal(boolean comGrupos) {
+        this.componentes = comGrupos ? new LinkedHashMap<>() : Map.of();
+        this.ibscbs = comGrupos ? new LinkedHashMap<>() : Map.of();
+    }
+
+    /**
+     * Item sem componentes de base nem grupo IBS/CBS (linhas do SPED): usa mapas vazios compartilhados e imutáveis em
+     * vez de dois mapas novos por item (SPED com milhões de linhas: centenas de MB a menos).
+     */
+    public static ItemFiscal semGrupos() {
+        return new ItemFiscal(false);
+    }
 
     public boolean temGrupoIbsCbs() {
         return ibscbs.containsKey("cClassTrib") || ibscbs.containsKey("CST");

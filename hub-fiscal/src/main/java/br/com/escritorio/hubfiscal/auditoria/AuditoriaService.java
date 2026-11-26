@@ -4,6 +4,7 @@ import static br.com.escritorio.hubfiscal.infra.Valores.decimal;
 import static br.com.escritorio.hubfiscal.infra.Valores.zeroSeNulo;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,6 +15,7 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
+import br.com.escritorio.hubfiscal.cenario.CenarioCbsService;
 import br.com.escritorio.hubfiscal.config.HubProperties;
 import br.com.escritorio.hubfiscal.importacao.DocumentoFiscal;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
@@ -24,7 +26,9 @@ import br.com.escritorio.hubfiscal.infra.ApiResposta;
 import br.com.escritorio.hubfiscal.infra.EndpointsReceita;
 import br.com.escritorio.hubfiscal.infra.J;
 import br.com.escritorio.hubfiscal.infra.Paralelo;
+import br.com.escritorio.hubfiscal.infra.Ufs;
 import br.com.escritorio.hubfiscal.infra.Valores;
+import tools.jackson.databind.JsonNode;
 
 /**
  * Auditoria do grupo IBS/CBS das notas: para cada documento, envia os itens à
@@ -35,6 +39,12 @@ import br.com.escritorio.hubfiscal.infra.Valores;
  * para conferir alíquotas, valores e a validade da classificação; (2) com os
  * componentes do item (vProd, frete, descontos, ICMS, PIS/COFINS...), para
  * conferir a própria base de cálculo.
+ * <p>
+ * Com o cenário de CBS configurado ({@code hub.cenario-cbs}, ex.: TCU 11,3%), a resposta (1) é reescalada
+ * localmente pelo {@link CenarioCbsService} e cada item traz também a CBS do cenário, lado a lado com a oficial.
+ * Não há chamada extra à calculadora. O status (OK/Divergente) continua comparando o XML com a alíquota oficial.
+ * <p>
+ * Itens com data de emissão ou nItem inválidos ficam como "Não auditado", com o motivo, sem interromper o lote.
  */
 @Service
 public class AuditoriaService {
@@ -46,22 +56,14 @@ public class AuditoriaService {
     /** A partir de 2027 a base oficial não tem alíquotas de referência: o cálculo usa as do próprio XML. */
     private static final int ANO_SEM_ALIQUOTA_REFERENCIA = 2027;
 
-    /** Código IBGE da UF (2 primeiros dígitos do município) → sigla, exigida pela calculadora. */
-    private static final Map<String, String> UF_IBGE = Map.ofEntries(
-            Map.entry("11", "RO"), Map.entry("12", "AC"), Map.entry("13", "AM"), Map.entry("14", "RR"),
-            Map.entry("15", "PA"), Map.entry("16", "AP"), Map.entry("17", "TO"), Map.entry("21", "MA"),
-            Map.entry("22", "PI"), Map.entry("23", "CE"), Map.entry("24", "RN"), Map.entry("25", "PB"),
-            Map.entry("26", "PE"), Map.entry("27", "AL"), Map.entry("28", "SE"), Map.entry("29", "BA"),
-            Map.entry("31", "MG"), Map.entry("32", "ES"), Map.entry("33", "RJ"), Map.entry("35", "SP"),
-            Map.entry("41", "PR"), Map.entry("42", "SC"), Map.entry("43", "RS"), Map.entry("50", "MS"),
-            Map.entry("51", "MT"), Map.entry("52", "GO"), Map.entry("53", "DF"));
-
     private final ApiReceitaClient api;
     private final HubProperties props;
+    private final CenarioCbsService cenario;
 
-    public AuditoriaService(ApiReceitaClient api, HubProperties props) {
+    public AuditoriaService(ApiReceitaClient api, HubProperties props, CenarioCbsService cenario) {
         this.api = api;
         this.props = props;
+        this.cenario = cenario;
     }
 
     /** Audita todos os documentos importados (em paralelo, limitado a {@code hub.paralelismo}). */
@@ -89,12 +91,14 @@ public class AuditoriaService {
         r.totalItens = r.linhas.size();
         r.contagemStatus.putAll(StatusAuditoria.contagemZerada());
         BigDecimal xCbs = BigDecimal.ZERO, cCbs = BigDecimal.ZERO, xIbs = BigDecimal.ZERO, cIbs = BigDecimal.ZERO;
+        BigDecimal eCbs = BigDecimal.ZERO;
         for (LinhaAuditoria l : r.linhas) {
             l.statusRotulo = l.status.rotulo();
             r.contagemStatus.merge(l.status.name(), 1, Integer::sum);
             if (l.status == StatusAuditoria.OK || l.status == StatusAuditoria.DIVERGENTE) {
                 xCbs = xCbs.add(zeroSeNulo(l.xmlVCBS));
                 cCbs = cCbs.add(zeroSeNulo(l.calcVCBS));
+                eCbs = eCbs.add(zeroSeNulo(l.cenVCBS != null ? l.cenVCBS : l.calcVCBS));
                 xIbs = xIbs.add(zeroSeNulo(l.xmlVIBSUF)).add(zeroSeNulo(l.xmlVIBSMun));
                 cIbs = cIbs.add(zeroSeNulo(l.calcVIBSUF)).add(zeroSeNulo(l.calcVIBSMun));
             }
@@ -103,7 +107,38 @@ public class AuditoriaService {
         r.totais.put("calcVCBS", cCbs);
         r.totais.put("xmlVIBS", xIbs);
         r.totais.put("calcVIBS", cIbs);
+        if (cenario.disponivel()) {
+            r.totais.put("cenVCBS", eCbs);
+            Map<String, Object> c = new LinkedHashMap<>();
+            c.put("rotulo", cenario.configuracao().rotulo());
+            c.put("aliquota", cenario.configuracao().aliquota());
+            r.cenarioCbs = c;
+        }
         return r;
+    }
+
+    /**
+     * Mesma resposta oficial (cálculo (1)), com a CBS reescalada localmente para a alíquota do cenário
+     * ({@link CenarioCbsService}, o mesmo cálculo do simulador). Não faz nova chamada de cálculo à calculadora:
+     * o contrato com a API da Receita não muda.
+     */
+    private void aplicarCenario(DocumentoFiscal d, byte[] respostaOficial, Map<Integer, LinhaAuditoria> porItem) {
+        if (!cenario.disponivel()) {
+            return;
+        }
+        try {
+            JsonNode cen = cenario.regimeGeral(respostaOficial, LocalDate.parse(d.dataHoraEmissao.substring(0, 10)));
+            for (JsonNode obj : cen.path("objetos")) {
+                LinhaAuditoria l = porItem.get(obj.path("nObj").asInt(-1));
+                JsonNode gCbs = obj.path("tribCalc").path("IBSCBS").path("gIBSCBS").path("gCBS");
+                if (l != null && l.status == StatusAuditoria.OK && !gCbs.isMissingNode()) {
+                    l.cenPCBS = decimal(gCbs.path("pCBS").asString(null));
+                    l.cenVCBS = decimal(gCbs.path("vCBS").asString(null));
+                }
+            }
+        } catch (RuntimeException e) {
+            porItem.values().forEach(l -> l.mensagens.add("CBS do cenário não calculada: " + e.getMessage()));
+        }
     }
 
     private List<LinhaAuditoria> auditarDocumento(DocumentoFiscal d) {
@@ -129,6 +164,14 @@ public class AuditoriaService {
             } else if (d.municipioFatoGerador == null || d.dataHoraEmissao == null) {
                 l.status = StatusAuditoria.NAO_AUDITADO;
                 l.mensagens.add("Documento sem município do fato gerador ou data de emissão.");
+            } else if (!dataValida(d.dataHoraEmissao)) {
+                // antes: StringIndexOutOfBounds/NumberFormat derrubava a auditoria do lote inteiro
+                l.status = StatusAuditoria.NAO_AUDITADO;
+                l.mensagens.add("Data de emissão inválida no XML (" + d.dataHoraEmissao + ").");
+            } else if (it.numeroItem == null || porItem.containsKey(it.numeroItem)) {
+                // antes: o item ficava sem status e a ordenação do resultado falhava (NullPointerException)
+                l.status = StatusAuditoria.NAO_AUDITADO;
+                l.mensagens.add("Item sem número (nItem) válido e único no XML.");
             } else {
                 auditaveis.add(it);
                 porItem.put(it.numeroItem, l);
@@ -155,6 +198,7 @@ public class AuditoriaService {
                 registrarCalculo(l, obj);
             }
         }
+        aplicarCenario(d, r1.corpo(), porItem);
 
         // (2) base de cálculo a partir dos componentes (somente NF-e/NFC-e)
         boolean temComponentes = auditaveis.stream().anyMatch(i -> !i.componentes.isEmpty());
@@ -172,6 +216,10 @@ public class AuditoriaService {
 
         // comparação
         for (LinhaAuditoria l : porItem.values()) {
+            if (l.status == null) { // a calculadora não devolveu este item
+                l.status = StatusAuditoria.ERRO_CLASSIFICACAO;
+                l.mensagens.add("A calculadora não devolveu resultado para o item.");
+            }
             if (l.status != StatusAuditoria.OK) {
                 continue;
             }
@@ -217,6 +265,16 @@ public class AuditoriaService {
         }
     }
 
+    /** Data/hora ISO com data válida nos 10 primeiros caracteres (o ano define a regra de alíquotas). */
+    private static boolean dataValida(String dataHora) {
+        try {
+            LocalDate.parse(dataHora.substring(0, 10));
+            return true;
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
     private static void comparar(LinhaAuditoria l, String campo, BigDecimal xml, BigDecimal calc) {
         if (calc == null) {
             return;
@@ -239,7 +297,7 @@ public class AuditoriaService {
         op.put("versao", "1.0.0");
         op.put("dhFatoGerador", d.dataHoraEmissao);
         op.put("municipio", d.municipioFatoGerador);
-        op.put("uf", UF_IBGE.getOrDefault(String.valueOf(d.municipioFatoGerador).substring(0, 2), d.emitenteUf));
+        op.put("uf", Ufs.doMunicipio(d.municipioFatoGerador, d.emitenteUf));
         if (d.modelo != null) {
             op.put("tpDoc", d.modelo);
         }

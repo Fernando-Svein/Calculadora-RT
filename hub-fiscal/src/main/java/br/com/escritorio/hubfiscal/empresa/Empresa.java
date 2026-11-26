@@ -26,6 +26,7 @@ import java.util.Map;
  * @param revisado           false enquanto o cadastro automático não for conferido por alguém
  * @param criadoEm           data/hora do cadastro
  * @param atualizadoEm       data/hora da última alteração
+ * @param dadosCadastrais    cadastro público do CNPJ (situação, CNAEs, endereço, QSA...) da última consulta, ou null
  */
 public record Empresa(
         long id,
@@ -47,7 +48,8 @@ public record Empresa(
         String origem,
         boolean revisado,
         String criadoEm,
-        String atualizadoEm) {
+        String atualizadoEm,
+        Map<String, Object> dadosCadastrais) {
 
     /** Regime tributário da empresa (equivale ao CRT da NF-e). */
     public enum Regime {

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# HUB Fiscal no Linux – funções usadas por instalar.sh e hub.sh (não execute este arquivo direto).
+# Hub Fiscal no Linux – funções usadas por instalar.sh e hub.sh (não execute este arquivo direto).
 #
 # Mesma lógica da versão Windows (scripts\hub.ps1, branch main): as calculadoras da Receita são clonadas sem modificação,
 # o banco oficial é gerado pelo Flyway do próprio repositório da Receita e os três serviços rodam com
@@ -15,6 +15,9 @@ ARQUIVO_RESULTADO="$LOGS/ultima-atualizacao.json"
 # horário da verificação diária: o hub lê este arquivo para mostrar a próxima atualização no topo das telas
 ARQUIVO_AGENDAMENTO="$LOGS/agendamento-atualizacao.json"
 HORARIO_ATUALIZACAO="03:00"
+# botão "Atualizar agora" do hub: o hub (sem privilégios) grava o pedido; a unidade .path do systemd inicia a verificação
+ARQUIVO_PEDIDO="$LOGS/pedido-atualizacao.json"
+ARQUIVO_EM_ANDAMENTO="$LOGS/atualizacao-em-andamento.json"
 
 # Repositórios oficiais da Receita: usados sem modificação (só clone e git pull)
 REPOS=(calculadora-rtc-regime-regular calculadora-rtc-simples-nacional)
@@ -27,7 +30,7 @@ declare -A URL_REPO=(
 SERVICOS=(
   "hubfiscal-calc-rg|Calculadora Regime Geral|calculadora-rtc-regime-regular|api-regime-geral.jar|http://127.0.0.1:8080/api/calculadora/dados-abertos/versao|regime-geral"
   "hubfiscal-calc-sn|Calculadora Simples Nacional|calculadora-rtc-simples-nacional|api-simples-nacional.jar|http://127.0.0.1:8082/api/versao|simples-nacional"
-  "hubfiscal|HUB Fiscal|hub-fiscal|hub-fiscal.jar|http://127.0.0.1:8090/hub/status|hub"
+  "hubfiscal|Hub Fiscal|hub-fiscal|hub-fiscal.jar|http://127.0.0.1:8090/hub/status|hub"
 )
 UNIDADES=(hubfiscal-calc-rg hubfiscal-calc-sn hubfiscal)
 
@@ -59,6 +62,25 @@ maven() {  # maven <pasta> <argumentos...>
 git_servico() {  # git_servico <pasta> <argumentos...>
   local pasta=$1; shift
   como_servico git -C "$RAIZ/$pasta" "$@"
+}
+
+# Gatilho do botão "Atualizar agora": quando o hub grava logs/pedido-atualizacao.json, o systemd (root) roda a mesma
+# verificação do agendamento das 03:00 (hubfiscal-atualizacao.service). O hub continua sem nenhum privilégio.
+escrever_gatilho_atualizacao() {
+  [[ -f /etc/systemd/system/hubfiscal-atualizacao.service ]] || return 0
+  cat >/etc/systemd/system/hubfiscal-atualizacao.path <<EOF
+[Unit]
+Description=Hub Fiscal - atualização das calculadoras pedida pela tela Situação do sistema
+
+[Path]
+PathExists=$ARQUIVO_PEDIDO
+Unit=hubfiscal-atualizacao.service
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+  systemctl enable --now hubfiscal-atualizacao.path --quiet
 }
 
 # Registra o horário do timer de atualização para o hub (só se o timer estiver habilitado)
@@ -172,7 +194,7 @@ reconstruir() {
 mostrar_enderecos() {
   local ip
   echo
-  echo "${AMARELO}HUB Fiscal disponível em:${FIM}"
+  echo "${AMARELO}Hub Fiscal disponível em:${FIM}"
   for ip in $(hostname -I 2>/dev/null); do
     [[ "$ip" == *:* ]] && continue
     echo "   http://$ip:8090"

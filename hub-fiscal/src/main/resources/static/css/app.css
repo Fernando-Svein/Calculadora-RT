@@ -1,5 +1,5 @@
 /* =====================================================================
-   HUB Fiscal – sistema visual
+   Hub Fiscal – sistema visual
    ===================================================================== */
 /* fonte Inter (SIL Open Font License – ver fonts/LICENCA-INTER.txt) */
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Inter-Regular.woff2") format("woff2"); }
@@ -814,3 +814,7 @@ input[type="checkbox"][data-da-empresa] { outline: 2px solid var(--violeta); out
 .novidades li { margin: 3px 0; }
 .novidades code { font-size: 12px; }
 .novidades .grade { gap: 14px; }
+
+/* ---------------------------------------------------------------- importação no simulador */
+input[data-sugerido] { border-color: var(--ambar) !important; background: var(--ambar-suave); }
+.item-desc { font-size: 12.5px; color: var(--texto-2); margin-left: 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }

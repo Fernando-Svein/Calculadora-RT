@@ -1,9 +1,6 @@
 package br.com.escritorio.hubfiscal.importacao;
 
 import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,16 +50,83 @@ public final class SpedParser {
         return conteudo.length > i + 6 && conteudo[i] == '|' && new String(conteudo, i, 6, StandardCharsets.ISO_8859_1).equals("|0000|");
     }
 
-    /** UTF-8 quando válido; senão ISO-8859-1, a codificação padrão do SPED. */
+    /**
+     * UTF-8 quando válido; senão ISO-8859-1, a codificação padrão do SPED. Sem o marcador de ordem (BOM) do início.
+     * <p>
+     * Desempenho: a validação percorre os bytes sem alocar nada e o texto é decodificado uma vez só. O decodificador
+     * do JDK usado antes criava um buffer de caracteres do tamanho do arquivo e depois o copiava (SPED de 250 MB:
+     * ~1 GB só nessa etapa).
+     */
     static String decodificar(byte[] conteudo) {
-        try {
-            return StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(conteudo)).toString();
-        } catch (CharacterCodingException e) {
-            return new String(conteudo, StandardCharsets.ISO_8859_1);
+        int ini = temBom(conteudo) ? 3 : 0;
+        return new String(conteudo, ini, conteudo.length - ini,
+                utf8Valido(conteudo, ini) ? StandardCharsets.UTF_8 : StandardCharsets.ISO_8859_1);
+    }
+
+    private static boolean temBom(byte[] b) {
+        return b.length >= 3 && (b[0] & 0xFF) == 0xEF && (b[1] & 0xFF) == 0xBB && (b[2] & 0xFF) == 0xBF;
+    }
+
+    /** Sequência UTF-8 bem formada (mesmas regras do decodificador estrito do JDK: sem sobrelongos nem surrogates). */
+    static boolean utf8Valido(byte[] b, int inicio) {
+        int n = b.length;
+        int i = inicio;
+        while (i < n) {
+            int x = b[i] & 0xFF;
+            if (x < 0x80) {
+                i++;
+                continue;
+            }
+            int k;
+            int min2 = 0x80;
+            int max2 = 0xBF;
+            if (x >= 0xC2 && x <= 0xDF) {
+                k = 1;
+            } else if (x >= 0xE0 && x <= 0xEF) {
+                k = 2;
+                if (x == 0xE0) {
+                    min2 = 0xA0; // sobrelongo
+                } else if (x == 0xED) {
+                    max2 = 0x9F; // surrogates
+                }
+            } else if (x >= 0xF0 && x <= 0xF4) {
+                k = 3;
+                if (x == 0xF0) {
+                    min2 = 0x90;
+                } else if (x == 0xF4) {
+                    max2 = 0x8F;
+                }
+            } else {
+                return false;
+            }
+            if (i + k >= n) {
+                return false;
+            }
+            int b2 = b[i + 1] & 0xFF;
+            if (b2 < min2 || b2 > max2) {
+                return false;
+            }
+            for (int j = 2; j <= k; j++) {
+                if ((b[i + j] & 0xC0) != 0x80) {
+                    return false;
+                }
+            }
+            i += k + 1;
         }
+        return true;
+    }
+
+    /** Registros lidos; os demais (C190, E110, ...) são pulados sem criar texto nem dividir campos. */
+    private static final String[] REGISTROS_USADOS = { "|0000|", "|0110|", "|0200|", "|C100|", "|C170|", "|A100|", "|A170|",
+            "|C400|", "|C405|", "|C425|" };
+
+    private static boolean usado(String texto, int inicio) {
+        for (String r : REGISTROS_USADOS) {
+            if (texto.startsWith(r, inicio)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Lê o arquivo: contribuinte, período, cadastro de itens (0200) e movimentos completados pelo cadastro. */
@@ -81,11 +145,24 @@ public final class SpedParser {
         List<ItemFiscal> movimentos = new ArrayList<>();
         Integer modeloDocumento = null; // modelo do documento corrente (C100); A100 e C400 não têm modelo numérico
 
-        for (String linha : decodificar(conteudo).split("\r?\n")) {
-            if (linha.length() < 6 || linha.charAt(0) != '|') {
+        // percorre as linhas sem montar um array com todas elas (SPED grande: milhões de linhas)
+        String texto = decodificar(conteudo);
+        int tamanho = texto.length();
+        int proxima = 0;
+        while (proxima < tamanho) {
+            int inicio = proxima;
+            int fim = texto.indexOf('\n', inicio);
+            if (fim < 0) {
+                fim = tamanho;
+            }
+            proxima = fim + 1;
+            if (fim > inicio && texto.charAt(fim - 1) == '\r') {
+                fim--;
+            }
+            if (fim - inicio < 6 || !usado(texto, inicio)) {
                 continue;
             }
-            String[] f = linha.split("\\|", -1);
+            String[] f = texto.substring(inicio, fim).split("\\|", -1);
             if (f.length < 3) {
                 continue;
             }
@@ -175,7 +252,7 @@ public final class SpedParser {
     }
 
     private static ItemFiscal novoItem(String registro, String cnpj, String nome, Integer modelo) {
-        ItemFiscal it = new ItemFiscal();
+        ItemFiscal it = ItemFiscal.semGrupos(); // o SPED não tem componentes de base nem grupo IBS/CBS
         it.registro = registro;
         it.donoCnpj = cnpj;
         it.donoNome = nome;

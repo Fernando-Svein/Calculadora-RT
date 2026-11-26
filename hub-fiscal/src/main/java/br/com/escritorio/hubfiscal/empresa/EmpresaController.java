@@ -1,6 +1,7 @@
 package br.com.escritorio.hubfiscal.empresa;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,14 +24,28 @@ import br.com.escritorio.hubfiscal.empresa.EmpresaService.DadosEmpresa;
 public class EmpresaController {
 
     private final EmpresaService empresas;
+    private final ConsultaCnpjService consulta;
 
-    public EmpresaController(EmpresaService empresas) {
+    public EmpresaController(EmpresaService empresas, ConsultaCnpjService consulta) {
         this.empresas = empresas;
+        this.consulta = consulta;
     }
 
     @GetMapping
     public List<Empresa> listar() {
         return empresas.listar();
+    }
+
+    /** Cadastro público do CNPJ (API externa configurada em hub.consulta-cnpj-url); exige a ferramenta "Empresas". */
+    @GetMapping("/consulta-cnpj/{cnpj}")
+    public Map<String, Object> consultarCnpj(@PathVariable String cnpj) {
+        return consulta.consultar(cnpj);
+    }
+
+    /** A tela mostra o botão "Consultar CNPJ" só quando a consulta está ligada. */
+    @GetMapping("/consulta-cnpj")
+    public Map<String, Object> consultaDisponivel() {
+        return Map.of("disponivel", consulta.disponivel());
     }
 
     @GetMapping("/{id}")

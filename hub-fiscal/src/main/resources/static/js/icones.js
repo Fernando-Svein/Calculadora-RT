@@ -1,4 +1,4 @@
-/* HUB Fiscal – ícones vetoriais (traço), no estilo de linha fina. */
+/* Hub Fiscal – ícones vetoriais (traço), no estilo de linha fina. */
 'use strict';
 
 (() => {

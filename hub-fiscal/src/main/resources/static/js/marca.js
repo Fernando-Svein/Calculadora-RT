@@ -1,7 +1,7 @@
 /*
  * Logo do escritório (cadastrada em Sistema → Logo do escritório).
  * Coloca a imagem nos elementos marcados com data-logo (cabeçalho e tela de login) e no ícone da aba.
- * Sem logo cadastrada, fica o ícone padrão do HUB Fiscal. Arquivo próprio porque a CSP não permite scripts inline
+ * Sem logo cadastrada, fica o ícone padrão do Hub Fiscal. Arquivo próprio porque a CSP não permite scripts inline
  * e a tela de login (antes do login) também usa este script.
  */
 'use strict';
@@ -23,7 +23,7 @@
       if (url) {
         if (!img) {
           img = document.createElement('img');
-          img.alt = ''; // decorativa: o nome HUB Fiscal está escrito ao lado
+          img.alt = ''; // decorativa: o nome Hub Fiscal está escrito ao lado
           alvo.appendChild(img);
         }
         img.src = url;

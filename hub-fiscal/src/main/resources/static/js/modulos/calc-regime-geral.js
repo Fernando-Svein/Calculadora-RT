@@ -38,6 +38,8 @@
         `<div data-empresa></div>
         <div class="card">
           <div class="card-cab"><h3>Operação</h3><div class="acoes">
+            <button class="btn btn-sec btn-peq" type="button" data-importar title="Lê NCM/NBS, CST, cClassTrib, quantidades e valores dos documentos">${Hub.icone('importar')} Importar XML/SPED</button>
+            <input type="file" data-arq-importar hidden multiple accept=".xml,.zip,.txt,.XML,.ZIP,.TXT" aria-label="Arquivos XML, ZIP ou SPED para importar">
             <button class="btn btn-sec btn-peq" data-exemplo>Carregar exemplo</button>
             <button class="btn btn-sec btn-peq" data-json-env>Ver dados técnicos</button></div></div>
           <div class="grade g4">
@@ -63,6 +65,7 @@
           </fieldset>
         </div>
         <div class="card"><div class="card-cab"><h3>Itens</h3><button class="btn btn-sec btn-peq" data-add>+ Adicionar item</button></div>
+          <div data-importado></div>
           <div class="itens-lista" data-itens></div></div>
         <div class="acoes" style="margin-bottom:16px"><button class="btn" data-calc>Calcular</button>
           <button class="btn btn-sec" data-limpar>Limpar</button></div>
@@ -114,7 +117,8 @@
       const emp = Hub.empresas.seletor(el.querySelector('[data-empresa]'), { raiz: el, aoMudar: aplicarEmpresa });
 
       function novoItem(dados = {}) {
-        if (cctPadrao && !dados.cClassTrib) dados = Object.assign({ cClassTrib: cctPadrao, cst: cctPadrao.substring(0, 3) }, dados);
+        // cClassTrib usual da empresa só em item novo (undefined); '' vindo de importação/duplicação fica vazio
+        if (cctPadrao && dados.cClassTrib === undefined) dados = Object.assign({}, dados, { cClassTrib: cctPadrao, cst: cctPadrao.substring(0, 3) });
         const n = lista.children.length + 1;
         const b = Hub.el(`<div class="item-bloco">
           <div class="item-cab"><strong>Item <span data-num>${n}</span></strong><span class="espaco"></span>
@@ -434,6 +438,82 @@
         novoItem({ tipoNom: 'ncm', codNom: '73181500', cClassTrib: '000001', cst: '000', modoBase: 'comp', c_vProd: '1000,00', c_vFrete: '50,00', c_vDesc: '20,00', c_vICMS: '180,00', c_vPIS: '16,50', c_vCOFINS: '76,00', quantidade: '1', unidade: 'UN' });
         novoItem({ tipoNom: 'ncm', codNom: '30049099', cClassTrib: '200030', cst: '200', baseCalculo: '300,00', quantidade: '10', unidade: 'CX' });
         Array.from(lista.children).forEach((b) => b.querySelector('[name=modoBase]').onchange());
+      }
+
+      // ---------------------------------------------------------------- importação de XML/SPED
+      const arqImp = el.querySelector('[data-arq-importar]');
+      const importado = el.querySelector('[data-importado]');
+      const num = (v) => (v === null || v === undefined || v === '' ? '' : String(v).replace('.', ','));
+      el.querySelector('[data-importar]').onclick = () => arqImp.click();
+      arqImp.onchange = async () => {
+        if (!arqImp.files.length) return;
+        const fd = new FormData();
+        Array.from(arqImp.files).forEach((f) => fd.append('arquivos', f, f.name));
+        arqImp.value = '';
+        importado.innerHTML = '<div class="carregando"><div class="giro"></div>Lendo os documentos e sugerindo as classificações...</div>';
+        const r = await comp.enviarComProgresso(`/hub/simulador/importar?data=${encodeURIComponent(inpData.value || Hub.hoje())}`, fd);
+        if (!r.ok) { importado.innerHTML = Hub.problema(r, 'Não foi possível importar'); return; }
+        const ops = r.data.operacoes || [];
+        if (r.data.empresasNovas > 0) Hub.toast(`${r.data.empresasNovas} empresa(s) cadastrada(s) automaticamente a partir dos arquivos.`);
+        if (!ops.length) { importado.innerHTML = '<div class="aviso">Nenhum documento com itens foi encontrado nos arquivos.</div>'; return; }
+        if (ops.length === 1) { carregarOperacao(ops[0]); return; }
+        importado.innerHTML = '';
+        // vários documentos: cada um é uma operação (data e local próprios); o usuário escolhe qual simular
+        const c = Hub.modal(`<h2>Escolha o documento para simular</h2>
+          <p class="sutil">Foram lidos ${ops.length} documentos. Cada um tem data, local e itens próprios: escolha qual carregar no simulador.</p>
+          <div class="tabela-wrap" style="max-height:60vh"><table class="tab"><thead><tr><th>Documento</th><th>Emissão</th><th>Emitente</th>
+            <th class="num">Itens</th><th class="num">Sugeridos</th><th></th></tr></thead><tbody>
+          ${ops.map((o, i) => `<tr><td>${esc(o.origem)}${o.numero ? ' nº ' + esc(o.numero) : ''}<div class="sutil">${esc(o.arquivo)}</div></td>
+            <td>${esc(fmt.data(o.dataHora))}</td><td>${esc(o.emitenteNome || '')}<div class="sutil">${esc(fmt.cnpj(o.emitenteCnpj))}</div></td>
+            <td class="num">${o.totalItens}</td><td class="num">${o.itens.filter((x) => x.origemClassificacao === 'SUGERIDO').length}</td>
+            <td><button class="btn btn-peq" type="button" data-op="${i}">Carregar</button></td></tr>`).join('')}
+          </tbody></table></div>`);
+        c.querySelectorAll('[data-op]').forEach((b) => { b.onclick = () => { Hub.fecharModal(); carregarOperacao(ops[Number(b.dataset.op)]); }; });
+      };
+
+      function carregarOperacao(o) {
+        if (o.dataHora) {
+          inpData.value = o.dataHora.substring(0, 10);
+          if (o.dataHora.length >= 16) el.querySelector('[name=hora]').value = o.dataHora.substring(11, 16);
+          ajustarAliq();
+        }
+        const selDoc = el.querySelector('[name=tpDoc]');
+        if (o.tpDoc && Array.from(selDoc.options).some((x) => x.value === String(o.tpDoc))) selDoc.value = String(o.tpDoc);
+        if (o.uf && o.municipio) loc.pronto.then(() => loc.definir(o.uf, o.municipio));
+        lista.innerHTML = '';
+        res.innerHTML = '';
+        let sugeridos = 0;
+        o.itens.forEach((it) => {
+          const comComp = (it.baseCalculo === null || it.baseCalculo === undefined) && it.componentes && Object.keys(it.componentes).length;
+          const dados = {
+            tipoNom: it.nbs ? 'nbs' : it.ncm ? 'ncm' : '', codNom: it.nbs || it.ncm || '',
+            cClassTrib: it.cClassTrib || '', cst: it.cst || '', quantidade: num(it.quantidade), unidade: it.unidade || '',
+            modoBase: comComp ? 'comp' : 'base', baseCalculo: num(it.baseCalculo),
+          };
+          if (comComp) Object.entries(it.componentes).forEach(([k, v]) => { dados['c_' + k] = num(v); });
+          const b = novoItem(dados);
+          b.querySelector('.item-cab strong').insertAdjacentHTML('afterend',
+            `<span class="item-desc">${esc([it.codigo, it.descricao].filter(Boolean).join(' – '))}${it.cfop ? ` · CFOP ${esc(it.cfop)}` : ''}</span>`);
+          const inpCct = b.querySelector('[name=cClassTrib]');
+          const info = b.querySelector('[data-sug-info]');
+          if (it.origemClassificacao === 'SUGERIDO') {
+            sugeridos++;
+            inpCct.dataset.sugerido = '1';
+            inpCct.title = 'Sugerido pelo NCM/NBS – não veio do documento';
+            inpCct.addEventListener('input', () => { delete inpCct.dataset.sugerido; inpCct.title = ''; }, { once: true });
+            info.innerHTML = ` <span class="etq etq-amarelo">cClassTrib sugerido – não veio do documento</span> ${esc(it.motivo || '')}`;
+          } else if (it.origemClassificacao === 'SEM_CLASSIFICACAO') {
+            info.innerHTML = ` <span class="etq etq-vermelho">Sem cClassTrib</span> ${esc(it.motivo || '')}`;
+          } else {
+            info.innerHTML = ' <span class="etq etq-verde">cClassTrib do documento</span>';
+          }
+        });
+        if (!lista.children.length) novoItem();
+        importado.innerHTML = `<div class="info-caixa"><strong>Importado:</strong> ${esc(o.origem)}${o.numero ? ' nº ' + esc(o.numero) : ''}
+          ${o.dataHora ? ' de ' + esc(fmt.data(o.dataHora)) : ''}${o.emitenteNome ? ' · ' + esc(o.emitenteNome) : ''} – ${o.itens.length} item(ns)${o.totalItens > o.itens.length ? ` de ${o.totalItens}` : ''}.
+          ${sugeridos ? `<br><strong>${sugeridos} item(ns) com cClassTrib sugerido</strong> (marcados em amarelo): o documento não trazia a classificação; confira antes de usar o resultado.` : ''}
+          ${(o.avisos || []).length ? `<ul>${o.avisos.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}</div>`;
+        Hub.toast('Documento carregado no simulador.');
       }
 
       el.querySelector('[data-add]').onclick = () => novoItem();

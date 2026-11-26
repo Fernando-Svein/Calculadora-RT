@@ -6,8 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Hub Fiscal: interface interna do departamento fiscal sobre as calculadoras
- * oficiais da Reforma Tributária do Consumo (Receita Federal / Serpro).
+ * HUB Fiscal: interface interna do departamento fiscal sobre as calculadoras
+ * oficiais de CBS, IBS e Imposto Seletivo (Receita Federal / Serpro).
  * <p>
  * O hub não altera o código das calculadoras oficiais: ele as consome por HTTP
  * (Regime Geral e Simples Nacional) e lê o banco oficial em modo somente leitura.

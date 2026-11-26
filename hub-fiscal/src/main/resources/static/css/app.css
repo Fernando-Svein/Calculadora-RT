@@ -1,5 +1,5 @@
 /* =====================================================================
-   Hub Fiscal – sistema visual
+   HUB Fiscal – sistema visual
    ===================================================================== */
 /* fonte Inter (SIL Open Font License – ver fonts/LICENCA-INTER.txt) */
 @font-face { font-family: "Inter"; font-style: normal; font-weight: 400; font-display: swap; src: url("fonts/Inter-Regular.woff2") format("woff2"); }
@@ -95,6 +95,19 @@ svg.i { width: 18px; height: 18px; flex: 0 0 auto; vertical-align: middle; }
 .marca-texto { display: flex; flex-direction: column; line-height: 1.15; white-space: nowrap; min-width: 0; overflow: hidden; transition: opacity .18s; }
 .marca-texto strong { font-size: 15.5px; font-weight: 700; letter-spacing: -.02em; color: var(--texto); }
 .marca-texto small { color: var(--texto-3); font-size: 11px; margin-top: 2px; }
+/* logo do escritório (Sistema → Logo do escritório), aplicada por js/marca.js */
+.marca-logo.com-imagem { display: flex; align-items: center; width: auto; height: auto; max-width: 120px; background: none; border-radius: 0; }
+.marca-logo.com-imagem svg { display: none; }
+.marca-logo.com-imagem img { display: block; height: 32px; width: auto; max-width: 120px; object-fit: contain; }
+.menu-recolhido .sidebar:not(.expandido) .marca-logo.com-imagem, .menu-recolhido .sidebar:not(.expandido) .marca-logo.com-imagem img { max-width: 40px; }
+[data-tema="escuro"] .marca-logo.com-imagem img { background: #fff; border-radius: 6px; padding: 2px 4px; }
+.logo-previas { display: flex; flex-wrap: wrap; gap: 16px; margin: 0 0 8px; }
+.logo-previa { margin: 0; padding: 16px; border: 1px solid var(--borda); border-radius: 10px; background: #fff; text-align: center; }
+.logo-previa img { display: block; max-width: 260px; max-height: 120px; object-fit: contain; margin: 0 auto 8px; }
+.logo-previa figcaption { font-size: 12px; color: #5b6472; }
+.logo-previa-escura { background: #15181e; }
+.logo-previa-escura img { background: #fff; border-radius: 6px; padding: 4px 8px; }
+.logo-previa-escura figcaption { color: #aab2bf; }
 .btn-recolher {
   flex: 0 0 auto; width: 30px; height: 30px; border-radius: var(--r); border: 0; background: transparent; color: var(--texto-3);
   display: grid; place-items: center; cursor: pointer; transition: background .15s, color .15s, opacity .18s;
@@ -420,7 +433,6 @@ table.tab tr.detalhe td { background: var(--superficie-2) !important; padding: 1
 .etq-verde { background: var(--verde-suave); color: var(--verde); border-color: var(--verde-borda); }
 .etq-amarelo { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borda); }
 .etq-vermelho { background: var(--vermelho-suave); color: var(--vermelho); border-color: var(--vermelho-borda); }
-.etq-roxo { background: var(--violeta-suave); color: var(--violeta); border-color: var(--violeta-borda); }
 .st-DIVERGENTE, .st-ERRO_CLASSIFICACAO { background: var(--vermelho-suave); color: var(--vermelho); border-color: var(--vermelho-borda); }
 .st-REVISAR { background: var(--ambar-suave); color: var(--ambar); border-color: var(--ambar-borda); }
 .st-SUGERIDO { background: var(--primaria-suave); color: var(--primaria-2); border-color: var(--primaria-borda); }
@@ -571,6 +583,9 @@ body.pagina-login {
 .login-marca { display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--texto); }
 .login-marca-topo { display: flex; align-items: center; gap: 10px; }
 .login-marca-topo .marca-logo { width: 34px; height: 34px; }
+.login-marca-topo .marca-logo.com-imagem { width: auto; height: auto; }
+.login-marca-topo .marca-logo.com-imagem, .login-marca-topo .marca-logo.com-imagem img { max-width: 220px; }
+.login-marca-topo .marca-logo.com-imagem img { height: 56px; }
 .login-marca-topo .marca-texto { text-align: left; }
 .login-marca-topo .marca-texto strong { font-size: 19px; }
 .login-painel { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 18px; }

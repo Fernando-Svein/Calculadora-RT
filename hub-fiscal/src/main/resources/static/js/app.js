@@ -1,4 +1,4 @@
-/* Hub Fiscal – núcleo: rotas, menu, chamadas às APIs e utilitários. */
+/* HUB Fiscal – núcleo: rotas, menu, chamadas às APIs e utilitários. */
 'use strict';
 
 window.Hub = (() => {
@@ -44,7 +44,7 @@ window.Hub = (() => {
     document.getElementById('tituloPagina').innerHTML = m.grupo
       ? `<span class="migalha">${esc(m.grupo)}</span><span class="migalha-sep">/</span><strong>${esc(m.titulo)}</strong>`
       : `<strong>${esc(m.titulo)}</strong>`;
-    document.title = m.titulo + ' – Hub Fiscal';
+    document.title = m.titulo + ' – HUB Fiscal';
     document.getElementById('sidebar').classList.remove('aberta');
     const el = document.getElementById('conteudo');
     el.innerHTML = '';

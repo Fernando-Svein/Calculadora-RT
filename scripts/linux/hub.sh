@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hub Fiscal no Linux – operação do dia a dia (equivale ao scripts\hub.ps1 do Windows).
+# HUB Fiscal no Linux – operação do dia a dia (equivale ao scripts\hub.ps1 do Windows).
 #
 #   sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>
 #
@@ -12,7 +12,7 @@
 #   atualizar      baixa a versão nova das calculadoras da Receita, recria o banco, recompila e religa
 #   verificar      só atualiza se a Receita publicou versão nova; se falhar, volta à versão anterior
 #                  (é o que o agendamento das 03:00 executa; resultado na tela "Situação do sistema")
-#   atualizar-hub  baixa a versão nova do próprio Hub Fiscal (do seu GitHub), recompila e religa o hub
+#   atualizar-hub  baixa a versão nova do próprio HUB Fiscal (do seu GitHub), recompila e religa o hub
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 
@@ -69,7 +69,7 @@ criar_admin() {
   estado=$(curl -s -m 5 http://127.0.0.1:8090/auth/estado | jq -r '.primeiroAcesso' 2>/dev/null)
   [[ "$estado" == true ]] || morrer "O hub já tem usuários. Entre pelo navegador com um administrador e cadastre a equipe em Sistema > Usuários."
   local usuario nome senha senha2
-  echo "Criando o administrador inicial do Hub Fiscal."
+  echo "Criando o administrador inicial do HUB Fiscal."
   read -rp "Usuário (login, ex.: fernando): " usuario
   read -rp "Nome completo: " nome
   read -rsp "Senha (mínimo 8 caracteres, letras e números): " senha; echo
@@ -167,14 +167,14 @@ verificar() {
 }
 
 atualizar_hub() {
-  etapa "Baixando a versão nova do Hub Fiscal (git pull em $RAIZ)"
+  etapa "Baixando a versão nova do HUB Fiscal (git pull em $RAIZ)"
   echo "Se o GitHub pedir login: Username = seu usuário do GitHub; Password = o token de acesso."
   # roda como administrador (o usuário do serviço não consegue pedir o token no seu terminal) e
   # devolve os arquivos ao usuário do serviço em seguida
   git -c safe.directory="$RAIZ" -C "$RAIZ" pull --ff-only || morrer "git pull falhou"
   chown -R "$USUARIO_SERVICO:$USUARIO_SERVICO" "$RAIZ"
   systemctl daemon-reload
-  compilar hub-fiscal "Hub Fiscal" || morrer "Compilação do hub falhou. O hub continua rodando a versão anterior; não reinicie a VM antes de corrigir (sudo bash $0 atualizar-hub de novo)."
+  compilar hub-fiscal "HUB Fiscal" || morrer "Compilação do hub falhou. O hub continua rodando a versão anterior; não reinicie a VM antes de corrigir (sudo bash $0 atualizar-hub de novo)."
   etapa "Reiniciando o hub"
   systemctl restart hubfiscal
   aguardar_servicos || morrer "O hub não voltou. Veja: sudo bash $0 logs hub"

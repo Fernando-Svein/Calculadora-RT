@@ -48,8 +48,8 @@
     const docs = new Map();
     lista.forEach((c) => (c.tiposDfeClassificacao || []).forEach((t) => docs.set(t.tipo, t.sigla)));
     const extras = Hub.el(`<span class="acoes">
-      <select data-f-cst style="width:auto"><option value="">Todos os CST</option>${csts.map((c) => `<option>${c}</option>`).join('')}</select>
-      <select data-f-doc style="width:auto"><option value="">Todos os documentos</option>${[...docs].sort((a, b) => a[0] - b[0]).map(([t, s]) => `<option value="${t}">${esc(s)} (${t})</option>`).join('')}</select>
+      <select data-f-cst style="width:auto" aria-label="Filtrar por CST"><option value="">Todos os CST</option>${csts.map((c) => `<option>${c}</option>`).join('')}</select>
+      <select data-f-doc style="width:auto" aria-label="Filtrar por documento fiscal"><option value="">Todos os documentos</option>${[...docs].sort((a, b) => a[0] - b[0]).map(([t, s]) => `<option value="${t}">${esc(s)} (${t})</option>`).join('')}</select>
       <label class="check"><input type="checkbox" data-f-red> Só com redução</label>
     </span>`);
     const tab = comp.tabela(d, {

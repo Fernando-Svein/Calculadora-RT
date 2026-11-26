@@ -290,7 +290,7 @@
         });
         const estados = { CALCULADO: 'etq-verde', CALCULO_SIMULADO: 'etq-azul', INCONSISTENCIA_ENTRADA: 'etq-vermelho', NAO_IMPLEMENTADO: 'etq-amarelo', FALHA_TECNICA: 'etq-vermelho' };
         res.innerHTML = `<div class="card"><div class="card-cab"><h2>Resultado</h2><div class="acoes">
-            <select data-xml-tipo style="width:auto"><option value="nfe">XML NF-e</option><option value="nfce">XML NFC-e</option>
+            <select data-xml-tipo style="width:auto" aria-label="Tipo de documento do XML"><option value="nfe">XML NF-e</option><option value="nfce">XML NFC-e</option>
               <option value="cte">XML CT-e</option><option value="bpe">XML BP-e</option><option value="nf3e">XML NF3e</option></select>
             <button class="btn btn-sec btn-peq" data-xml>Gerar XML do grupo IBS/CBS</button>
             <button class="btn btn-sec btn-peq" data-json>Ver resposta técnica</button></div></div>

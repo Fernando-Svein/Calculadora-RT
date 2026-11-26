@@ -1,4 +1,4 @@
-# Hub Fiscal – Reforma Tributária do Consumo (Ubuntu Server)
+# HUB Fiscal (Ubuntu Server)
 
 Aplicação web interna do departamento fiscal, construída sobre as **calculadoras oficiais da Receita Federal/Serpro** (CBS, IBS e Imposto Seletivo – LC 214/2025). Atende clientes do **Regime Regular** e do **Simples Nacional**.
 
@@ -40,11 +40,11 @@ Todos os comandos: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`
 | `criar-admin` | Cria o administrador inicial (só enquanto não há usuários) |
 | `verificar` | Atualiza as calculadoras só se houver versão nova; se falhar, volta à anterior (é o que roda às 03:00) |
 | `atualizar` | Força a atualização das calculadoras: git pull, banco novo, compilação e reinício |
-| `atualizar-hub` | Baixa a versão nova do Hub Fiscal desta branch, recompila e reinicia só o hub |
+| `atualizar-hub` | Baixa a versão nova do HUB Fiscal desta branch, recompila e reinicia só o hub |
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs/atualizacao.log`.
 
-**Backup:** inclua `/opt/hub-fiscal/dados/hub-usuarios.db` (usuários e senhas). O resto se recria a partir dos repositórios.
+**Backup:** inclua a pasta `/opt/hub-fiscal/dados/` (usuários, senhas e logo). O resto se recria a partir dos repositórios.
 Se perder o acesso de todos os administradores: `hub.sh parar`, renomeie esse arquivo, `hub.sh iniciar` e rode `hub.sh criar-admin`.
 
 ## Acesso (login e senha)
@@ -56,6 +56,16 @@ Depois do `criar-admin`, o administrador cadastra a equipe em **Sistema → Usu�
 - **Desativar** bloqueia o acesso na hora; **Redefinir senha** gera nova provisória;
 - senhas com no mínimo 8 caracteres, letras e números (BCrypt); 5 erros seguidos bloqueiam o usuário por 15 minutos e 20 erros
   do mesmo computador bloqueiam esse computador por 15 minutos; a sessão expira após 8 horas sem uso.
+
+## Logo do escritório
+
+O administrador cadastra a logo em **Sistema → Logo do escritório** (PNG ou JPEG, até 2 MB; de preferência PNG com fundo
+transparente). Ela aparece para todos no cabeçalho do menu, na tela de login e no ícone da aba do navegador; sem logo, fica o
+ícone padrão "HF". No modo escuro a logo ganha uma placa branca para continuar legível.
+
+Por segurança o hub não guarda o arquivo enviado: confere o formato pelos bytes (SVG é recusado, pois pode conter scripts),
+abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px. O arquivo fica em
+`/opt/hub-fiscal/dados/logo.png` (configurável em `hub.arquivo-logo`) – inclua no backup junto com os usuários.
 
 ## O que o hub oferece
 
@@ -106,3 +116,5 @@ git push
 ```
 
 No servidor, aplique com `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh atualizar-hub`.
+
+Convenções de código: veja [CONVENCOES.md](CONVENCOES.md).

@@ -45,7 +45,8 @@ public class SegurancaConfig {
 
     /** Endereços acessíveis sem login. */
     private static final String[] PUBLICOS = {
-            "/login.html", "/css/**", "/js/tema.js", "/js/login.js", "/favicon.ico", "/error",
+            "/login.html", "/css/**", "/js/tema.js", "/js/login.js", "/js/marca.js", "/favicon.ico", "/error",
+            "/marca", "/marca/logo",
             "/auth/csrf", "/auth/estado", "/auth/login", "/auth/primeiro-acesso" };
 
     /**

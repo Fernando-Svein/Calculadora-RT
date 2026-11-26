@@ -1,5 +1,5 @@
 ﻿<#
-  Hub Fiscal - gerenciamento dos serviços (Windows PowerShell 5.1+)
+  HUB Fiscal - gerenciamento dos serviços (Windows PowerShell 5.1+)
 
   Ações:
     iniciar     Inicia as calculadoras oficiais e o hub (compila o que faltar)
@@ -12,8 +12,8 @@
                 Se a atualização falhar, volta para a versão anterior e religa tudo.
                 Grava o resultado em logs\ultima-atualizacao.json (mostrado no hub).
     agendar     (servidor, como administrador) Cria as tarefas no Agendador do Windows:
-                  - "Hub Fiscal - Iniciar": liga os serviços quando o servidor inicia
-                  - "Hub Fiscal - Atualizacao": roda "verificar" todo dia no horário -Hora
+                  - "HUB Fiscal - Iniciar": liga os serviços quando o servidor inicia
+                  - "HUB Fiscal - Atualizacao": roda "verificar" todo dia no horário -Hora
     desagendar  Remove as duas tarefas
 
   Uso: powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 iniciar
@@ -71,7 +71,7 @@ $Servicos = @(
         Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8080/api/calculadora/dados-abertos/versao'; Log = 'regime-geral' },
     @{ Nome = 'Calculadora Simples Nacional'; Pasta = 'calculadora-rtc-simples-nacional'; Jar = 'api-simples-nacional.jar';
         Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8082/api/versao'; Log = 'simples-nacional' },
-    @{ Nome = 'Hub Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @(); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
+    @{ Nome = 'HUB Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @(); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
 )
 
 function Get-ProcessoServico($s) {
@@ -179,7 +179,7 @@ function Start-Servicos {
     $ips = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
         Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254*' } | Select-Object -ExpandProperty IPAddress
     Write-Host ""
-    Write-Host "Hub Fiscal disponível em:" -ForegroundColor Yellow
+    Write-Host "HUB Fiscal disponível em:" -ForegroundColor Yellow
     Write-Host "   http://localhost:8090   (neste computador)"
     foreach ($ip in $ips) { Write-Host "   http://$($ip):8090   (outros computadores da rede)" }
 }
@@ -293,7 +293,7 @@ function Update-SeHouverNovidade {
     }
 }
 
-$NomesTarefas = @{ Iniciar = 'Hub Fiscal - Iniciar'; Atualizar = 'Hub Fiscal - Atualizacao' }
+$NomesTarefas = @{ Iniciar = 'HUB Fiscal - Iniciar'; Atualizar = 'HUB Fiscal - Atualizacao' }
 
 function Register-Tarefas {
     $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -310,7 +310,7 @@ function Register-Tarefas {
     $gIni = New-ScheduledTaskTrigger -AtStartup
     $gIni.Delay = 'PT1M'
     Register-ScheduledTask -TaskName $NomesTarefas.Iniciar -Action (& $acao 'iniciar') -Trigger $gIni -Principal $quem -Settings $cfg `
-        -Description 'Liga as calculadoras oficiais e o Hub Fiscal quando o servidor inicia.' -Force | Out-Null
+        -Description 'Liga as calculadoras oficiais e o HUB Fiscal quando o servidor inicia.' -Force | Out-Null
     Write-Ok "Tarefa '$($NomesTarefas.Iniciar)' criada (ao iniciar o servidor)"
 
     $gAtu = New-ScheduledTaskTrigger -Daily -At $Hora

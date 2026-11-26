@@ -1,5 +1,5 @@
 ﻿<#
-  Funções comuns dos testes do Hub Fiscal: sessão HTTP (cookies + token CSRF) e registro de resultados.
+  Funções comuns dos testes do HUB Fiscal: sessão HTTP (cookies + token CSRF) e registro de resultados.
   Usa HttpClient em vez de Invoke-WebRequest: com -WebSession, o Invoke-WebRequest guarda os -Headers
   na sessão e os reenvia nas chamadas seguintes, o que mascara testes de CSRF.
 #>
@@ -36,14 +36,14 @@ function Invoke-Hub($Sessao, [string]$Metodo, [string]$Url, $Json = $null,
     $Sessao.Cliente.SendAsync($m).Result
 }
 
-<# Envio de arquivos (multipart, campo "arquivos"), como faz a tela de lotes. #>
-function Send-Arquivos($Sessao, [string]$Url, [string[]]$Arquivos) {
+<# Envio de arquivos (multipart; campo "arquivos" como a tela de lotes, ou outro em -Campo). #>
+function Send-Arquivos($Sessao, [string]$Url, [string[]]$Arquivos, [string]$Campo = 'arquivos') {
     $m = New-Object Net.Http.HttpRequestMessage('POST', "$Base$Url")
     $m.Headers.Add('Accept', 'application/json')
     $m.Headers.Add('X-XSRF-TOKEN', (Get-TokenCsrf $Sessao))
     $form = New-Object Net.Http.MultipartFormDataContent
     foreach ($a in $Arquivos) {
-        $form.Add((New-Object Net.Http.ByteArrayContent(, [IO.File]::ReadAllBytes($a))), 'arquivos', [IO.Path]::GetFileName($a))
+        $form.Add((New-Object Net.Http.ByteArrayContent(, [IO.File]::ReadAllBytes($a))), $Campo, [IO.Path]::GetFileName($a))
     }
     $m.Content = $form
     $Sessao.Cliente.SendAsync($m).Result

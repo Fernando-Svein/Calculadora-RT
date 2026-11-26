@@ -63,9 +63,9 @@
             <tr><th rowspan="2">Anexo</th><th colspan="2">Alíquota normal</th><th colspan="2">Quando o ISS não é recolhido no DAS</th></tr>
             <tr><th>CBS (%)</th><th>IBS (%)</th><th>CBS (%)</th><th>IBS (%)</th></tr></thead><tbody>
             ${ANEXOS.map((a) => `<tr><td><strong>${a}</strong></td>
-              <td><input name="a${a}_cbs" placeholder="ex.: 1,1612"></td><td><input name="a${a}_ibs" placeholder="ex.: 0,0129"></td>
-              <td>${COM_ISS.has(a) ? `<input name="a${a}_scbs">` : '<span class="sutil">–</span>'}</td>
-              <td>${COM_ISS.has(a) ? `<input name="a${a}_sibs">` : '<span class="sutil">–</span>'}</td></tr>`).join('')}
+              <td><input name="a${a}_cbs" placeholder="ex.: 1,1612" aria-label="Anexo ${a}: CBS, alíquota normal (%)"></td><td><input name="a${a}_ibs" placeholder="ex.: 0,0129" aria-label="Anexo ${a}: IBS, alíquota normal (%)"></td>
+              <td>${COM_ISS.has(a) ? `<input name="a${a}_scbs" aria-label="Anexo ${a}: CBS quando o ISS não é recolhido no DAS (%)">` : '<span class="sutil">–</span>'}</td>
+              <td>${COM_ISS.has(a) ? `<input name="a${a}_sibs" aria-label="Anexo ${a}: IBS quando o ISS não é recolhido no DAS (%)">` : '<span class="sutil">–</span>'}</td></tr>`).join('')}
           </tbody></table></div>
           <p class="sutil" style="margin-top:8px">Preencha só os anexos das atividades da empresa, com todas as casas decimais da apuração do PGDAS-D.
             Nos anexos III, IV e V informe também a linha usada quando o ISS é retido, isento, não incide ou é recolhido fora do Simples.</p>

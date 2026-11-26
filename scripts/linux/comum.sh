@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hub Fiscal no Linux – funções usadas por instalar.sh e hub.sh (não execute este arquivo direto).
+# HUB Fiscal no Linux – funções usadas por instalar.sh e hub.sh (não execute este arquivo direto).
 #
 # Mesma lógica do scripts\hub.ps1 do Windows: as calculadoras da Receita são clonadas sem modificação,
 # o banco oficial é gerado pelo Flyway do próprio repositório da Receita e os três serviços rodam com
@@ -24,7 +24,7 @@ declare -A URL_REPO=(
 SERVICOS=(
   "hubfiscal-calc-rg|Calculadora Regime Geral|calculadora-rtc-regime-regular|api-regime-geral.jar|http://127.0.0.1:8080/api/calculadora/dados-abertos/versao|regime-geral"
   "hubfiscal-calc-sn|Calculadora Simples Nacional|calculadora-rtc-simples-nacional|api-simples-nacional.jar|http://127.0.0.1:8082/api/versao|simples-nacional"
-  "hubfiscal|Hub Fiscal|hub-fiscal|hub-fiscal.jar|http://127.0.0.1:8090/hub/status|hub"
+  "hubfiscal|HUB Fiscal|hub-fiscal|hub-fiscal.jar|http://127.0.0.1:8090/hub/status|hub"
 )
 UNIDADES=(hubfiscal-calc-rg hubfiscal-calc-sn hubfiscal)
 
@@ -157,7 +157,7 @@ reconstruir() {
 mostrar_enderecos() {
   local ip
   echo
-  echo "${AMARELO}Hub Fiscal disponível em:${FIM}"
+  echo "${AMARELO}HUB Fiscal disponível em:${FIM}"
   for ip in $(hostname -I 2>/dev/null); do
     [[ "$ip" == *:* ]] && continue
     echo "   http://$ip:8090"

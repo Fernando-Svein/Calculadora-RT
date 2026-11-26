@@ -76,7 +76,11 @@
 
   /** Preenche um campo de alíquota nominal da CBS (2027 em diante) conforme o cenário, e acompanha a troca. */
   function ligarCampoNominal(input, padrao) {
-    const ajustar = () => { input.value = ativo() ? aliquotaTexto() : padrao; };
+    const ajustar = () => {
+      // a tela foi trocada: o campo saiu do documento e o ouvinte deixa de existir (evita acumular um por visita)
+      if (!input.isConnected) { window.removeEventListener('hub:cenario-cbs', ajustar); return; }
+      input.value = ativo() ? aliquotaTexto() : padrao;
+    };
     pronto.then(ajustar);
     window.addEventListener('hub:cenario-cbs', ajustar);
   }

@@ -45,7 +45,7 @@ public class ExportacaoController {
                 for (List<String> par : pedido.resumo()) {
                     pares.add(par.toArray(String[]::new));
                 }
-                p.abaResumo("Resumo", pedido.titulo() == null ? "Hub Fiscal" : pedido.titulo(), pares);
+                p.abaResumo("Resumo", pedido.titulo() == null ? "HUB Fiscal" : pedido.titulo(), pares);
             }
             List<Coluna> cols = new ArrayList<>();
             for (ColunaPedido c : pedido.colunas()) {

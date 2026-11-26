@@ -58,7 +58,7 @@ public final class ClassificacaoExcel {
                     + "(destinatário, finalidade, regime). A decisão final é do responsável técnico: use as colunas "
                     + "\"cClassTrib definido\" e \"Responsável\" para registrar." });
             Planilha.secoesArquivosEAvisos(resumo, r.arquivos, r.avisos);
-            p.abaResumo("Resumo", "Classificação tributária (cClassTrib) – Reforma Tributária", resumo);
+            p.abaResumo("Resumo", "Classificação tributária (cClassTrib)", resumo);
 
             List<Coluna> cols = List.of(
                     Coluna.texto("Status", 16), Coluna.texto("CNPJ", 17), Coluna.texto("Empresa", 28),

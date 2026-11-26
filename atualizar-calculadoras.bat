@@ -1,5 +1,5 @@
 @echo off
-title Hub Fiscal - atualizar calculadoras da Receita
+title HUB Fiscal - atualizar calculadoras da Receita
 echo Este processo baixa a versao nova das calculadoras oficiais (GitHub da Receita Federal),
 echo recria o banco de dados oficial, recompila tudo e reinicia os servicos.
 echo Os usuarios ficarao sem acesso ao hub por alguns minutos.

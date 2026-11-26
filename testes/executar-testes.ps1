@@ -1,5 +1,5 @@
 ﻿<#
-  Testes automatizados do Hub Fiscal.
+  Testes automatizados do HUB Fiscal.
 
   Sobe uma cópia isolada do hub (porta 8091, banco de usuários temporário — os usuários reais não são
   tocados), cria usuários de teste e roda três suítes contra ela:
@@ -54,7 +54,7 @@ New-Item -ItemType Directory $tmp | Out-Null
 Copy-Item $jar (Join-Path $tmp 'hub-fiscal-teste.jar')   # cópia: não trava o jar usado pelo hub em produção
 $proc = Start-Process -FilePath (Join-Path $jdk.FullName 'bin\java.exe') -PassThru -WindowStyle Hidden `
     -WorkingDirectory (Join-Path $Raiz 'hub-fiscal') `
-    -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db" `
+    -ArgumentList '-jar', (Join-Path $tmp 'hub-fiscal-teste.jar'), "--server.port=$Porta", "--hub.banco-usuarios=$tmp\usuarios.db", "--hub.arquivo-logo=$tmp\logo.png" `
     -RedirectStandardOutput (Join-Path $tmp 'hub.log') -RedirectStandardError (Join-Path $tmp 'hub.err')
 
 $codigoSaida = 1

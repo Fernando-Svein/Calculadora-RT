@@ -6,7 +6,7 @@ HTTP 200 attachment; filename="classificacao-cclasstrib-<HOJE>.xlsx"; filename*=
 <?xml version="1.0" encoding="UTF-8"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:B28"/><sheetViews><sheetView workbookViewId="0" tabSelected="true"/></sheetViews><sheetFormatPr defaultRowHeight="15.0"/><cols><col min="1" max="1" width="45.0" customWidth="true"/><col min="2" max="2" width="90.0" customWidth="true"/></cols><sheetData>
 <row r="1">
-<c r="A1" s="2" t="inlineStr"><is><t>Classificação tributária (cClassTrib) – Reforma Tributária</t></is></c></row>
+<c r="A1" s="2" t="inlineStr"><is><t>Classificação tributária (cClassTrib)</t></is></c></row>
 <row r="3">
 <c r="A3" s="3" t="inlineStr"><is><t>Data de referência (vigência)</t></is></c><c r="B3" s="4" t="inlineStr"><is><t>2026-03-10</t></is></c></row>
 <row r="4">

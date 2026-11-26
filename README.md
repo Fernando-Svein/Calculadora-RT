@@ -1,4 +1,4 @@
-# Hub Fiscal – Reforma Tributária do Consumo
+# HUB Fiscal
 
 Aplicação web interna do departamento fiscal, construída sobre as **calculadoras oficiais da Receita Federal/Serpro** (CBS, IBS e Imposto Seletivo – LC 214/2025). Atende clientes do **Regime Regular** e do **Simples Nacional**.
 
@@ -30,14 +30,24 @@ usuário, no canto superior direito), o administrador cadastra a equipe:
 Os usuários ficam em `dados\hub-usuarios.db` – **inclua esse arquivo no backup** do servidor. Se perder o acesso de todos
 os administradores, pare o hub, renomeie esse arquivo e inicie de novo: o primeiro acesso volta a ser oferecido no servidor.
 
+## Logo do escritório
+
+O administrador cadastra a logo em **Sistema → Logo do escritório** (PNG ou JPEG, até 2 MB; de preferência PNG com fundo
+transparente). Ela passa a aparecer para todos no cabeçalho do menu, na tela de login e no ícone da aba do navegador;
+sem logo, fica o ícone padrão "HF". No modo escuro a logo ganha uma placa branca para continuar legível.
+
+Por segurança o hub não guarda o arquivo enviado: confere o formato pelos bytes (SVG é recusado, pois pode conter scripts),
+abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px. O arquivo fica em `dados\logo.png`
+(configurável em `hub.arquivo-logo`) – inclua no backup junto com os usuários.
+
 ## Instalação no servidor (VM Windows)
 
 1. Copie a pasta inteira do projeto para a VM (ex.: `C:\HubFiscal`) — inclui `tools\` com o Java 25 portátil.
 2. Instale o **Git para Windows** (https://git-scm.com) na VM. A VM precisa de acesso ao `github.com` e ao Maven Central (`repo.maven.apache.org`).
 3. Rode `iniciar-hub.bat` uma vez para conferir que tudo sobe.
 4. Clique com o botão direito em `ativar-atualizacao-automatica.bat` → **Executar como administrador**. Isso cria duas tarefas no Agendador do Windows (conta SYSTEM, rodam sem ninguém logado):
-   - **Hub Fiscal - Iniciar** – liga as calculadoras e o hub quando a VM inicia;
-   - **Hub Fiscal - Atualizacao** – todo dia às 03:00 consulta o GitHub da Receita. Sem novidade, não mexe em nada. Com versão nova: para os serviços, atualiza, recria o banco, recompila e religa (alguns minutos). Se algo falhar, volta para a versão anterior e religa.
+   - **HUB Fiscal - Iniciar** – liga as calculadoras e o hub quando a VM inicia;
+   - **HUB Fiscal - Atualizacao** – todo dia às 03:00 consulta o GitHub da Receita. Sem novidade, não mexe em nada. Com versão nova: para os serviços, atualiza, recria o banco, recompila e religa (alguns minutos). Se algo falhar, volta para a versão anterior e religa.
 5. Libere a porta 8090 no firewall da VM.
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs\atualizacao.log`. Para mudar o horário: `powershell -ExecutionPolicy Bypass -File scripts\hub.ps1 agendar -Hora 22:30`. Para remover as tarefas: `desativar-atualizacao-automatica.bat` (como administrador).
@@ -134,16 +144,14 @@ o hub em uso não são tocados. Exige as calculadoras no ar e o hub compilado. T
 |---|---|
 | Referência | 36 respostas comparadas com `testes\referencia`: lotes (JSON e Excel célula a célula), consultas, repasse do proxy às calculadoras (incluindo POSTs de cálculo) e erros |
 | Funcional | arquivos inválidos (XML quebrado, XXE, vazio, binário), datas e parâmetros errados, limites |
-| Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, força bruta |
+| Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, envio da logo (formatos, SVG, tamanho, permissão), força bruta |
 
-Arquivos de entrada (fictícios) ficam em `testes\dados`. Quando uma mudança **intencional** alterar respostas, ou quando
+São 130 testes (36 + 44 + 50). Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
+e um SPED fictícios para experimentar à mão as telas de lote. Quando uma mudança **intencional** alterar respostas, ou quando
 a Receita publicar uma base nova, confira as diferenças apontadas e, se estiverem certas, aprove as novas respostas com
 `testes\executar-testes.ps1 -GravarReferencia`.
 
 Fluxo para mudar o código: `parar-hub.bat` → compilar (ver "Desenvolvimento") → `iniciar-hub.bat` → `testar-hub.bat`.
 O hub precisa estar parado para compilar (o jar fica em uso), e os testes precisam das calculadoras no ar.
 
-Convenções:
-- Endpoint novo da calculadora usado pelo servidor → constante em `infra/EndpointsReceita`; URL ou caminho de arquivo → `application.yml` + `HubProperties`.
-- Telas: sem `<script>` inline nem `onclick=` (a política CSP bloqueia); use arquivos `.js` e atributos `data-*`.
-- Ao alterar arquivos em `static/`, aumente o `?v=` em `index.html`/`login.html` para os navegadores não usarem cópia antiga.
+Convenções de código: veja [CONVENCOES.md](CONVENCOES.md) (guia curto para manter o padrão).

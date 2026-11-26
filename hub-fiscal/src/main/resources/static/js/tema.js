@@ -1,5 +1,5 @@
 /*
-  Tema claro/escuro do Hub Fiscal.
+  Tema claro/escuro do HUB Fiscal.
   Carregado no <head> (antes do CSS pintar) para a página já abrir no tema certo, sem "piscar".
   A escolha fica no navegador (localStorage); sem escolha, segue o tema do Windows.
   Qualquer botão com [data-alternar-tema] troca o tema, com o efeito de círculo a partir do botão.

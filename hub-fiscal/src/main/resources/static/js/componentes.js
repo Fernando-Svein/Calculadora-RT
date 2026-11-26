@@ -1,4 +1,4 @@
-/* Hub Fiscal – componentes reutilizáveis. */
+/* HUB Fiscal – componentes reutilizáveis. */
 'use strict';
 
 (() => {
@@ -375,6 +375,23 @@
     });
     return o;
   }
+
+  /**
+   * Acessibilidade: liga cada rótulo de campo (.campo > label) ao seu controle (for/id), para leitores de tela
+   * anunciarem o nome do campo e o clique no rótulo focar o campo. Roda também para o que as telas criam depois
+   * (itens novos, modais, resultados), sem cada módulo precisar gerar ids.
+   */
+  let sequenciaRotulo = 0;
+  function vincularRotulos(raiz) {
+    raiz.querySelectorAll('.campo > label:not([for])').forEach((rotulo) => {
+      const controle = rotulo.parentElement.querySelector('input:not([type=hidden]), select, textarea');
+      if (!controle) return;
+      if (!controle.id) controle.id = `campo-${++sequenciaRotulo}`;
+      rotulo.htmlFor = controle.id;
+    });
+  }
+  vincularRotulos(document.body);
+  new MutationObserver(() => vincularRotulos(document.body)).observe(document.body, { childList: true, subtree: true });
 
   Hub.comp = { tabela, jsonTabela, abas, seletorMunicipio, autocompletarNomenclatura, upload, enviarComProgresso, verJson, cabecalho, campo, status, lerCampos };
 })();

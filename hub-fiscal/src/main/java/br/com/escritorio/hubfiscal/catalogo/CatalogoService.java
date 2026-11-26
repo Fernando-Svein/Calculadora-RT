@@ -139,6 +139,36 @@ public class CatalogoService {
      *
      * @param tipoDfe modelo do documento (55, 65, 91...) ou null para não filtrar
      */
+    /**
+     * Descrição oficial de NCM (8 dígitos) ou NBS (9 dígitos) na data, com cache durante o uso da função
+     * (relatórios agrupados por NCM consultam o mesmo código várias vezes). null quando não existe na base.
+     */
+    public java.util.function.Function<String, String> descricoesNomenclatura(LocalDate data) {
+        Map<String, java.util.Optional<String>> cache = new java.util.HashMap<>();
+        return codigo -> cache.computeIfAbsent(codigo, c -> {
+            Tipo t = c.length() == 8 ? Tipo.NCM : c.length() == 9 ? Tipo.NBS : null;
+            if (t == null || !base.disponivel()) {
+                return java.util.Optional.empty();
+            }
+            try {
+                // posição (4 dígitos, nomeia o produto: "Arroz") + último nível ("Polido ou brunido"): só o último
+                // não diz qual é o produto, e a hierarquia inteira fica longa demais para uma tabela
+                return base.nomenclatura(t, c, data).map(n -> {
+                    String completa = n.descricaoCompleta();
+                    if (completa == null || !completa.contains(" › ")) {
+                        return n.descricao();
+                    }
+                    String[] niveis = completa.split(" › ");
+                    String posicao = niveis[Math.min(1, niveis.length - 1)].replaceAll("[.;:]+$", "").trim();
+                    String ultimo = niveis[niveis.length - 1].trim();
+                    return niveis.length <= 2 || posicao.equals(ultimo) ? ultimo : posicao + " – " + ultimo;
+                });
+            } catch (RuntimeException e) {
+                return java.util.Optional.empty();
+            }
+        }).orElse(null);
+    }
+
     public AnaliseNomenclatura analisar(Tipo tipo, String codigoBruto, LocalDate data, Integer tipoDfe) {
         String codigo = codigoBruto == null ? "" : codigoBruto.replaceAll("\\D", "");
         String chave = tipo + "|" + codigo + "|" + data + "|" + tipoDfe;

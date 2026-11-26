@@ -40,6 +40,8 @@ Por segurança o hub não guarda o arquivo enviado: confere o formato pelos byte
 abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px. O arquivo fica em `dados\logo.png`
 (configurável em `hub.arquivo-logo`) – inclua no backup junto com os usuários.
 
+> **Manual de instalação, operação e atualização (VM, comandos, problemas resolvidos):** [docs/MANUAL-OPERACAO.md](docs/MANUAL-OPERACAO.md)
+
 ## Empresas, simuladores e relatórios
 
 - **Cadastros → Empresas**: empresas atendidas e suas particularidades (regime, Lucro Real/Presumido, município, alíquotas
@@ -57,6 +59,8 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
 - **Consultar CNPJ**: no cadastro da empresa, busca na base pública (BrasilAPI, `hub.consulta-cnpj-url`) razão social,
   fantasia, situação cadastral, CNAEs, endereço, Simples/MEI, regime declarado e quadro societário. Falhas (CNPJ inexistente,
   limite de consultas, serviço fora) aparecem com mensagem e o cadastro manual continua.
+- **Vendas por NCM**: na classificação de cadastro e na auditoria de XML, quadro abaixo do resultado (e aba na planilha) com o
+  valor vendido por empresa e NCM, o total geral e o que ficou de fora (entradas, remessas, devoluções...).
 - **Auditor com cenário TCU**: a CBS de cada item aparece calculada com a alíquota oficial (0,9% em 2026) e com a do cenário
   (11,3%), lado a lado, na tela e no Excel; o status OK/Divergente segue a alíquota oficial.
 - **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária
@@ -166,11 +170,11 @@ o hub em uso não são tocados. Exige as calculadoras no ar e o hub compilado. T
 |---|---|
 | Referência | 36 respostas comparadas com `testes\referencia`: lotes (JSON e Excel célula a célula), consultas, repasse do proxy às calculadoras (incluindo POSTs de cálculo) e erros |
 | Funcional | arquivos inválidos (XML quebrado, XXE, vazio, binário), datas e parâmetros errados, limites |
-| Empresas | cadastro automático na importação (sem duplicar, CNPJ alfanumérico, CPF/CNPJ inválido ignorados), edição das particularidades e validações, permissões, relatório PDF e datas da base no status |
-| Simulador | importação de XML/SPED no simulador (cClassTrib do documento × sugerido), consulta de CNPJ com API simulada (`testes\mock-cnpj.ps1`: cadastro, QSA, cache, 404, 429, 502, CNPJ inválido) e auditor com a CBS a 0,9% e a 11,3% lado a lado |
+| Empresas | empresas encontradas na importação (o usuário confirma; consulta do CNPJ; CNPJ alfanumérico; CPF/CNPJ inválido ignorados), exclusão de várias, edição das particularidades e validações, permissões, relatório PDF e datas da base no status |
+| Simulador | importação de XML/SPED no simulador (cClassTrib do documento × sugerido), consulta de CNPJ com API simulada (`testes\mock-cnpj.ps1`: cadastro, QSA, cache, 404, 429, 502, CNPJ inválido) auditor com a CBS a 0,9% e a 11,3% lado a lado e vendas por NCM |
 | Segurança | permissões por ferramenta (inclusive variações do endereço), CSRF, sessões, isolamento de resultados, cabeçalhos, envio da logo (formatos, SVG, tamanho, permissão), força bruta |
 
-São 207 testes (36 + 59 + 33 + 29 + 50); a suíte de Segurança roda por último porque o teste de força bruta bloqueia novos logins. Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
+São 225 testes (36 + 59 + 44 + 36 + 50); a suíte de Segurança roda por último porque o teste de força bruta bloqueia novos logins. Arquivos de entrada (fictícios) ficam em `testes\dados`; `hub-fiscal\exemplos` traz notas
 e um SPED fictícios para experimentar à mão as telas de lote. Quando uma mudança **intencional** alterar respostas, ou quando
 a Receita publicar uma base nova, confira as diferenças apontadas e, se estiverem certas, aprove as novas respostas com
 `testes\executar-testes.ps1 -GravarReferencia`.

@@ -22,6 +22,7 @@ import br.com.escritorio.hubfiscal.catalogo.Candidata.Categoria;
 import br.com.escritorio.hubfiscal.catalogo.CatalogoService;
 import br.com.escritorio.hubfiscal.config.HubProperties;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
+import br.com.escritorio.hubfiscal.importacao.VendasPorNcm;
 import br.com.escritorio.hubfiscal.importacao.ItemFiscal;
 import br.com.escritorio.hubfiscal.infra.J;
 import br.com.escritorio.hubfiscal.infra.Paralelo;
@@ -163,6 +164,7 @@ public class ClassificacaoService {
         imp.speds.forEach(s -> contribuintes.add(s.nome() + " – CNPJ " + s.cnpj() + " (" + s.tipo() + ", "
                 + s.dataInicial() + " a " + s.dataFinal() + ")"));
         res.contribuintes.addAll(contribuintes);
+        res.vendasPorNcm = VendasPorNcm.calcular(imp, catalogo.descricoesNomenclatura(data));
 
         Map<String, Map<String, Object>> tabela = catalogo.classificacoes(data);
         for (Agregado a : agregados.values()) {

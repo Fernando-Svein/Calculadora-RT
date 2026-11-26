@@ -1,10 +1,10 @@
 HTTP 200 attachment; filename="classificacao-cclasstrib-<HOJE>.xlsx"; filename*=UTF-8''classificacao-cclasstrib-<HOJE>.xlsx
 == xl/workbook.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><workbookPr date1904="false"/><bookViews><workbookView activeTab="0"/></bookViews><sheets><sheet name="Resumo" r:id="rId3" sheetId="1"/><sheet name="Classificação" r:id="rId4" sheetId="2"/><sheet name="Alternativas por item" r:id="rId5" sheetId="3"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="1" hidden="true">Classificação!$A$1:$AC$7</definedName><definedName name="_xlnm._FilterDatabase" localSheetId="2" hidden="true">'Alternativas por item'!$A$1:$N$4</definedName></definedNames></workbook>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><workbookPr date1904="false"/><bookViews><workbookView activeTab="0"/></bookViews><sheets><sheet name="Resumo" r:id="rId3" sheetId="1"/><sheet name="Classificação" r:id="rId4" sheetId="2"/><sheet name="Alternativas por item" r:id="rId5" sheetId="3"/><sheet name="Vendas por NCM" r:id="rId6" sheetId="4"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="1" hidden="true">Classificação!$A$1:$AC$7</definedName><definedName name="_xlnm._FilterDatabase" localSheetId="2" hidden="true">'Alternativas por item'!$A$1:$N$4</definedName><definedName name="_xlnm._FilterDatabase" localSheetId="3" hidden="true">'Vendas por NCM'!$A$1:$K$4</definedName></definedNames></workbook>
 == xl/worksheets/sheet1.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:B28"/><sheetViews><sheetView workbookViewId="0" tabSelected="true"/></sheetViews><sheetFormatPr defaultRowHeight="15.0"/><cols><col min="1" max="1" width="45.0" customWidth="true"/><col min="2" max="2" width="90.0" customWidth="true"/></cols><sheetData>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:B37"/><sheetViews><sheetView workbookViewId="0" tabSelected="true"/></sheetViews><sheetFormatPr defaultRowHeight="15.0"/><cols><col min="1" max="1" width="45.0" customWidth="true"/><col min="2" max="2" width="90.0" customWidth="true"/></cols><sheetData>
 <row r="1">
 <c r="A1" s="2" t="inlineStr"><is><t>Classificação tributária (cClassTrib)</t></is></c></row>
 <row r="3">
@@ -54,11 +54,29 @@ HTTP 200 attachment; filename="classificacao-cclasstrib-<HOJE>.xlsx"; filename*=
 <row r="25">
 <c r="A25" s="3" t="inlineStr"><is><t></t></is></c></row>
 <row r="26">
-<c r="A26" s="3" t="inlineStr"><is><t>Arquivos lidos</t></is></c></row>
+<c r="A26" s="3" t="inlineStr"><is><t>Vendas por NCM (aba &quot;Vendas por NCM&quot;)</t></is></c></row>
 <row r="27">
-<c r="A27" s="3" t="inlineStr"><is><t>sped-efd-icms-ipi.txt</t></is></c><c r="B27" s="4" t="inlineStr"><is><t>EFD ICMS/IPI de EMPRESA TESTE LTDA (2026-01-01 a 2026-01-31): 6 itens no 0200, 4 movimentos</t></is></c></row>
+<c r="A27" s="3" t="inlineStr"><is><t>Itens vendidos</t></is></c><c r="B27" s="4" t="inlineStr"><is><t>3</t></is></c></row>
 <row r="28">
-<c r="A28" s="3" t="inlineStr"><is><t>nfe-ibscbs.xml</t></is></c><c r="B28" s="4" t="inlineStr"><is><t>NF-e nº 1 – 2 item(ns)</t></is></c></row>
+<c r="A28" s="3" t="inlineStr"><is><t>Valor dos produtos/serviços</t></is></c><c r="B28" s="4" t="inlineStr"><is><t>R$ 150,00</t></is></c></row>
+<row r="29">
+<c r="A29" s="3" t="inlineStr"><is><t>Descontos</t></is></c><c r="B29" s="4" t="inlineStr"><is><t>R$ 0,00</t></is></c></row>
+<row r="30">
+<c r="A30" s="3" t="inlineStr"><is><t>Total vendido (líquido)</t></is></c><c r="B30" s="4" t="inlineStr"><is><t>R$ 150,00</t></is></c></row>
+<row r="31">
+<c r="A31" s="3" t="inlineStr"><is><t></t></is></c><c r="B31" s="4" t="inlineStr"><is><t>Vendas: itens de saída com CFOP de venda ou prestação (5/6/7.101–125, 251–258, 301–307, 351–360, 401–405, 651–656, 667, 932, 933), NFS-e, cupom fiscal (C425) e serviços prestados no SPED. Valor líquido = valor dos produtos/serviços − descontos.</t></is></c></row>
+<row r="32">
+<c r="A32" s="3" t="inlineStr"><is><t></t></is></c><c r="B32" s="4" t="inlineStr"><is><t>1 item(ns) de entrada não entram (R$ 10,00).</t></is></c></row>
+<row r="33">
+<c r="A33" s="3" t="inlineStr"><is><t></t></is></c><c r="B33" s="4" t="inlineStr"><is><t>2 item(ns) de outras saídas (remessa, transferência, devolução, bonificação, venda de ativo...) não entram (R$ 1.050,00).</t></is></c></row>
+<row r="34">
+<c r="A34" s="3" t="inlineStr"><is><t></t></is></c></row>
+<row r="35">
+<c r="A35" s="3" t="inlineStr"><is><t>Arquivos lidos</t></is></c></row>
+<row r="36">
+<c r="A36" s="3" t="inlineStr"><is><t>sped-efd-icms-ipi.txt</t></is></c><c r="B36" s="4" t="inlineStr"><is><t>EFD ICMS/IPI de EMPRESA TESTE LTDA (2026-01-01 a 2026-01-31): 6 itens no 0200, 4 movimentos</t></is></c></row>
+<row r="37">
+<c r="A37" s="3" t="inlineStr"><is><t>nfe-ibscbs.xml</t></is></c><c r="B37" s="4" t="inlineStr"><is><t>NF-e nº 1 – 2 item(ns)</t></is></c></row>
 </sheetData><pageMargins bottom="0.75" footer="0.3" header="0.3" left="0.7" right="0.7" top="0.75"/></worksheet>
 == xl/worksheets/sheet2.xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -90,3 +108,15 @@ HTTP 200 attachment; filename="classificacao-cclasstrib-<HOJE>.xlsx"; filename*=
 <row r="4">
 <c r="A4" t="inlineStr"><is><t>P1</t></is></c><c r="B4" t="inlineStr"><is><t>ARROZ POLIDO</t></is></c><c r="C4" t="inlineStr"><is><t>10063021</t></is></c><c r="D4" t="inlineStr"><is><t>515001</t></is></c><c r="E4" t="inlineStr"><is><t>515</t></is></c><c r="F4" t="inlineStr"><is><t>Operações, sujeitas a diferimento, com insumos agropecuários e aquícolas (Anexo IX)</t></is></c><c r="G4" t="inlineStr"><is><t>Redução 60%</t></is></c><c r="H4" t="inlineStr"><is><t>Regime especial / condicional</t></is></c><c r="I4" t="inlineStr"><is><t>Sim</t></is></c><c r="J4" t="inlineStr"><is><t>Sim</t></is></c><c r="K4" t="inlineStr"><is><t>IX</t></is></c><c r="L4" t="inlineStr"><is><t>10</t></is></c><c r="M4" t="inlineStr"><is><t>Semente genética, semente básica, semente nativa in natura, semente certificada de primeira geração (C1), semente certificada de segunda geração (C2), semente não certificada de primeira geração (S1), semente não certificada de segunda geração (S2) e sementes de cultivar local, tradicional ou crioula; em conformidade com as definições e demais requisitos da legislação específica</t></is></c><c r="N4" t="inlineStr"><is><t xml:space="preserve">Art. 138, § 2º - Art. 138. Ficam reduzidas em 60% (sessenta por cento) as alíquotas do IBS e da CBS incidentes sobre o fornecimento dos insumos agropecuários e aquícolas relacionados no Anexo IX desta Lei Complementar, com a especificação das respectivas classificações da NCM/SH e da NBS. &#xa; § 2º Fica diferido o recolhimento do IBS e da CBS incidentes nas seguintes operações com insumos agropecuários e aquícolas de que trata o caput:&#xa;</t></is></c></row>
 </sheetData><autoFilter ref="A1:N4"/><pageMargins bottom="0.75" footer="0.3" header="0.3" left="0.7" right="0.7" top="0.75"/></worksheet>
+== xl/worksheets/sheet4.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:K4"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1.0" state="frozen" topLeftCell="A2" activePane="bottomLeft"/><selection pane="bottomLeft"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15.0"/><cols><col min="1" max="1" width="30.0" customWidth="true"/><col min="2" max="2" width="17.0" customWidth="true"/><col min="3" max="3" width="11.0" customWidth="true"/><col min="4" max="4" width="50.0" customWidth="true"/><col min="5" max="5" width="12.0" customWidth="true"/><col min="6" max="6" width="12.0" customWidth="true"/><col min="7" max="7" width="8.0" customWidth="true"/><col min="8" max="8" width="14.0" customWidth="true"/><col min="9" max="9" width="14.0" customWidth="true"/><col min="10" max="10" width="14.0" customWidth="true"/><col min="11" max="11" width="12.0" customWidth="true"/></cols><sheetData>
+<row r="1" customHeight="1" ht="32.0">
+<c r="A1" s="1" t="inlineStr"><is><t>Empresa</t></is></c><c r="B1" s="1" t="inlineStr"><is><t>CNPJ</t></is></c><c r="C1" s="1" t="inlineStr"><is><t>NCM/NBS</t></is></c><c r="D1" s="1" t="inlineStr"><is><t>Descrição</t></is></c><c r="E1" s="1" t="inlineStr"><is><t>Itens</t></is></c><c r="F1" s="1" t="inlineStr"><is><t>Quantidade</t></is></c><c r="G1" s="1" t="inlineStr"><is><t>Unidade</t></is></c><c r="H1" s="1" t="inlineStr"><is><t>Valor dos produtos</t></is></c><c r="I1" s="1" t="inlineStr"><is><t>Descontos</t></is></c><c r="J1" s="1" t="inlineStr"><is><t>Valor vendido (líquido)</t></is></c><c r="K1" s="1" t="inlineStr"><is><t>% da empresa</t></is></c></row>
+<row r="2">
+<c r="A2" t="inlineStr"><is><t>Fornecedor &lt;img src=x onerror=alert(1)&gt;</t></is></c><c r="B2" t="inlineStr"><is><t>12345678000199</t></is></c><c r="C2" t="inlineStr"><is><t>10063021</t></is></c><c r="D2" t="inlineStr"><is><t>Arroz – Polido ou brunido</t></is></c><c r="E2" s="6" t="n"><v>2.0</v></c><c r="F2" s="6" t="n"><v>20.0</v></c><c r="G2" t="inlineStr"><is><t>KG</t></is></c><c r="H2" s="5" t="n"><v>150.0</v></c><c r="I2" s="5" t="n"><v>0.0</v></c><c r="J2" s="5" t="n"><v>150.0</v></c><c r="K2" s="6" t="n"><v>100.0</v></c></row>
+<row r="3">
+<c r="A3" t="inlineStr"><is><t>Fornecedor &lt;img src=x onerror=alert(1)&gt;</t></is></c><c r="B3" t="inlineStr"><is><t>12345678000199</t></is></c><c r="C3" t="inlineStr"><is><t>(sem NCM)</t></is></c><c r="D3" t="inlineStr"><is><t>Itens sem NCM/NBS</t></is></c><c r="E3" s="6" t="n"><v>1.0</v></c><c r="H3" s="5" t="n"><v>0.0</v></c><c r="I3" s="5" t="n"><v>0.0</v></c><c r="J3" s="5" t="n"><v>0.0</v></c><c r="K3" s="6" t="n"><v>0.0</v></c></row>
+<row r="4">
+<c r="A4" t="inlineStr"><is><t>TOTAL GERAL</t></is></c><c r="D4" t="inlineStr"><is><t>2 NCM/NBS</t></is></c><c r="E4" s="6" t="n"><v>3.0</v></c><c r="H4" s="5" t="n"><v>150.0</v></c><c r="I4" s="5" t="n"><v>0.0</v></c><c r="J4" s="5" t="n"><v>150.0</v></c></row>
+</sheetData><autoFilter ref="A1:K4"/><pageMargins bottom="0.75" footer="0.3" header="0.3" left="0.7" right="0.7" top="0.75"/></worksheet>

@@ -144,6 +144,8 @@ public final class SpedParser {
         List<ItemFiscal> ordemCadastro = new ArrayList<>();
         List<ItemFiscal> movimentos = new ArrayList<>();
         Integer modeloDocumento = null; // modelo do documento corrente (C100); A100 e C400 não têm modelo numérico
+        String operacaoDocumento = null; // IND_OPER do documento corrente: 0 = entrada, 1 = saída
+        String chaveDocumento = null; // chave da NF-e do C100 corrente (evita contar a nota duas vezes com o XML)
 
         // percorre as linhas sem montar um array com todas elas (SPED grande: milhões de linhas)
         String texto = decodificar(conteudo);
@@ -199,8 +201,23 @@ public final class SpedParser {
                         ordemCadastro.add(it);
                     }
                 }
-                case "C100" -> modeloDocumento = Valores.inteiro(campo(f, 5));
-                case "A100", "C400", "C405" -> modeloDocumento = null;
+                case "C100" -> {
+                    // |C100|IND_OPER|IND_EMIT|COD_PART|COD_MOD|COD_SIT|SER|NUM_DOC|CHV_NFE|...
+                    modeloDocumento = Valores.inteiro(campo(f, 5));
+                    operacaoDocumento = campo(f, 2);
+                    chaveDocumento = campo(f, 9);
+                }
+                case "A100" -> {
+                    // |A100|IND_OPER|...: 0 = serviço contratado (entrada), 1 = serviço prestado (saída)
+                    modeloDocumento = null;
+                    operacaoDocumento = campo(f, 2);
+                    chaveDocumento = null;
+                }
+                case "C400", "C405" -> {
+                    modeloDocumento = null;
+                    operacaoDocumento = "1"; // cupom fiscal (ECF): venda
+                    chaveDocumento = null;
+                }
                 case "C170" -> {
                     ItemFiscal it = novoItem("C170", cnpj, nome, modeloDocumento);
                     it.numeroItem = Valores.inteiro(campo(f, 2));
@@ -208,7 +225,10 @@ public final class SpedParser {
                     it.quantidade = decimalSped(campo(f, 5));
                     it.unidade = campo(f, 6);
                     it.valor = decimalSped(campo(f, 7));
+                    it.desconto = decimalSped(campo(f, 8));
                     it.cfop = campo(f, 11);
+                    it.saida = "1".equals(operacaoDocumento);
+                    it.chave = chaveDocumento;
                     movimentos.add(it);
                 }
                 case "A170" -> {
@@ -216,6 +236,8 @@ public final class SpedParser {
                     it.numeroItem = Valores.inteiro(campo(f, 2));
                     it.codigo = campo(f, 3);
                     it.valor = decimalSped(campo(f, 5));
+                    it.desconto = decimalSped(campo(f, 6));
+                    it.saida = "1".equals(operacaoDocumento);
                     movimentos.add(it);
                 }
                 case "C425" -> {
@@ -224,6 +246,7 @@ public final class SpedParser {
                     it.quantidade = decimalSped(campo(f, 3));
                     it.unidade = campo(f, 4);
                     it.valor = decimalSped(campo(f, 5));
+                    it.saida = true;
                     movimentos.add(it);
                 }
                 default -> {

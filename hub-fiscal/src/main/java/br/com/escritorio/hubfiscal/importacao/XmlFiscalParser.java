@@ -164,6 +164,8 @@ public final class XmlFiscalParser {
             it.unidade = texto(prod, "uCom");
             it.quantidade = decimal(texto(prod, "qCom"));
             it.valor = decimal(texto(prod, "vProd"));
+            it.desconto = decimal(texto(prod, "vDesc"));
+            it.chave = d.chave;
             for (Map.Entry<String, String> e : COMPONENTES_PROD.entrySet()) {
                 BigDecimal v = decimal(texto(prod, e.getKey()));
                 if (v != null && v.signum() != 0) {
@@ -280,6 +282,9 @@ public final class XmlFiscalParser {
         it.nbs = SpedParser.somenteDigitos(texto(cServ, "cNBS"));
         Element valores = primeiro(infDps, "valores");
         it.valor = decimal(coalesce(texto(primeiro(valores, "vServPrest"), "vServ"), texto(valores, "vServ")));
+        it.desconto = decimal(texto(primeiro(valores, "vDescCondIncond"), "vDescIncond"));
+        it.chave = d.chave;
+        it.saida = true; // NFS-e: prestação de serviço pelo emitente
         // Classificação informada na DPS e valores calculados na NFS-e
         Element ibscbsDps = primeiro(infDps, "IBSCBS");
         if (ibscbsDps != null) {

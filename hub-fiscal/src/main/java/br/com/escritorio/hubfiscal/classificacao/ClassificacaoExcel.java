@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import br.com.escritorio.hubfiscal.catalogo.Candidata;
 import br.com.escritorio.hubfiscal.excel.Planilha;
 import br.com.escritorio.hubfiscal.excel.Planilha.Coluna;
+import br.com.escritorio.hubfiscal.excel.VendasExcel;
 
 /** Gera a planilha Excel da classificação em lote. */
 public final class ClassificacaoExcel {
@@ -57,6 +58,7 @@ public final class ClassificacaoExcel {
                     + "(anexos da LC 214/2025). Benefícios podem exigir requisitos que não constam dos arquivos "
                     + "(destinatário, finalidade, regime). A decisão final é do responsável técnico: use as colunas "
                     + "\"cClassTrib definido\" e \"Responsável\" para registrar." });
+            VendasExcel.resumo(resumo, r.vendasPorNcm);
             Planilha.secoesArquivosEAvisos(resumo, r.arquivos, r.avisos);
             p.abaResumo("Resumo", "Classificação tributária (cClassTrib)", resumo);
 
@@ -107,6 +109,7 @@ public final class ClassificacaoExcel {
                 }
             }
             p.abaTabela("Alternativas por item", colsAlt, alt, -1);
+            VendasExcel.aba(p, r.vendasPorNcm);
             return p.bytes();
         }
     }

@@ -34,6 +34,15 @@ public class ItemFiscal {
     public String unidade;
     public BigDecimal quantidade;
     public BigDecimal valor;
+    /** Desconto do item (vDesc no XML; VL_DESC no C170). */
+    public BigDecimal desconto;
+    /** Chave do documento (XML; C100 do SPED): evita contar a mesma nota duas vezes nas vendas por NCM. */
+    public String chave;
+    /**
+     * Saída (venda/prestação) quando o item não tem CFOP: SPED A170 (IND_OPER do A100 = 1), C425 (cupom) e NFS-e.
+     * Com CFOP, quem decide é o CFOP ({@code Cfops.venda}).
+     */
+    public Boolean saida;
 
     /** Componentes de base (nomes do grupo gComponentesBC da calculadora). Imutável e vazio nos itens do SPED. */
     public Map<String, BigDecimal> componentes;

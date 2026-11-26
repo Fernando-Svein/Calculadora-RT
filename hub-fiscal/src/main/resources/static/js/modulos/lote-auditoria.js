@@ -92,6 +92,7 @@
           });
           Hub.contadoresStatus(res.querySelector('[data-cont]'), d.contagemStatus, ROTULOS, tab);
           res.querySelector('[data-xlsx]').onclick = () => Hub.baixarUrl(`/hub/lote/auditoria/${d.id}/excel`, 'auditoria.xlsx');
+          Hub.vendasPorNcm(res, d.vendasPorNcm);
         },
       });
     },

@@ -15,7 +15,9 @@ import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
+import br.com.escritorio.hubfiscal.catalogo.CatalogoService;
 import br.com.escritorio.hubfiscal.cenario.CenarioCbsService;
+import br.com.escritorio.hubfiscal.importacao.VendasPorNcm;
 import br.com.escritorio.hubfiscal.config.HubProperties;
 import br.com.escritorio.hubfiscal.importacao.DocumentoFiscal;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
@@ -59,11 +61,13 @@ public class AuditoriaService {
     private final ApiReceitaClient api;
     private final HubProperties props;
     private final CenarioCbsService cenario;
+    private final CatalogoService catalogo;
 
-    public AuditoriaService(ApiReceitaClient api, HubProperties props, CenarioCbsService cenario) {
+    public AuditoriaService(ApiReceitaClient api, HubProperties props, CenarioCbsService cenario, CatalogoService catalogo) {
         this.api = api;
         this.props = props;
         this.cenario = cenario;
+        this.catalogo = catalogo;
     }
 
     /** Audita todos os documentos importados (em paralelo, limitado a {@code hub.paralelismo}). */
@@ -76,6 +80,10 @@ public class AuditoriaService {
             r.avisos.add("Arquivos SPED não são usados na auditoria (ela confere o grupo IBS/CBS dos XMLs).");
         }
         r.totalDocumentos = imp.documentos.size();
+        // só os XMLs (o SPED não entra na auditoria); descrições de NCM pela base vigente hoje
+        Importacao soXml = new Importacao();
+        soXml.documentos.addAll(imp.documentos);
+        r.vendasPorNcm = VendasPorNcm.calcular(soXml, catalogo.descricoesNomenclatura(LocalDate.now()));
 
         List<List<LinhaAuditoria>> porDocumento;
         try {

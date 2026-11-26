@@ -87,3 +87,34 @@ $x = Invoke-Hub $adm 'GET' "/hub/lote/auditoria/$($a.id)/excel"
 $tmpX = Join-Path ([IO.Path]::GetTempPath()) "auditoria-cenario-$PID.xlsx"; [IO.File]::WriteAllBytes($tmpX, $x.Content.ReadAsByteArrayAsync().Result)
 $z = [IO.Compression.ZipFile]::OpenRead($tmpX); $strings = ($z.Entries | Where-Object FullName -like 'xl/*.xml' | ForEach-Object { $sr = New-Object IO.StreamReader($_.Open()); $sr.ReadToEnd(); $sr.Dispose() }) -join "`n"; $z.Dispose(); Remove-Item $tmpX
 Add-Resultado $Suite 'auditor: planilha com as duas colunas de CBS (oficial e Cenário TCU)' ($strings -like '*vCBS calc. (oficial)*' -and $strings -like '*vCBS Cenário TCU*' -and $strings -like '*CBS calculada – Cenário TCU (11,3%)*') ''
+
+# ---------------------------------------------------------------- vendas por NCM (classificação e auditoria)
+$nfeCen = Join-Path $Dados 'nfe-auditoria-cenario.xml'
+$v = (Get-Json (Send-Arquivos $adm '/hub/lote/auditoria' @($nfeCen))).vendasPorNcm
+$l7318 = $v.linhas | Where-Object ncm -eq '73181500'
+Add-Resultado $Suite 'vendas por NCM (auditoria): soma por NCM, % da empresa e total' ($v.itens -eq 3 -and $v.valorLiquido -eq 7765 -and $l7318.itens -eq 2 -and $l7318.valorLiquido -eq 7465 -and $l7318.percentual -eq 96.14 -and $l7318.descricao) ($v | ConvertTo-Json -Depth 4 -Compress)
+# SPED com a mesma nota do XML (chave igual), uma venda só no SPED, uma entrada, uma transferência e uma bonificação
+$chave = '35260355123456000130550010000000771000000771'
+$spedV = @"
+|0000|017|0|01032026|31032026|COMERCIAL EXEMPLO LTDA|55123456000130||SP|123|3550308|||A|1|
+|0200|A1|PARAFUSO|||UN|00|73181500||10|||
+|0200|R1|ARROZ|||KG|00|10063021||10|||
+|C100|1|0||55|00|1|77|$chave|10032026|10032026|1000,00|
+|C170|1|A1||10,000|UN|1000,00|0,00|0|000|5102|001|
+|C100|1|0||55|00|1|90|35260355123456000130550010000000901000000901|10032026|10032026|50,00|
+|C170|1|R1||10,000|KG|50,00|5,00|0|000|5102|001|
+|C170|2|R1||1,000|KG|20,00|0,00|0|000|5152|001|
+|C170|3|R1||1,000|KG|7,00|0,00|0|000|5910|001|
+|C100|0|1||55|00|1|91|35260311222333000181550010000000911000000911|10032026|10032026|300,00|
+|C170|1|R1||30,000|KG|300,00|0,00|0|000|1102|001|
+|9999|11|
+"@
+$arqV = Join-Path $tmp 'sped-vendas.txt'; [IO.File]::WriteAllText($arqV, $spedV, [Text.Encoding]::GetEncoding(28591))
+$c = Get-Json (Send-Arquivos $adm '/hub/lote/classificacao?data=2026-03-10' @($nfeCen, $arqV))
+$v = $c.vendasPorNcm; $arroz = $v.linhas | Where-Object ncm -eq '10063021'
+Add-Resultado $Suite 'vendas por NCM: venda só do SPED entra com desconto (50,00 − 5,00)' ($arroz.itens -eq 1 -and $arroz.valorBruto -eq 50 -and $arroz.descontos -eq 5 -and $arroz.valorLiquido -eq 45 -and $arroz.quantidade -eq 10 -and $arroz.unidade -eq 'KG') ($arroz | ConvertTo-Json -Compress)
+Add-Resultado $Suite 'vendas por NCM: nota no SPED e no XML conta uma vez; entrada, transferência e bonificação ficam de fora' ($v.itens -eq 4 -and $v.valorLiquido -eq 7810 -and @($v.empresas).Count -eq 1 -and ($v.observacoes -join ' ') -like '*1 item(ns) de entrada*' -and ($v.observacoes -join ' ') -like '*2 item(ns) de outras saídas*' -and ($v.observacoes -join ' ') -like '*1 item(ns) do SPED já constavam*') (($v.observacoes -join ' | ') + " | total=$($v.valorLiquido) itens=$($v.itens)")
+$x = Invoke-Hub $adm 'GET' "/hub/lote/classificacao/$($c.id)/excel"
+$tmpV = Join-Path ([IO.Path]::GetTempPath()) "vendas-$PID.xlsx"; [IO.File]::WriteAllBytes($tmpV, $x.Content.ReadAsByteArrayAsync().Result)
+$z = [IO.Compression.ZipFile]::OpenRead($tmpV); $xmlV = ($z.Entries | Where-Object FullName -like 'xl/*.xml' | ForEach-Object { $sr = New-Object IO.StreamReader($_.Open()); $sr.ReadToEnd(); $sr.Dispose() }) -join "`n"; $z.Dispose(); Remove-Item $tmpV
+Add-Resultado $Suite 'vendas por NCM: aba na planilha com o total geral' ($xmlV -like '*Vendas por NCM*' -and $xmlV -like '*TOTAL GERAL*' -and $xmlV -like '*Total vendido (líquido)*') ''

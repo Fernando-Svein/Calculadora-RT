@@ -11,6 +11,8 @@ public class LinhaClassificacao {
 
     public StatusClassificacao status;
     public String statusRotulo;
+    /** O que está divergente ou precisa de decisão no item (vazio quando sugerido/conferido). */
+    public String revisar;
 
     public String donoCnpj;
     public String donoNome;
@@ -31,6 +33,8 @@ public class LinhaClassificacao {
 
     public String cstAtual;
     public String cClassTribAtual;
+    /** Resposta da calculadora oficial para o cClassTrib das notas ("Aceita", "Rejeitada: ..."); null se não houve. */
+    public String oficialAtual;
 
     public String cstSugerido;
     public String cClassTribSugerido;
@@ -38,6 +42,8 @@ public class LinhaClassificacao {
     public String tratamentoSugerido;
     public String anexoSugerido;
     public String fundamentacaoSugerido;
+    /** Resposta da calculadora oficial para o cClassTrib sugerido. */
+    public String oficialSugerido;
 
     /** Classificações vinculadas ao produto/serviço (anexo), em ordem de prioridade. */
     public List<Candidata> alternativas = new ArrayList<>();

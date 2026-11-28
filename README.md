@@ -88,6 +88,10 @@ abre a imagem e regrava como um PNG novo, reduzido para no máximo 640 × 320 px
   limite de consultas, serviço fora) aparecem com mensagem e o cadastro manual continua. A VM precisa de acesso à internet.
 - **Vendas por NCM**: na classificação de cadastro e na auditoria de XML, quadro abaixo do resultado (e aba na planilha) com o
   valor vendido por empresa e NCM, o total geral e o que ficou de fora (entradas, remessas, devoluções...).
+- **Classificação conferida na calculadora oficial**: no lote de classificação, o cClassTrib das notas e o sugerido de cada
+  item são enviados à calculadora do Regime Geral (NCM/NBS + CST + cClassTrib + modelo, base de teste 100,00). A planilha
+  mostra "Aceita" ou "Rejeitada" com o código do erro oficial; rejeição do cClassTrib das notas deixa o item Divergente, e
+  da sugestão, Revisar. A coluna "O que revisar" diz o que corrigir ou decidir em cada item.
 - **Auditor com cenário TCU**: a CBS de cada item aparece calculada com a alíquota oficial (0,9% em 2026) e com a do cenário
   (11,3%), lado a lado, na tela e no Excel; o status OK/Divergente segue a alíquota oficial.
 - **Base das calculadoras**: o topo mostra a data da última atualização da base e a da próxima verificação diária (timer

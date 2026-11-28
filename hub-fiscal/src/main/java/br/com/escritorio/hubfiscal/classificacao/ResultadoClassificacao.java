@@ -17,6 +17,8 @@ public class ResultadoClassificacao {
     public int totalItens;
     public Map<String, Integer> contagemStatus = new LinkedHashMap<>();
     public List<LinhaClassificacao> linhas = new ArrayList<>();
+    /** Resumo da conferência na calculadora oficial (quantas combinações aceitas, rejeitadas, não conferidas). */
+    public String conferenciaOficial;
     /** Vendas por NCM/NBS e empresa (aba "Vendas por NCM" da tela e da planilha). */
     public br.com.escritorio.hubfiscal.importacao.VendasPorNcm.Resumo vendasPorNcm;
 }

@@ -38,6 +38,9 @@ public final class ClassificacaoExcel {
             if (!r.contribuintes.isEmpty()) {
                 resumo.add(new String[] { "Contribuinte(s) (SPED)", String.join("\n", r.contribuintes) });
             }
+            if (r.conferenciaOficial != null) {
+                resumo.add(new String[] { "Conferência na calculadora oficial", r.conferenciaOficial });
+            }
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Resultado por status" });
             r.contagemStatus.forEach((s, n) -> resumo.add(new String[] {
@@ -45,7 +48,7 @@ public final class ClassificacaoExcel {
             resumo.add(new String[] { "" });
             resumo.add(new String[] { "Legenda" });
             resumo.add(new String[] { "Divergente", "A classificação usada nas notas é inválida para o NCM/NBS, para o "
-                    + "documento ou para o CST. Corrigir." });
+                    + "documento ou para o CST, ou foi rejeitada pela calculadora oficial. Corrigir." });
             resumo.add(new String[] { "Revisar", "Existe benefício possível ou mais de uma opção. Exige decisão do "
                     + "analista (requisitos legais, adquirente, operação)." });
             resumo.add(new String[] { "Sugerido", "Nenhum benefício vinculado ao produto: sugestão de tributação "
@@ -54,42 +57,45 @@ public final class ClassificacaoExcel {
             resumo.add(new String[] { "NCM/NBS inválido", "Código inexistente, incompleto ou fora de vigência." });
             resumo.add(new String[] { "Sem NCM/NBS", "Item sem nomenclatura (comum em serviços no SPED)." });
             resumo.add(new String[] { "" });
+            resumo.add(new String[] { "Calculadora oficial", "Cada cClassTrib (o das notas e o sugerido) foi enviado "
+                    + "à calculadora da Receita com o NCM/NBS, o CST e o modelo do documento. \"Aceita\" significa que "
+                    + "ela calcula a combinação; \"Rejeitada\" traz o código e o motivo do erro oficial (ex.: REG-011). "
+                    + "Aceitar não confirma o direito ao benefício: os requisitos do anexo continuam com o analista." });
             resumo.add(new String[] { "Importante", "As sugestões usam as tabelas oficiais da calculadora da Receita "
                     + "(anexos da LC 214/2025). Benefícios podem exigir requisitos que não constam dos arquivos "
-                    + "(destinatário, finalidade, regime). A decisão final é do responsável técnico: use as colunas "
-                    + "\"cClassTrib definido\" e \"Responsável\" para registrar." });
+                    + "(destinatário, finalidade, regime). A decisão final é do responsável técnico. A coluna "
+                    + "\"O que revisar\" diz o que está divergente ou precisa de decisão em cada item." });
             VendasExcel.resumo(resumo, r.vendasPorNcm);
             Planilha.secoesArquivosEAvisos(resumo, r.arquivos, r.avisos);
             p.abaResumo("Resumo", "Classificação tributária (cClassTrib)", resumo);
 
             List<Coluna> cols = List.of(
-                    Coluna.texto("Status", 16), Coluna.texto("CNPJ", 17), Coluna.texto("Empresa", 28),
-                    Coluna.texto("Código do item", 16), Coluna.texto("Descrição do item", 40),
-                    Coluna.texto("Tipo do item (SPED)", 22), Coluna.texto("Nomenclatura", 8),
-                    Coluna.texto("NCM/NBS", 11), Coluna.texto("Descrição NCM/NBS", 50),
-                    Coluna.texto("Imposto Seletivo", 9), Coluna.texto("Origem", 22),
-                    Coluna.texto("CFOPs de saída", 14), Coluna.texto("CFOPs de entrada", 14),
-                    Coluna.numero("Ocorrências"), Coluna.moeda("Valor total"),
+                    Coluna.texto("Status", 16), Coluna.texto("O que revisar", 60), Coluna.texto("CNPJ", 17),
+                    Coluna.texto("Empresa", 28), Coluna.texto("Código do item", 16),
+                    Coluna.texto("Descrição do item", 40), Coluna.texto("Tipo do item (SPED)", 22),
+                    Coluna.texto("Nomenclatura", 8), Coluna.texto("NCM/NBS", 11),
+                    Coluna.texto("Descrição NCM/NBS", 50), Coluna.texto("Imposto Seletivo", 9),
+                    Coluna.texto("Origem", 22), Coluna.texto("CFOPs de saída", 14), Coluna.moeda("Valor total"),
                     Coluna.texto("CST atual", 8), Coluna.texto("cClassTrib atual", 10),
+                    Coluna.texto("Calculadora oficial (atual)", 30),
                     Coluna.texto("CST sugerido", 8), Coluna.texto("cClassTrib sugerido", 10),
+                    Coluna.texto("Calculadora oficial (sugerido)", 30),
                     Coluna.texto("Descrição do cClassTrib sugerido", 45), Coluna.texto("Tratamento", 20),
                     Coluna.texto("Anexo LC 214/2025", 45), Coluna.texto("Fundamentação", 30),
-                    Coluna.texto("Alternativas do anexo", 30), Coluna.texto("Sugestões por CFOP", 35),
+                    Coluna.texto("Alternativas do anexo", 30),
                     Coluna.texto("Outras possibilidades (dependem da atividade)", 40),
-                    Coluna.texto("Observações", 60),
-                    Coluna.texto("cClassTrib definido (preencher)", 14),
-                    Coluna.texto("Responsável / data (preencher)", 20));
+                    Coluna.texto("Observações", 60));
             List<Object[]> linhas = new ArrayList<>();
             for (LinhaClassificacao l : r.linhas) {
-                linhas.add(new Object[] { l.statusRotulo, l.donoCnpj, l.donoNome, l.codigo, l.descricao,
+                linhas.add(new Object[] { l.statusRotulo, l.revisar, l.donoCnpj, l.donoNome, l.codigo, l.descricao,
                         l.tipoItemSped, l.tipoNomenclatura, l.nomenclatura, l.descricaoNomenclatura,
-                        l.impostoSeletivo ? "Sim" : "", l.origens, l.cfopsSaida, l.cfopsEntrada, l.ocorrencias,
-                        l.valorTotal, l.cstAtual, l.cClassTribAtual, l.cstSugerido, l.cClassTribSugerido,
-                        l.descricaoSugerido, l.tratamentoSugerido, l.anexoSugerido, l.fundamentacaoSugerido,
+                        l.impostoSeletivo ? "Sim" : "", l.origens, l.cfopsSaida, l.valorTotal, l.cstAtual,
+                        l.cClassTribAtual, l.oficialAtual, l.cstSugerido, l.cClassTribSugerido, l.oficialSugerido,
+                        l.descricaoSugerido,
+                        l.tratamentoSugerido, l.anexoSugerido, l.fundamentacaoSugerido,
                         l.alternativas.stream().map(c -> c.cClassTrib() + (c.condicional() ? "*" : ""))
                                 .collect(Collectors.joining(", ")),
-                        String.join("\n", l.sugestoesPorCfop), String.join("\n", l.outrasPossibilidades),
-                        String.join("\n", l.observacoes), null, null });
+                        String.join("\n", l.outrasPossibilidades), String.join("\n", l.observacoes) });
             }
             p.abaTabela("Classificação", cols, linhas, 0);
 

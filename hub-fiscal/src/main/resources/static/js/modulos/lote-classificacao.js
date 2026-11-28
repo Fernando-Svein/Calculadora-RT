@@ -157,9 +157,12 @@
           <dt>Origem</dt><dd>${esc(l.origens)}</dd>
           <dt>CFOPs</dt><dd>saída: ${esc(l.cfopsSaida || '–')} · entrada: ${esc(l.cfopsEntrada || '–')}</dd>
           <dt>Sugestão</dt><dd><strong>${esc(l.cClassTribSugerido || '–')}</strong> ${esc(l.descricaoSugerido || '')}</dd>
+          ${l.oficialAtual ? `<dt>Calculadora oficial (atual ${esc(l.cClassTribAtual)})</dt><dd>${esc(l.oficialAtual)}</dd>` : ''}
+          ${l.oficialSugerido ? `<dt>Calculadora oficial (sugerido)</dt><dd>${esc(l.oficialSugerido)}</dd>` : ''}
           <dt>Fundamentação</dt><dd>${esc(l.fundamentacaoSugerido || '–')}</dd>
           ${l.anexoSugerido ? `<dt>Anexo</dt><dd>${esc(l.anexoSugerido)}</dd>` : ''}
         </dl>
+        ${l.revisar ? `<div class="aviso"><strong>O que revisar:</strong> ${esc(l.revisar)}</div>` : ''}
         ${(l.observacoes || []).length ? `<div class="aviso"><ul>${l.observacoes.map((o) => `<li>${esc(o)}</li>`).join('')}</ul></div>` : ''}
         ${(l.sugestoesPorCfop || []).length ? `<div class="info-caixa"><strong>Pelos CFOPs:</strong><ul>${l.sugestoesPorCfop.map((o) => `<li>${esc(o)}</li>`).join('')}</ul></div>` : ''}
       </div>
@@ -192,6 +195,7 @@
               <div class="acoes"><button class="btn btn-verde" data-xlsx>${Hub.icone('baixar')} Baixar planilha Excel</button></div></div>
             ${(d.contribuintes || []).length ? `<p>${d.contribuintes.map(esc).join('<br>')}</p>` : ''}
             <p class="sutil">Vigência considerada: ${fmt.data(d.dataReferencia)} · gerado em ${esc(d.geradoEm)}. Clique num item para ver as alternativas.</p>
+            ${d.conferenciaOficial ? `<p class="sutil">${esc(d.conferenciaOficial)}</p>` : ''}
             <div data-cont></div><div data-tab></div>${arquivosHtml(d.arquivos, d.avisos)}</div>`;
           const tab = comp.tabela(res.querySelector('[data-tab]'), {
             placeholder: 'Buscar código, descrição, NCM...',
@@ -206,7 +210,7 @@
               { titulo: 'Atual', campo: 'cClassTribAtual', render: (l) => `<code>${esc(l.cClassTribAtual || '')}</code>` },
               { titulo: 'Sugerido', campo: 'cClassTribSugerido', render: (l) => `<code><strong>${esc(l.cClassTribSugerido || '')}</strong></code>` },
               { titulo: 'Tratamento', campo: 'tratamentoSugerido' },
-              { titulo: 'Observação', render: (l) => esc((l.observacoes || [])[0] || ''), exportar: (l) => (l.observacoes || []).join(' | ') },
+              { titulo: 'Observação', render: (l) => esc(l.revisar || (l.observacoes || [])[0] || ''), exportar: (l) => [l.revisar, ...(l.observacoes || [])].filter(Boolean).join(' | ') },
             ],
             linhas: d.linhas,
             porPagina: 100,

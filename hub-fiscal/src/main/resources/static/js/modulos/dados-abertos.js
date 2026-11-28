@@ -28,9 +28,9 @@
     render(el, params) {
       el.innerHTML = comp.cabecalho('Outras tabelas oficiais', 'Demais tabelas publicadas pela calculadora (dados abertos). Todas podem ser exportadas para Excel.') +
         `<div class="card"><div class="linha">
-          <div class="campo" style="flex:2 1 320px"><label>Tabela</label><select data-conj>${CONJUNTOS.map((c) => `<option value="${c.id}">${esc(c.titulo)}</option>`).join('')}</select></div>
-          <div class="campo" style="flex:0 0 180px"><label>Data</label><input type="date" data-data value="${Hub.hoje()}"></div>
-          <button class="btn" data-ok>Carregar</button></div><p class="sutil" data-desc style="margin:10px 0 0"></p></div>
+          <div class="campo u-flex-2-1-320"><label>Tabela</label><select data-conj>${CONJUNTOS.map((c) => `<option value="${c.id}">${esc(c.titulo)}</option>`).join('')}</select></div>
+          <div class="campo u-flex-0-0-180"><label>Data</label><input type="date" data-data value="${Hub.hoje()}"></div>
+          <button class="btn" data-ok>Carregar</button></div><p class="sutil u-m-10-0-0" data-desc></p></div>
         <div class="card" data-res></div>`;
       const sel = el.querySelector('[data-conj]');
       const desc = el.querySelector('[data-desc]');

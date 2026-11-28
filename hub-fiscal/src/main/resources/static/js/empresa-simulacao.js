@@ -205,15 +205,15 @@
         Marque as que deseja adicionar: cada uma é cadastrada com a <strong>consulta completa do CNPJ</strong> na base pública
         (situação cadastral, CNAEs, endereço, Simples/MEI e quadro societário).</p>
       ${lista.some((e) => e.origem === 'XML') ? '<p class="sutil">Nos XMLs, a empresa considerada é o <strong>emitente</strong>: em notas de compra, é o fornecedor. Desmarque quem não for cliente do escritório.</p>' : ''}
-      <label class="check" style="margin:6px 0"><input type="checkbox" data-todas checked> Marcar todas</label>
-      <div class="tabela-wrap" style="max-height:45vh"><table class="tab"><thead><tr><th></th><th>Razão social</th><th>CNPJ</th><th>Origem</th><th>UF</th><th>Regime no arquivo</th></tr></thead><tbody>
+      <label class="check u-m-6-0"><input type="checkbox" data-todas checked> Marcar todas</label>
+      <div class="tabela-wrap u-maxh-45vh"><table class="tab"><thead><tr><th></th><th>Razão social</th><th>CNPJ</th><th>Origem</th><th>UF</th><th>Regime no arquivo</th></tr></thead><tbody>
       ${lista.map((e, i) => `<tr><td><input type="checkbox" data-cnpj="${esc(e.cnpj)}" checked aria-label="Adicionar ${esc(e.razaoSocial)}"></td>
         <td>${esc(e.razaoSocial)}${e.nomeFantasia ? `<div class="sutil">${esc(e.nomeFantasia)}</div>` : ''}</td>
         <td><code>${esc(fmt.cnpj(e.cnpj))}</code></td><td>${esc(origem[e.origem] || e.origem)}</td><td>${esc(e.uf || '–')}</td>
         <td>${esc(e.regime ? regimeTexto(e) : 'não informado')}</td></tr>`).join('')}
       </tbody></table></div>
       <div data-res-cad></div>
-      <div class="acoes" style="margin-top:12px"><button class="btn" type="button" data-adicionar>Adicionar selecionadas</button>
+      <div class="acoes u-mt-12"><button class="btn" type="button" data-adicionar>Adicionar selecionadas</button>
         <button class="btn btn-sec" type="button" data-agora-nao>Agora não</button><span class="sutil" data-qtd></span></div>`);
     const caixas = () => Array.from(c.querySelectorAll('[data-cnpj]'));
     const contar = () => { c.querySelector('[data-qtd]').textContent = `${caixas().filter((x) => x.checked).length} de ${lista.length} selecionada(s)`; };

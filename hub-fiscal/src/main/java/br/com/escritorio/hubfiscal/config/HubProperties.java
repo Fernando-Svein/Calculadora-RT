@@ -21,6 +21,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *                                  {@code pedido} (só grava o pedido; usado nos testes) ou {@code desativada}
  * @param consultaCnpjUrl           API pública de consulta de CNPJ, com {@code {cnpj}} no lugar do número
  *                                  (padrão BrasilAPI); {@code desativada} desliga o botão "Consultar CNPJ"
+ * @param lotesSimultaneos          processamentos em lote ao mesmo tempo; os demais esperam na fila (memória)
+ * @param resultadosPorUsuario      resultados de lote guardados por usuário (os mais antigos saem antes da retenção)
  */
 @ConfigurationProperties(prefix = "hub")
 public record HubProperties(
@@ -35,7 +37,9 @@ public record HubProperties(
         String arquivoLogo,
         String bancoEmpresas,
         String atualizacaoManual,
-        String consultaCnpjUrl) {
+        String consultaCnpjUrl,
+        int lotesSimultaneos,
+        int resultadosPorUsuario) {
 
     /**
      * Cenário de simulação da CBS com alíquota diferente da oficial (ex.: alíquota estimada para o regime
@@ -75,6 +79,12 @@ public record HubProperties(
         }
         if (retencaoResultadosMinutos <= 0) {
             retencaoResultadosMinutos = 240;
+        }
+        if (lotesSimultaneos <= 0) {
+            lotesSimultaneos = 2;
+        }
+        if (resultadosPorUsuario <= 0) {
+            resultadosPorUsuario = 5;
         }
     }
 }

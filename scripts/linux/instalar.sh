@@ -11,6 +11,7 @@
 #   5. registra os serviços no systemd (sobem sozinhos com a VM e voltam se caírem)
 #   6. agenda a verificação de atualização das calculadoras todo dia às 03:00
 #   7. se o firewall (ufw) estiver ativo, libera a porta 8090 só para redes internas
+#   8. rotação diária dos logs (30 dias) e backup diário de dados/ às 02:30 (14 cópias em backups/)
 # Pode ser rodado de novo sem problema: o que já estiver pronto é mantido.
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
@@ -22,7 +23,7 @@ principal() {
 
   etapa "Pacotes do sistema (git, curl, jq)"
   export DEBIAN_FRONTEND=noninteractive
-  apt-get update -qq && apt-get install -y -qq git curl jq ca-certificates tar unzip >/dev/null || morrer "apt-get falhou (a VM tem internet?)"
+  apt-get update -qq && apt-get install -y -qq git curl jq ca-certificates tar unzip sqlite3 >/dev/null || morrer "apt-get falhou (a VM tem internet?)"
   ok "Pacotes instalados"
 
   etapa "Usuário do serviço ($USUARIO_SERVICO)"
@@ -55,8 +56,9 @@ principal() {
     "-Dspring.profiles.active=offline -Dserver.address=127.0.0.1" api-regime-geral.jar regime-geral ""
   escrever_unidade hubfiscal-calc-sn "Hub Fiscal - Calculadora Simples Nacional (Receita Federal)" calculadora-rtc-simples-nacional \
     "-Dspring.profiles.active=offline -Dserver.address=127.0.0.1" api-simples-nacional.jar simples-nacional ""
-  escrever_unidade hubfiscal "Hub Fiscal" hub-fiscal "" hub-fiscal.jar hub "hubfiscal-calc-rg.service hubfiscal-calc-sn.service"
+  escrever_unidade_hub
   escrever_agendamento
+  configurar_logs_e_backup
   systemctl daemon-reload
   systemctl enable hubfiscal-calc-rg hubfiscal-calc-sn hubfiscal hubfiscal-atualizacao.timer --quiet
   systemctl start hubfiscal-atualizacao.timer
@@ -76,35 +78,6 @@ principal() {
   echo "${VERDE}Instalação concluída.${FIM}"
   echo "Próximo passo: criar o administrador do hub com"
   echo "   sudo bash $RAIZ/scripts/linux/hub.sh criar-admin"
-}
-
-escrever_unidade() {  # nome descrição pasta argumentos-java jar log depende-de
-  local nome=$1 descricao=$2 pasta=$3 args=$4 jar=$5 log=$6 depende=$7
-  cat >"/etc/systemd/system/$nome.service" <<EOF
-[Unit]
-Description=$descricao
-After=network-online.target ${depende}
-Wants=network-online.target ${depende}
-
-[Service]
-User=$USUARIO_SERVICO
-Group=$USUARIO_SERVICO
-WorkingDirectory=$RAIZ/$pasta
-ExecStart=$JAVA_HOME_HUB/bin/java $args -jar target/$jar
-Restart=on-failure
-RestartSec=10
-# o Java encerra com 143 ao receber o pedido de parada: é um encerramento normal
-SuccessExitStatus=143
-StandardOutput=append:$LOGS/$log.log
-StandardError=append:$LOGS/$log.err
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=full
-ProtectHome=true
-
-[Install]
-WantedBy=multi-user.target
-EOF
 }
 
 escrever_agendamento() {

@@ -22,6 +22,7 @@ import br.com.escritorio.hubfiscal.config.HubProperties;
 import br.com.escritorio.hubfiscal.importacao.DocumentoFiscal;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
 import br.com.escritorio.hubfiscal.importacao.ItemFiscal;
+import br.com.escritorio.hubfiscal.infra.Andamento;
 import br.com.escritorio.hubfiscal.infra.Api;
 import br.com.escritorio.hubfiscal.infra.ApiReceitaClient;
 import br.com.escritorio.hubfiscal.infra.ApiResposta;
@@ -71,7 +72,7 @@ public class AuditoriaService {
     }
 
     /** Audita todos os documentos importados (em paralelo, limitado a {@code hub.paralelismo}). */
-    public ResultadoAuditoria auditar(Importacao imp) {
+    public ResultadoAuditoria auditar(Importacao imp, Andamento andamento) {
         ResultadoAuditoria r = new ResultadoAuditoria();
         r.geradoEm = Valores.dataHoraGeracao();
         r.arquivos.putAll(imp.arquivos);
@@ -87,7 +88,8 @@ public class AuditoriaService {
 
         List<List<LinhaAuditoria>> porDocumento;
         try {
-            porDocumento = Paralelo.mapear(imp.documentos, props.paralelismo(), this::auditarDocumento);
+            andamento.etapa("Auditando os documentos na calculadora oficial", imp.documentos.size());
+            porDocumento = Paralelo.mapear(imp.documentos, props.paralelismo(), this::auditarDocumento, andamento);
         } catch (RuntimeException e) {
             throw new IllegalStateException("Falha na auditoria: " + e.getMessage(), e);
         }

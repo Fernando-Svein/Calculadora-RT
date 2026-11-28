@@ -14,6 +14,7 @@
 #                  (é o que o agendamento das 03:00 executa; resultado na tela "Situação do sistema")
 #   atualizar-hub  baixa a versão nova do próprio Hub Fiscal (do seu GitHub), recompila e religa o hub
 #   testar         testa a classificação de cClassTrib numa cópia isolada do hub (não precisa de sudo)
+#   backup         copia dados/ (usuários, empresas, logo) para backups/ agora (roda sozinho todo dia às 02:30)
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 
@@ -31,8 +32,9 @@ principal() {
     atualizar-hub) exigir_root "$@"; atualizar_hub ;;
     depois-de-atualizar-hub) exigir_root "$@"; depois_atualizar_hub ;;
     testar) bash "$RAIZ/scripts/linux/testar-classificacao.sh" ;;
-    ajuda | -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
-    *) falha "Comando desconhecido: $comando"; sed -n '6,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    backup) exigir_root "$@"; fazer_backup ;;
+    ajuda | -h | --help) sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
+    *) falha "Comando desconhecido: $comando"; sed -n '6,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
   esac
 }
 
@@ -188,6 +190,9 @@ atualizar_hub() {
 # Parte final do atualizar-hub, já com os scripts novos (chamada por ele; não use direto)
 depois_atualizar_hub() {
   chown -R "$USUARIO_SERVICO:$USUARIO_SERVICO" "$RAIZ"
+  command -v sqlite3 >/dev/null || DEBIAN_FRONTEND=noninteractive apt-get install -y -qq sqlite3 >/dev/null || true
+  escrever_unidade_hub
+  configurar_logs_e_backup
   systemctl daemon-reload
   gravar_agendamento
   escrever_gatilho_atualizacao

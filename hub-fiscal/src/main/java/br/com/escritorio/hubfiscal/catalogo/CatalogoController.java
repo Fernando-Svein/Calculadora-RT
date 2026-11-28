@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.escritorio.hubfiscal.config.ErroHandler.ErroParametro;
 import br.com.escritorio.hubfiscal.catalogo.BaseOficial.Nomenclatura;
 import br.com.escritorio.hubfiscal.catalogo.BaseOficial.Tipo;
 
@@ -52,7 +53,7 @@ public class CatalogoController {
         Tipo t = switch (tipo.toLowerCase(Locale.ROOT)) {
             case "ncm" -> Tipo.NCM;
             case "nbs" -> Tipo.NBS;
-            default -> throw new IllegalArgumentException("Tipo de busca inválido: use ncm ou nbs.");
+            default -> throw new ErroParametro("Tipo de busca inválido: use ncm ou nbs.");
         };
         if (q == null || q.trim().length() < 2) {
             return List.of();

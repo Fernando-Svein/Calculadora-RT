@@ -24,6 +24,20 @@ public class ErroHandler {
         }
     }
 
+    /** Parâmetro enviado pela tela fora do esperado, com mensagem escrita para o usuário (HTTP 400). */
+    public static class ErroParametro extends RuntimeException {
+        public ErroParametro(String mensagem) {
+            super(mensagem);
+        }
+    }
+
+    @ExceptionHandler(ErroParametro.class)
+    public ProblemDetail parametroInvalido(ErroParametro e) {
+        ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+        p.setTitle("Parâmetro inválido");
+        return p;
+    }
+
     @ExceptionHandler(ErroNegocio.class)
     public ProblemDetail negocio(ErroNegocio e) {
         ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_CONTENT, e.getMessage());
@@ -31,9 +45,15 @@ public class ErroHandler {
         return p;
     }
 
+    /**
+     * Valor inválido detectado no próprio hub. A mensagem técnica (pode citar classes ou enums internos) fica no log;
+     * a tela recebe um texto fixo.
+     */
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail argumento(IllegalArgumentException e) {
-        ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+        log.warn("Parâmetro inválido: {}", e.getMessage());
+        ProblemDetail p = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST,
+                "Um dos valores enviados é inválido. Confira os campos e tente novamente.");
         p.setTitle("Parâmetro inválido");
         return p;
     }

@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import br.com.escritorio.hubfiscal.config.ErroHandler.ErroParametro;
 import br.com.escritorio.hubfiscal.config.ErroHandler.ErroNegocio;
 import br.com.escritorio.hubfiscal.config.HubProperties;
 import br.com.escritorio.hubfiscal.config.HubProperties.CenarioCbs;
@@ -301,7 +302,7 @@ public class CenarioCbsService {
         } catch (RuntimeException e) {
             // cai na mensagem abaixo
         }
-        throw new IllegalArgumentException("Envie a resposta da calculadora (objeto JSON).");
+        throw new ErroParametro("Envie a resposta da calculadora (objeto JSON).");
     }
 
     /** Multiplica pelo fator os valores (campos "v...") de um grupo; devolve a diferença total. */

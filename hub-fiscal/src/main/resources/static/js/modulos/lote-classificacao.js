@@ -16,139 +16,14 @@
     if (b) Hub.detalheClassificacao(b.dataset.detalheCct);
   });
 
-  /** Tela de upload + processamento reutilizada pela classificação e pela auditoria. */
-  Hub.telaLote = (el, cfg) => {
-    el.innerHTML = comp.cabecalho(cfg.titulo, cfg.texto) +
-      `<div class="card"><div data-up></div>
-        <div class="linha" style="margin-top:14px">
-          ${cfg.comData ? `<div class="campo" style="flex:0 0 200px"><label>Data de referência (vigência)</label><input type="date" data-data value="${Hub.hoje()}"></div>` : ''}
-          <button class="btn" data-proc disabled>Processar</button>
-          <span class="sutil" data-st></span>
-        </div>
-        <div class="progresso" hidden><div></div></div>
-      </div><div data-res></div>`;
-    const up = comp.upload(el.querySelector('[data-up]'), {
-      aceita: cfg.aceita, titulo: 'Arraste os arquivos aqui ou clique para selecionar', dica: cfg.dica,
-      aoMudar: (fs) => { el.querySelector('[data-proc]').disabled = !fs.length; },
-    });
-    const barra = el.querySelector('.progresso');
-    const st = el.querySelector('[data-st]');
-    const res = el.querySelector('[data-res]');
-    el.querySelector('[data-proc]').onclick = async (e) => {
-      const btn = e.target;
-      const fd = new FormData();
-      up.arquivos().forEach((f) => fd.append('arquivos', f, f.name));
-      btn.disabled = true;
-      barra.hidden = false;
-      barra.firstElementChild.style.width = '0';
-      st.textContent = 'Enviando arquivos...';
-      res.innerHTML = '';
-      const q = cfg.comData ? '?data=' + el.querySelector('[data-data]').value : '';
-      const r = await comp.enviarComProgresso(cfg.url + q, fd, (p) => {
-        barra.firstElementChild.style.width = Math.round(p * 100) + '%';
-        if (p >= 1) st.textContent = cfg.msgProcessando;
-      });
-      btn.disabled = false;
-      barra.hidden = true;
-      st.textContent = '';
-      if (!r.ok) { res.innerHTML = Hub.problema(r); return; }
-      cfg.mostrar(res, r.data);
-      // empresas dos arquivos que não estão no cadastro: pergunta quais adicionar (nada foi gravado ainda)
-      Hub.empresas.perguntarCadastro(r.cabecalho && r.cabecalho('X-Hub-Empresas-Encontradas'));
-    };
-  };
-
-  /**
-   * Quadro "Vendas por NCM" abaixo do resultado (classificação e auditoria): valor vendido por empresa e NCM/NBS,
-   * com o total no fim e o que ficou de fora (entradas, remessas, devoluções...). Mesmos números da aba da planilha.
-   */
-  Hub.vendasPorNcm = (res, v) => {
-    if (!v) return;
-    const empresas = v.empresas || [];
-    const varias = empresas.length > 1;
-    const quadro = Hub.el(`<div class="card vendas-ncm"><div class="card-cab"><h2>Vendas por NCM</h2>
-        <span class="sutil">Também na aba "Vendas por NCM" da planilha Excel</span></div>
-      <div class="kpis">
-        <div class="kpi destaque"><small>Total vendido (líquido)</small><strong>${fmt.moeda(v.valorLiquido)}</strong></div>
-        <div class="kpi"><small>Itens vendidos</small><strong>${fmt.num(v.itens)}</strong></div>
-        <div class="kpi"><small>NCM/NBS diferentes</small><strong>${fmt.num(new Set(v.linhas.map((l) => l.ncm)).size)}</strong></div>
-        <div class="kpi"><small>Descontos</small><strong>${fmt.moeda(v.descontos)}</strong></div>
-      </div>
-      ${varias ? `<div class="campo" style="max-width:520px;margin-bottom:10px"><label>Empresa</label><select data-emp-vendas>
-        <option value="">Todas (${empresas.length})</option>${empresas.map((e) => `<option value="${esc(e.empresaCnpj)}">${esc(e.empresaNome || '')} – ${esc(fmt.cnpj(e.empresaCnpj))}</option>`).join('')}
-        </select></div>` : ''}
-      <div data-tab-vendas></div>
-      <div class="vendas-total" data-total-vendas></div>
-      <details style="margin-top:10px"><summary>O que entra no total</summary><ul>${(v.observacoes || []).map((o) => `<li>${esc(o)}</li>`).join('')}</ul></details>
-    </div>`);
-    res.appendChild(quadro);
-    if (!v.linhas.length) {
-      quadro.querySelector('[data-tab-vendas]').innerHTML = '<p class="sutil">Nenhuma venda nos arquivos (só entradas, remessas ou devoluções).</p>';
-      return;
-    }
-    const tab = comp.tabela(quadro.querySelector('[data-tab-vendas]'), {
-      placeholder: 'Buscar NCM ou descrição...',
-      porPagina: 50,
-      colunas: [
-        ...(varias ? [{ titulo: 'Empresa', campo: 'empresaNome' }] : []),
-        { titulo: 'NCM/NBS', campo: 'ncm', render: (l) => (l.ncm ? `<code>${esc(l.ncm)}</code>` : '<span class="sutil">sem NCM</span>') },
-        { titulo: 'Descrição', campo: 'descricao', render: (l) => `<span class="desc-curta" title="${esc(l.descricao || '')}">${esc(l.descricao || '')}</span>` },
-        { titulo: 'Itens', campo: 'itens', tipo: 'num' },
-        { titulo: 'Quantidade', campo: 'quantidade', tipo: 'num' },
-        { titulo: 'Unid.', campo: 'unidade' },
-        { titulo: 'Valor dos produtos', campo: 'valorBruto', tipo: 'moeda' },
-        { titulo: 'Descontos', campo: 'descontos', tipo: 'moeda' },
-        { titulo: 'Valor vendido', campo: 'valorLiquido', tipo: 'moeda' },
-        { titulo: '% da empresa', campo: 'percentual', tipo: 'pct' },
-      ],
-      linhas: v.linhas,
-    });
-    const total = quadro.querySelector('[data-total-vendas]');
-    const somar = () => {
-      const sel = quadro.querySelector('[data-emp-vendas]');
-      const cnpj = sel ? sel.value : '';
-      const ls = tab.linhas(); // linhas exibidas (empresa escolhida e busca)
-      const soma = (k) => ls.reduce((s, l) => s + Number(l[k] || 0), 0);
-      const filtrado = ls.length !== v.linhas.length;
-      total.innerHTML = `<span><strong>${filtrado ? 'Total exibido' : 'Total geral'}</strong> · ${fmt.num(ls.length)} NCM/NBS · ${fmt.num(soma('itens'))} itens</span>
-        <span>Produtos ${fmt.moeda(soma('valorBruto'))}</span><span>Descontos ${fmt.moeda(soma('descontos'))}</span>
-        <span class="vendas-total-valor">Vendido ${fmt.moeda(soma('valorLiquido'))}</span>
-        ${cnpj ? '<span class="sutil">(empresa selecionada)</span>' : ''}`;
-    };
-    const sel = quadro.querySelector('[data-emp-vendas]');
-    if (sel) sel.onchange = () => { tab.filtrar(sel.value ? (l) => String(l.empresaCnpj) === sel.value : null); somar(); };
-    quadro.querySelector('[data-tab-vendas] input[type=search]').addEventListener('input', () => setTimeout(somar, 250));
-    somar();
-  };
-
-  /** Contadores por status (clicáveis para filtrar a tabela). */
-  Hub.contadoresStatus = (alvo, contagem, rotulos, tabela, campo = 'status') => {
-    alvo.innerHTML = `<div class="contadores">${Object.entries(contagem).map(([k, v]) =>
-      `<button class="contador st-${k}" data-st="${k}"><strong>${v}</strong><span>${esc(rotulos[k] || k)}</span></button>`).join('')}</div>`;
-    let ativo = null;
-    alvo.querySelectorAll('[data-st]').forEach((b) => {
-      b.onclick = () => {
-        ativo = ativo === b.dataset.st ? null : b.dataset.st;
-        alvo.querySelectorAll('[data-st]').forEach((x) => x.classList.toggle('sel', x.dataset.st === ativo));
-        tabela.filtrar(ativo ? (l) => l[campo] === ativo : null);
-      };
-    });
-  };
-
-  function arquivosHtml(arquivos, avisos) {
-    const lista = Object.entries(arquivos || {});
-    return `<details><summary>Arquivos lidos (${lista.length})</summary><ul>${lista.map(([k, v]) => `<li><code>${esc(k)}</code> – ${esc(v)}</li>`).join('')}</ul></details>
-      ${(avisos || []).length ? `<div class="aviso"><ul>${avisos.map((a) => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}`;
-  }
-  Hub.arquivosHtml = arquivosHtml;
 
   function detalhe(l) {
-    const alts = (l.alternativas || []).map((c) => `<div class="candidata ${c.cClassTrib === l.cClassTribSugerido ? 'principal' : ''}" style="padding:8px 12px">
+    const alts = (l.alternativas || []).map((c) => `<div class="candidata ${c.cClassTrib === l.cClassTribSugerido ? 'principal' : ''} u-p-8-12">
         <div class="candidata-cab"><span class="cod">${esc(c.cClassTrib)}</span><span class="etq etq-azul">${esc(c.tratamento || '')}</span>
         ${Number(c.reducaoCbs) > 0 ? `<span class="etq etq-teal">Redução ${fmt.num(c.reducaoCbs)}%</span>` : ''}
         ${c.condicional ? '<span class="etq etq-amarelo">Condicional</span>' : ''}${c.dfeCompativel ? '' : '<span class="etq etq-vermelho">Não admitido no documento</span>'}
         <button class="btn btn-sec btn-peq" type="button" data-detalhe-cct="${esc(c.cClassTrib)}">Detalhes</button></div>
-        <div>${esc(c.descricao)}</div>${c.textoAnexo ? `<div class="sutil" style="font-size:12px">Anexo ${esc(c.anexo)}, item ${esc(c.itemAnexo)}: ${esc(c.textoAnexo)}</div>` : ''}</div>`).join('');
+        <div>${esc(c.descricao)}</div>${c.textoAnexo ? `<div class="sutil u-fs-12">Anexo ${esc(c.anexo)}, item ${esc(c.itemAnexo)}: ${esc(c.textoAnexo)}</div>` : ''}</div>`).join('');
     return `<div class="grade g2">
       <div>
         <dl class="dl">
@@ -196,7 +71,7 @@
             ${(d.contribuintes || []).length ? `<p>${d.contribuintes.map(esc).join('<br>')}</p>` : ''}
             <p class="sutil">Vigência considerada: ${fmt.data(d.dataReferencia)} · gerado em ${esc(d.geradoEm)}. Clique num item para ver as alternativas.</p>
             ${d.conferenciaOficial ? `<p class="sutil">${esc(d.conferenciaOficial)}</p>` : ''}
-            <div data-cont></div><div data-tab></div>${arquivosHtml(d.arquivos, d.avisos)}</div>`;
+            <div data-cont></div><div data-tab></div>${Hub.arquivosHtml(d.arquivos, d.avisos)}</div>`;
           const tab = comp.tabela(res.querySelector('[data-tab]'), {
             placeholder: 'Buscar código, descrição, NCM...',
             colunas: [

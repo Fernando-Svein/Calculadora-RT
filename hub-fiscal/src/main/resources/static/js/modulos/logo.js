@@ -20,7 +20,7 @@
             <input id="arqLogo" type="file" accept="image/png,image/jpeg" data-arq>
             <span class="ajuda">PNG (de preferência com fundo transparente) ou JPEG, até 2 MB. Imagens grandes são reduzidas automaticamente.
               Logos mais largas que altas ficam melhores no cabeçalho.</span></div>
-          <div class="acoes" style="margin-top:12px"><button class="btn" type="button" data-enviar>Enviar logo</button>
+          <div class="acoes u-mt-12"><button class="btn" type="button" data-enviar>Enviar logo</button>
             <button class="btn btn-perigo" type="button" data-remover>Remover logo</button></div>
         </div>`;
       const previa = el.querySelector('[data-previa]');

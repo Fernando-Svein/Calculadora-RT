@@ -52,4 +52,11 @@ public class LinhaClassificacao {
     /** Sugestões derivadas dos CFOPs (exportação, bonificação, transferência...). */
     public List<String> sugestoesPorCfop = new ArrayList<>();
     public List<String> observacoes = new ArrayList<>();
+
+    /** Define o status e o rótulo exibido (sempre juntos). */
+    LinhaClassificacao definirStatus(StatusClassificacao s) {
+        status = s;
+        statusRotulo = s.rotulo();
+        return this;
+    }
 }

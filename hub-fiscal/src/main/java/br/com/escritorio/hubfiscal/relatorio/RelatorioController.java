@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.escritorio.hubfiscal.config.ErroHandler.ErroParametro;
 import br.com.escritorio.hubfiscal.config.HubProperties;
 import br.com.escritorio.hubfiscal.relatorio.RelatorioPdf.Coluna;
 import br.com.escritorio.hubfiscal.seguranca.UsuarioSessao;
@@ -42,14 +43,14 @@ public class RelatorioController {
     @PostMapping("/hub/relatorio/pdf")
     public ResponseEntity<byte[]> pdf(@RequestBody PedidoRelatorio p, @AuthenticationPrincipal UsuarioSessao usuario) {
         if (p.titulo() == null || p.titulo().isBlank()) {
-            throw new IllegalArgumentException("Informe o título do relatório.");
+            throw new ErroParametro("Informe o título do relatório.");
         }
         int colunas = p.colunas() == null ? 0 : p.colunas().size();
         int linhas = p.linhas() == null ? 0 : p.linhas().size();
         int resumo = p.resumo() == null ? 0 : p.resumo().size();
         if (colunas > 40 || linhas > 5_000 || resumo > 200 || (p.observacoes() != null && p.observacoes().size() > 100)
                 || (p.empresa() != null && p.empresa().size() > 10)) {
-            throw new IllegalArgumentException("Relatório grande demais para PDF (máximo de 40 colunas e 5 mil linhas). Use o Excel.");
+            throw new ErroParametro("Relatório grande demais para PDF (máximo de 40 colunas e 5 mil linhas). Use o Excel.");
         }
         byte[] logo = null;
         try {

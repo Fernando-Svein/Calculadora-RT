@@ -24,12 +24,12 @@
       el.innerHTML = comp.cabecalho('Atividades do Simples Nacional',
         'Códigos de atividade usados no cálculo do IBS/CBS no Simples (no leiaute da nota, campo cAtivSN). Indicam o anexo aplicável, se a atividade depende do fator r e em quais documentos pode ser usada.') +
         `<div class="card"><div class="linha">
-          <div class="campo" style="flex:0 0 180px"><label>Data</label><input type="date" name="data" value="${Hub.hoje() < '2027-01-01' ? '2027-01-01' : Hub.hoje()}"></div>
-          <div class="campo" style="flex:0 0 160px"><label>Anexos</label><input name="anexos" placeholder="Ex.: III,V"></div>
-          <div class="campo" style="flex:0 0 180px"><label>Documento</label><select name="tpDoc"><option value="">Todos</option>
+          <div class="campo u-flex-0-0-180"><label>Data</label><input type="date" name="data" value="${Hub.hoje() < '2027-01-01' ? '2027-01-01' : Hub.hoje()}"></div>
+          <div class="campo u-flex-0-0-160"><label>Anexos</label><input name="anexos" placeholder="Ex.: III,V"></div>
+          <div class="campo u-flex-0-0-180"><label>Documento</label><select name="tpDoc"><option value="">Todos</option>
             <option value="55">NF-e (55)</option><option value="65">NFC-e (65)</option><option value="91">NFS-e (91)</option>
             <option value="57">CT-e (57)</option><option value="67">CT-e OS (67)</option><option value="63">BP-e (63)</option><option value="62">NFCom (62)</option></select></div>
-          <div class="campo" style="flex:0 0 160px"><label>cClassTrib</label><input name="cClassTrib" placeholder="Ex.: 000001"></div>
+          <div class="campo u-flex-0-0-160"><label>cClassTrib</label><input name="cClassTrib" placeholder="Ex.: 000001"></div>
           <button class="btn" data-consultar>Consultar</button>
         </div></div><div class="card" data-res></div>`;
       const res = el.querySelector('[data-res]');

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.com.escritorio.hubfiscal.config.ErroHandler.ErroParametro;
 import br.com.escritorio.hubfiscal.excel.Planilha.Coluna;
 
 /**
@@ -34,10 +35,10 @@ public class ExportacaoController {
     @PostMapping("/hub/excel")
     public ResponseEntity<byte[]> exportar(@RequestBody PedidoExportacao pedido) {
         if (pedido.colunas() == null || pedido.colunas().isEmpty() || pedido.linhas() == null) {
-            throw new IllegalArgumentException("Informe as colunas e as linhas da planilha.");
+            throw new ErroParametro("Informe as colunas e as linhas da planilha.");
         }
         if (pedido.colunas().size() > 500 || pedido.linhas().size() > 1_000_000) {
-            throw new IllegalArgumentException("Planilha grande demais para exportar (máximo de 500 colunas e 1 milhão de linhas).");
+            throw new ErroParametro("Planilha grande demais para exportar (máximo de 500 colunas e 1 milhão de linhas).");
         }
         try (Planilha p = new Planilha()) {
             if (pedido.resumo() != null && !pedido.resumo().isEmpty()) {

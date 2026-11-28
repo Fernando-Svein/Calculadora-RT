@@ -143,20 +143,20 @@
     d.innerHTML = `<p class="sutil">${esc(f.desc)}</p>
       <div class="grade g4">${f.campos.map(campoHtml).join('')}</div>
       ${f.extra === 'nfseUnificada' ? `<div data-extra>
-        <fieldset style="margin-top:12px"><legend>Locação de imóvel (situação 9903)</legend><div class="grade g4">
+        <fieldset class="u-mt-12"><legend>Locação de imóvel (situação 9903)</legend><div class="grade g4">
           ${comp.campo('% copropriedade', '<input data-l="pCopropriedade" value="100">')}
           ${comp.campo('Valor total da operação', '<input data-l="vTotOper">')}
           ${comp.campo('Desconto incondicional total', '<input data-l="vDescIncondTot">')}
           ${comp.campo('Soma dos ajustes', '<input data-l="somaAjustesLocImoveis">')}</div></fieldset>
         <fieldset><legend>Documentos de ajuste da base</legend><div data-docs></div>
           <button class="btn btn-sec btn-peq" data-add-doc type="button">+ Ajuste</button></fieldset></div>` : ''}
-      <div class="acoes" style="margin-top:12px"><button class="btn" data-ok>Calcular</button><button class="btn btn-sec" data-json>Ver dados técnicos</button></div>
-      <div data-res style="margin-top:14px"></div>`;
+      <div class="acoes u-mt-12"><button class="btn" data-ok>Calcular</button><button class="btn btn-sec" data-json>Ver dados técnicos</button></div>
+      <div class="u-mt-14" data-res></div>`;
     const res = d.querySelector('[data-res]');
     if (f.extra === 'nfseUnificada') {
       const docs = d.querySelector('[data-docs]');
       d.querySelector('[data-add-doc]').onclick = () => {
-        docs.appendChild(Hub.el(`<div class="grade g4" style="margin-bottom:8px">
+        docs.appendChild(Hub.el(`<div class="grade g4 u-mb-8">
           ${comp.campo('Tipo de ajuste', '<select data-d="tpAjusteBC"><option value="101">Subcontratação</option><option value="102">Consórcio</option><option value="103">Intermediação</option><option value="104">Cessão de mão de obra</option><option value="105">Ressarcimento</option><option value="9">Profissional-parceiro (salão-parceiro)</option><option value="199">Outros (descrever)</option></select>')}
           ${comp.campo('Valor aplicado', '<input data-d="vAjusteAplic">')}
           ${comp.campo('Descrição (obrigatória no tipo Outros)', '<input data-d="xTpAjusteBC">')}</div>`));

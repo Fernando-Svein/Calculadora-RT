@@ -65,8 +65,28 @@ public class CatalogoService {
         this.base = base;
     }
 
-    /** Limpa caches diariamente (a base pode ser atualizada pela Receita). */
-    @Scheduled(cron = "0 0 3 * * *")
+    /** Versão da calculadora e da base vista na última verificação ({@code versaoApp/versaoDb}). */
+    private volatile String versaoVista;
+
+    /**
+     * Limpa os caches quando a calculadora passa a responder com outra versão da base. Antes a limpeza era às 03:00,
+     * a mesma hora da atualização: se o hub consultasse a calculadora antes de a base nova subir, guardava as tabelas
+     * antigas até o dia seguinte.
+     */
+    @Scheduled(fixedDelay = 5 * 60 * 1000, initialDelay = 60 * 1000)
+    public void conferirVersaoDaBase() {
+        ApiResposta r = api.get(Api.RG, EndpointsReceita.RG_VERSAO);
+        if (!r.ok()) {
+            return; // calculadora fora do ar (ex.: no meio da atualização): confere na próxima rodada
+        }
+        Object v = api.json(r);
+        String versao = J.str(v, "versaoApp") + "/" + J.str(v, "versaoDb");
+        if (versaoVista != null && !versaoVista.equals(versao)) {
+            limparCaches();
+        }
+        versaoVista = versao;
+    }
+
     public void limparCaches() {
         cacheClassificacoes.clear();
         cacheFundamentacao.clear();

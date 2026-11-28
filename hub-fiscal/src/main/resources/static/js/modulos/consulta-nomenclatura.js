@@ -30,7 +30,7 @@
       </div>
       <div>${esc(c.descricao)}</div>
       ${c.anexo ? `<div class="memoria"><strong>Anexo ${esc(c.anexo)}${c.itemAnexo ? ', item ' + esc(c.itemAnexo) : ''}:</strong> ${esc(c.textoAnexo || '')}</div>` : ''}
-      ${c.fundamentacao ? `<div class="sutil" style="font-size:12.5px">Fundamentação: ${esc(c.fundamentacao)}</div>` : ''}
+      ${c.fundamentacao ? `<div class="sutil u-fs-12_5">Fundamentação: ${esc(c.fundamentacao)}</div>` : ''}
     </div>`;
   }
 
@@ -66,11 +66,11 @@
         <dt>Fundamentação</dt><dd>${esc(d.fundamentacao || '–')}</dd>
         <dt>Atualização</dt><dd>${fmt.data(d.dataAtualizacao)}</dd>
       </dl>
-      <div style="margin:10px 0">${flags.map(([t, v]) => `<span class="etq ${v ? 'etq-verde' : ''}">${v ? '✓' : '✗'} ${esc(t)}</span>`).join(' ')}</div>
+      <div class="u-m-10-0">${flags.map(([t, v]) => `<span class="etq ${v ? 'etq-verde' : ''}">${v ? '✓' : '✗'} ${esc(t)}</span>`).join(' ')}</div>
       <div data-anexo-ncm></div><div data-anexo-nbs></div>`;
     const montarAnexo = (alvo, lista, tipo) => {
       if (!lista || !lista.length) return;
-      alvo.innerHTML = `<h3 style="margin-top:14px">${tipo} do anexo (${lista.length})</h3><div></div>`;
+      alvo.innerHTML = `<h3 class="u-mt-14">${tipo} do anexo (${lista.length})</h3><div></div>`;
       comp.tabela(alvo.lastElementChild, {
         colunas: [
           { titulo: tipo + ' (prefixo)', campo: 'codigo', render: (l) => `<code>${esc(l.codigo)}</code>` },
@@ -102,12 +102,12 @@
         'usando a mesma regra da calculadora oficial. Classificações que dependem da operação (exportação, bonificação, ' +
         'regimes especiais) aparecem como condicionais.') +
         `<div class="card"><div class="linha">
-          <div class="campo" style="flex:0 0 150px"><label>Tipo</label>
+          <div class="campo u-flex-0-0-150"><label>Tipo</label>
             <select name="tipo"><option value="ncm">NCM (bens)</option><option value="nbs">NBS (serviços)</option></select></div>
-          <div class="campo" style="flex:2 1 300px"><label>Código ou descrição</label>
+          <div class="campo u-flex-2-1-300"><label>Código ou descrição</label>
             <input name="codigo" placeholder="Ex.: 10063021 ou 'arroz'" autofocus></div>
-          <div class="campo" style="flex:0 0 170px"><label>Data de referência</label><input type="date" name="data" value="${Hub.hoje()}"></div>
-          <div class="campo" style="flex:0 0 200px"><label>Documento</label>
+          <div class="campo u-flex-0-0-170"><label>Data de referência</label><input type="date" name="data" value="${Hub.hoje()}"></div>
+          <div class="campo u-flex-0-0-200"><label>Documento</label>
             <select name="dfe"><option value="">Todos</option><option value="55">NF-e (55)</option><option value="65">NFC-e (65)</option>
             <option value="91">NFS-e (91)</option><option value="57">CT-e (57)</option></select></div>
           <button class="btn" data-consultar>Consultar</button>
@@ -150,7 +150,7 @@
             ${a.lc116 ? `<span class="etq etq-azul">LC 116: ${esc(a.lc116)}</span>` : ''}
             <a class="btn btn-sec btn-peq" href="#/calc-rg?${a.tipo.toLowerCase()}=${a.codigo}&cClassTrib=${principal ? principal.cClassTrib : '000001'}">Simular no Regime Regular</a>
           </div></div>
-          <p style="margin:0">${esc(a.descricaoCompleta)}</p>
+          <p class="u-m-0">${esc(a.descricaoCompleta)}</p>
           ${(a.observacoes || []).length ? `<div class="aviso"><ul>${a.observacoes.map((o) => `<li>${esc(o)}</li>`).join('')}</ul></div>` : ''}</div>`);
         html.push(`<div class="card"><h3>Classificações vinculadas ao ${a.tipo === 'NCM' ? 'produto' : 'serviço'} (anexos)</h3>`);
         if (!a.especificas.length) {
@@ -166,7 +166,7 @@
           html.push(`<div class="card"><details ${a.tipo === 'NBS' ? 'open' : ''}><summary>${a.tipo === 'NBS'
             ? 'Classificações que dependem da atividade, do prestador ou da operação'
             : 'Outras classificações aplicáveis a qualquer NCM (dependem da operação ou do adquirente)'} (${a.situacionais.length})</summary>
-            <div data-sit style="margin-top:10px"></div></details></div>`);
+            <div class="u-mt-10" data-sit></div></details></div>`);
         }
         res.innerHTML = html.join('');
         res.querySelectorAll('[data-det]').forEach((b) => { b.onclick = () => Hub.detalheClassificacao(b.dataset.det, a.data); });

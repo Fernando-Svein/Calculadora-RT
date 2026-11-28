@@ -2,6 +2,8 @@ package br.com.escritorio.hubfiscal.infra;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,15 +28,24 @@ public class ResultadoStore {
 
     private final Map<String, Entrada> dados = new ConcurrentHashMap<>();
     private final Duration retencao;
+    private final int porUsuario;
 
     public ResultadoStore(HubProperties props) {
         this.retencao = Duration.ofMinutes(props.retencaoResultadosMinutos());
+        this.porUsuario = props.resultadosPorUsuario();
     }
 
-    /** Guarda o resultado do usuário {@code dono} e devolve o identificador para download. */
-    public String guardar(Object valor, long dono) {
+    /**
+     * Guarda o resultado do usuário {@code dono} e devolve o identificador para download. Cada usuário fica com no
+     * máximo {@code hub.resultados-por-usuario} resultados: um lote de SPED grande ocupa centenas de MB, e sem o
+     * limite vários lotes seguidos ficavam todos na memória até a retenção vencer.
+     */
+    public synchronized String guardar(Object valor, long dono) {
         String id = UUID.randomUUID().toString();
         dados.put(id, new Entrada(valor, dono, Instant.now()));
+        List<String> doDono = dados.entrySet().stream().filter(e -> e.getValue().dono() == dono)
+                .sorted(Comparator.comparing(e -> e.getValue().criado())).map(Map.Entry::getKey).toList();
+        doDono.subList(0, Math.max(0, doDono.size() - porUsuario)).forEach(dados::remove);
         return id;
     }
 

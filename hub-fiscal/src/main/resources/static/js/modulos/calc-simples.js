@@ -38,14 +38,14 @@
             ${comp.campo('Documento *', `<select name="tpDoc">${DOCS.map(([v, t]) => `<option value="${v}">${t}</option>`).join('')}</select>`)}
             ${comp.campo('Venda para órgão público', `<select name="tpEnteGov"><option value="">Não</option><option value="1">Sim – União</option><option value="2">Sim – Estado</option><option value="3">Sim – Distrito Federal</option><option value="4">Sim – Município</option></select>`)}
           </div>
-          <div class="grade g4" data-crt style="margin-top:12px">
+          <div class="grade g4 u-mt-12" data-crt>
             ${comp.campo('Regime tributário do emitente (CRT) *', `<select name="CRT"><option value="1">1 – Simples Nacional</option><option value="2">2 – Simples Nacional, com excesso de sublimite</option>
               <option value="3">3 – Regime normal</option><option value="4">4 – MEI</option></select>`)}
             ${comp.campo('Como a empresa recolhe o IBS e a CBS', `<select name="tpRegimeIBSCBS"><option value="">Não informar (segue o CRT)</option>
               <option value="1">Optou por recolher fora do Simples (regime regular)</option><option value="2">Pediu o Simples e a opção ainda está pendente</option></select>`,
               '“Fora do Simples” vale para CRT 1 ou 2: a nota leva só a receita, sem calcular IBS/CBS. “Opção pendente” vale para CRT 3: os valores ficam suspensos.')}
           </div>
-          <div class="grade g4" data-nfse hidden style="margin-top:12px">
+          <div class="grade g4 u-mt-12" data-nfse hidden>
             ${comp.campo('Situação do prestador no Simples *', `<select name="opSimpNac"><option value="3">Optante – ME ou EPP</option><option value="1">Não optante</option>
               <option value="2">MEI</option><option value="4">Opção pelo Simples pendente</option></select>`)}
             ${comp.campo('Como recolhe o IBS e a CBS', `<select name="regApIBSCBSSN"><option value="1">IBS e CBS dentro do Simples</option>
@@ -56,11 +56,11 @@
           </div>
         </div>
         <div class="card"><h3>Alíquotas efetivas do período (parcelas de CBS e IBS dentro do DAS, em %)</h3>
-          <div class="acoes" style="margin-bottom:10px">
+          <div class="acoes u-mb-10">
             <label class="check"><input type="checkbox" name="fatorR"> Fator r igual ou maior que 28% (atividades sujeitas ao fator r vão para o Anexo III)</label>
             <label class="check"><input type="checkbox" name="impedimentoSublimite"> Ultrapassou o sublimite estadual (IBS e ISS saem do Simples)</label>
           </div>
-          <div class="tabela-wrap" style="max-height:none"><table class="tab tab-aliq"><thead>
+          <div class="tabela-wrap u-maxh-none"><table class="tab tab-aliq"><thead>
             <tr><th rowspan="2">Anexo</th><th colspan="2">Alíquota normal</th><th colspan="2">Quando o ISS não é recolhido no DAS</th></tr>
             <tr><th>CBS (%)</th><th>IBS (%)</th><th>CBS (%)</th><th>IBS (%)</th></tr></thead><tbody>
             ${ANEXOS.map((a) => `<tr><td><strong>${a}</strong></td>
@@ -68,12 +68,12 @@
               <td>${COM_ISS.has(a) ? `<input name="a${a}_scbs" aria-label="Anexo ${a}: CBS quando o ISS não é recolhido no DAS (%)">` : '<span class="sutil">–</span>'}</td>
               <td>${COM_ISS.has(a) ? `<input name="a${a}_sibs" aria-label="Anexo ${a}: IBS quando o ISS não é recolhido no DAS (%)">` : '<span class="sutil">–</span>'}</td></tr>`).join('')}
           </tbody></table></div>
-          <p class="sutil" style="margin-top:8px">Preencha só os anexos das atividades da empresa, com todas as casas decimais da apuração do PGDAS-D.
+          <p class="sutil u-mt-8">Preencha só os anexos das atividades da empresa, com todas as casas decimais da apuração do PGDAS-D.
             Nos anexos III, IV e V informe também a linha usada quando o ISS é retido, isento, não incide ou é recolhido fora do Simples.</p>
         </div>
         <div class="card"><div class="card-cab"><h3>Itens</h3><button class="btn btn-sec btn-peq" data-add>+ Adicionar item</button></div>
           <div class="itens-lista" data-itens></div></div>
-        <div class="acoes" style="margin-bottom:16px"><button class="btn" data-calc>Calcular</button></div>
+        <div class="acoes u-mb-16"><button class="btn" data-calc>Calcular</button></div>
         <div data-res></div>`;
 
       const cards = el.querySelectorAll('.card');
@@ -173,7 +173,7 @@
             ${comp.campo('Base de cálculo (R$) *', '<input name="baseCalculo" placeholder="0,00">', 'Mercadorias: produtos + frete + seguro + outras despesas − descontos (sem o Imposto Seletivo). NFS-e: valor do serviço.')}
             <div data-so-crt>${comp.campo('Imposto Seletivo da nota (R$)', '<input name="valorImpostoSeletivo" value="0,00">')}</div>
           </div>
-          <div class="grade g4" data-so-nfse hidden style="margin-top:8px">
+          <div class="grade g4 u-mt-8" data-so-nfse hidden>
             ${comp.campo('Tributação do ISS', '<select name="tribISSQN"><option value="1">Tributável</option><option value="2">Imunidade</option><option value="3">Exportação de serviço</option><option value="4">Não incidência</option></select>')}
             ${comp.campo('Retenção do ISS', '<select name="tpRetISSQN"><option value="1">Não retido</option><option value="2">Retido pelo tomador</option><option value="3">Retido pelo intermediário</option></select>')}
             ${comp.campo('Benefício municipal do ISS', '<select name="tpBM"><option value="">Nenhum</option><option value="1">Isenção</option><option value="2">Redução da base em %</option><option value="3">Redução da base em R$</option><option value="4">Alíquota diferenciada</option></select>')}

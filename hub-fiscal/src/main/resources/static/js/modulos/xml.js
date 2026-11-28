@@ -19,9 +19,9 @@
           ${comp.campo('Tipo de documento', '<select name="tipo"><option value="nfe">Carregando...</option></select>')}
           ${comp.campo('O que validar', '<select name="subtipo"><option value="grupo">Grupo de tributação</option><option value="nota">Nota completa</option></select>')}
         </div>
-        <div data-up style="margin-top:12px"></div>
-        <div class="campo" style="margin-top:12px"><label>…ou cole o XML</label><textarea name="xml" rows="12" placeholder="&lt;infNFe ...&gt;"></textarea></div>
-        <div class="acoes" style="margin-top:12px"><button class="btn" data-ok>Validar</button></div></div>
+        <div class="u-mt-12" data-up></div>
+        <div class="campo u-mt-12"><label>…ou cole o XML</label><textarea name="xml" rows="12" placeholder="&lt;infNFe ...&gt;"></textarea></div>
+        <div class="acoes u-mt-12"><button class="btn" data-ok>Validar</button></div></div>
         <div data-res></div>`;
       const selTipo = el.querySelector('[name=tipo]');
       (async () => {

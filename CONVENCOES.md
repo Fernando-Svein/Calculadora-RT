@@ -33,7 +33,12 @@ Guia curto para manter o padrão do código. Vale para a `main` e para a branch 
 - Texto vindo de fora (resposta da calculadora, arquivo enviado, dado do usuário) sempre passa por `Hub.esc` antes de ir para o HTML.
 - Nada de nome cru da API na tela (`tpRegimeIBSCBS`, `pCBSSN`): use linguagem de contador e `Hub.rotulos`. CST, cClassTrib, NCM, NBS, CRT e CFOP podem aparecer, de preferência com o nome por extenso.
 - Campo de formulário: `comp.campo(rotulo, html)`; o rótulo é ligado ao campo automaticamente. Campo sem rótulo visível (ex.: dentro de tabela) leva `aria-label`.
-- Ao alterar arquivos em `static/`, aumente o `?v=` em `index.html` e `login.html`.
+- Sem atributo `style="..."`: a CSP não aceita estilo inline. Use classes do `app.css` ou as utilitárias de
+  `css/utilitarios.css` (`u-mt-12`, `u-flex-0-0-200`...). Ajuste feito por script (`el.style.width = ...`) é permitido.
+- Os endereços em `index.html` e `login.html` usam `?v=@hub.versao.recursos@`: o Maven troca pela data da compilação,
+  e o navegador baixa os arquivos novos a cada versão. Script novo entra no `index.html` com esse mesmo sufixo.
+- Peças usadas por mais de uma tela ficam fora de `modulos/` (`componentes.js`, `lotes.js`, `empresa-simulacao.js`).
+- Tabela, linha ou cabeçalho clicável também precisa funcionar pelo teclado (Tab + Enter): o `comp.tabela` já faz isso.
 
 ## Segurança
 
@@ -55,7 +60,10 @@ Guia curto para manter o padrão do código. Vale para a `main` e para a branch 
 
 ## Antes de enviar uma mudança
 
-1. `parar-hub.bat` → compilar → `iniciar-hub.bat`.
-2. `testar-hub.bat`: todos os testes passando. Resposta mudou de propósito? Conferir a diferença e aprovar com `-GravarReferencia`.
-3. Funcionalidade nova ganha teste em `testes/` (`.ps1` gravado em UTF-8 **com BOM**).
-4. Commit na `main`; depois `git merge main` na `ubuntu-server`.
+1. `cd hub-fiscal` e `mvnw test`: testes unitários (leitores de SPED/XML, CFOP, regras, fila, conferência oficial).
+   Não precisam das calculadoras e rodam também no GitHub Actions a cada push (`.github/workflows/ci.yml`).
+2. `parar-hub.bat` → compilar → `iniciar-hub.bat`.
+3. `testar-hub.bat`: todos os testes passando. Resposta mudou de propósito? Conferir a diferença e aprovar com `-GravarReferencia`.
+4. Funcionalidade nova ganha teste: regra ou leitor em `hub-fiscal/src/test` (JUnit); fluxo completo em `testes/`
+   (`.ps1` gravado em UTF-8 **com BOM**).
+5. Commit na `main`; depois `git merge main` na `ubuntu-server`. No servidor, `hub.sh testar` confere a classificação.

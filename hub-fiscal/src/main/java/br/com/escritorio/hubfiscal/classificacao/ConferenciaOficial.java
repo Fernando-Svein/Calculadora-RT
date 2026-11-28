@@ -12,6 +12,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import br.com.escritorio.hubfiscal.config.HubProperties;
+import br.com.escritorio.hubfiscal.infra.Andamento;
 import br.com.escritorio.hubfiscal.infra.Api;
 import br.com.escritorio.hubfiscal.infra.ApiReceitaClient;
 import br.com.escritorio.hubfiscal.infra.ApiResposta;
@@ -70,7 +71,7 @@ public class ConferenciaOficial {
     }
 
     /** Envia as combinações à calculadora (em paralelo, limitado a {@code hub.paralelismo}) com vigência em {@code data}. */
-    public Map<Combinacao, Resultado> conferir(Collection<Combinacao> combinacoes, LocalDate data) {
+    public Map<Combinacao, Resultado> conferir(Collection<Combinacao> combinacoes, LocalDate data, Andamento andamento) {
         // a operação tem um município e um modelo de documento: agrupa por eles e divide em blocos
         Map<Grupo, List<Combinacao>> porGrupo = new LinkedHashMap<>();
         for (Combinacao c : combinacoes) {
@@ -83,7 +84,8 @@ public class ConferenciaOficial {
             }
         }
         Map<Combinacao, Resultado> r = new HashMap<>();
-        Paralelo.mapear(blocos, props.paralelismo(), b -> conferirBloco(b, data)).forEach(r::putAll);
+        andamento.etapa("Conferindo as classificações na calculadora oficial", blocos.size());
+        Paralelo.mapear(blocos, props.paralelismo(), b -> conferirBloco(b, data), andamento).forEach(r::putAll);
         return r;
     }
 

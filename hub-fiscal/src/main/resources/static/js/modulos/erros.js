@@ -24,12 +24,12 @@
       el.innerHTML = comp.cabecalho('Códigos de erro das calculadoras',
         'Consulte um código específico ou carregue o catálogo completo de cada calculadora.') +
         `<div class="card"><div class="linha">
-          <div class="campo" style="flex:0 0 220px"><label>Código</label><input data-cod placeholder="Ex.: REG-011 ou VSN-027"></div>
+          <div class="campo u-flex-0-0-220"><label>Código</label><input data-cod placeholder="Ex.: REG-011 ou VSN-027"></div>
           <button class="btn" data-ok>Consultar</button>
           <span class="espaco"></span>
           <button class="btn btn-sec" data-cat="REG">Catálogo REG- (Regime Geral)</button>
           <button class="btn btn-sec" data-cat="VSN">Catálogo VSN- (Simples)</button>
-        </div><div data-um style="margin-top:12px"></div></div>
+        </div><div class="u-mt-12" data-um></div></div>
         <div class="card" data-res hidden></div>`;
       const inp = el.querySelector('[data-cod]');
       const um = el.querySelector('[data-um]');

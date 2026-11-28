@@ -18,7 +18,7 @@
       <div class="kpi"><small>IBS estadual devido</small><strong>${fmt.moeda(uf)}</strong></div>
       <div class="kpi"><small>IBS municipal devido</small><strong>${fmt.moeda(mun)}</strong></div>
       <div class="kpi destaque"><small>Total de tributos</small><strong>${fmt.moeda((cbs || 0) + (uf || 0) + (mun || 0))}</strong></div>
-    </div><h4 style="margin:10px 0 6px">Rateio por trecho</h4>`;
+    </div><h4 class="u-m-10-0-6">Rateio por trecho</h4>`;
   }
 
   Hub.registrar({
@@ -41,15 +41,15 @@
           ${comp.campo('CST *', '<input name="cst" value="000">')}
           ${comp.campo('Classificação tributária (cClassTrib) *', '<input name="cClassTrib" value="000002">')}
           ${comp.campo('Base de cálculo (tarifa) *', '<input name="baseCalculo" value="200,00">')}
-        </div><h4 style="margin-top:14px">Município de origem</h4><div data-orig></div></div>
+        </div><h4 class="u-mt-14">Município de origem</h4><div data-orig></div></div>
         <div class="card"><div class="card-cab"><h3>Trechos</h3><button class="btn btn-sec btn-peq" data-add>+ Trecho</button></div><div data-trechos class="itens-lista"></div></div>
-        <div class="acoes" style="margin-bottom:16px"><button class="btn" data-calc>Calcular</button></div><div data-res></div>`;
+        <div class="acoes u-mb-16"><button class="btn" data-calc>Calcular</button></div><div data-res></div>`;
       const orig = comp.seletorMunicipio(el.querySelector('[data-orig]'), { uf: 'SP', municipio: 3550308 });
       const lista = el.querySelector('[data-trechos]');
       const trechos = [];
       const addTrecho = () => {
         const b = Hub.el(`<div class="item-bloco"><div class="item-cab"><strong>Trecho ${lista.children.length + 1}</strong><span class="espaco"></span><button class="btn btn-perigo btn-peq" data-rm>Remover</button></div>
-          <div class="grade g3"><div data-mun style="grid-column: span 2"></div>${comp.campo('Extensão (km) *', '<input name="extensao" value="10">')}</div></div>`);
+          <div class="grade g3"><div class="u-gc-span-2" data-mun></div>${comp.campo('Extensão (km) *', '<input name="extensao" value="10">')}</div></div>`);
         lista.appendChild(b);
         const sel = comp.seletorMunicipio(b.querySelector('[data-mun]'), { uf: 'SP', municipio: 3550308 });
         const t = { b, sel };

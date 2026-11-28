@@ -4,9 +4,12 @@
 *.ps1   text eol=crlf
 mvnw    text eol=lf
 *.sh    text eol=lf
+*.py    text eol=lf
 *.jar   binary
 *.xlsx  binary
 
 # dados e respostas de referência dos testes: bytes exatos (sem conversão de fim de linha)
 testes/dados/** -text
 testes/referencia/** -text
+scripts/linux/testes/*.xml -text
+scripts/linux/testes/*.txt -text

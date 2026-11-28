@@ -121,7 +121,8 @@ Add-Resultado $Suite 'vendas por NCM: aba na planilha com o total geral' ($xmlV 
 
 # ---------------------------------------------------------------- classificação conferida na calculadora oficial
 # um item por situação; os códigos de erro são os que a calculadora oficial devolve (REG-011, 006, 005, 029)
-$r = Send-Arquivos $adm '/hub/lote/classificacao?data=2026-03-10' @((Join-Path $Dados 'nfe-classificacao-conferencia.xml'))
+# mesmo arquivo do teste de Linux (scripts/linux/testar-classificacao.sh), que vai também para a branch ubuntu-server
+$r = Send-Arquivos $adm '/hub/lote/classificacao?data=2026-03-10' @((Join-Path $Raiz 'scripts\linux\testes\nfe-classificacao-conferencia.xml'))
 $cf = Get-Json $r; $li = @{}; $cf.linhas | ForEach-Object { $li[$_.codigo] = $_ }
 foreach ($caso in @(
         @('C1', 'CONFERIDO', 'Aceita', 'cClassTrib correto'),

@@ -193,7 +193,7 @@ public class AuditoriaService {
         // (1) cálculo com a base informada no XML
         ApiResposta r1 = api.postJson(Api.RG, EndpointsReceita.RG_CALCULO_OBSERVABILIDADE, operacao(d, auditaveis, ano, true));
         if (!r1.ok()) {
-            String msg = mensagemErro(r1);
+            String msg = api.mensagemErro(r1);
             for (LinhaAuditoria l : porItem.values()) {
                 l.status = StatusAuditoria.ERRO_CLASSIFICACAO;
                 l.mensagens.add("Calculadora rejeitou o documento: " + msg);
@@ -343,25 +343,6 @@ public class AuditoriaService {
         }
         op.put("itens", lista);
         return op;
-    }
-
-    /** Texto do erro devolvido pela calculadora (ProblemDetail com listas {@code erros}/{@code errors}). */
-    private String mensagemErro(ApiResposta r) {
-        Object j = api.json(r);
-        StringBuilder sb = new StringBuilder();
-        String t = J.str(j, "title");
-        String det = J.str(j, "detail");
-        sb.append(t == null ? "HTTP " + r.status() : t);
-        if (det != null) {
-            sb.append(" – ").append(det);
-        }
-        for (Object e : J.list(j, "erros")) {
-            sb.append(" | ").append(J.str(e, "code")).append(": ").append(J.str(e, "detail"));
-        }
-        for (Object e : J.list(j, "errors")) {
-            sb.append(" | ").append(J.str(e, "detail"));
-        }
-        return sb.toString();
     }
 
     private static LinhaAuditoria novaLinha(DocumentoFiscal d, ItemFiscal it) {

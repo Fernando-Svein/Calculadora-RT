@@ -90,6 +90,25 @@ public class ApiReceitaClient {
         return chamar(api, "POST", caminho, bytes, "application/json");
     }
 
+    /** Texto do erro devolvido pela calculadora (ProblemDetail com listas {@code erros}/{@code errors}). */
+    public String mensagemErro(ApiResposta r) {
+        Object j = json(r);
+        StringBuilder sb = new StringBuilder();
+        String t = J.str(j, "title");
+        String det = J.str(j, "detail");
+        sb.append(t == null ? "HTTP " + r.status() : t);
+        if (det != null) {
+            sb.append(" – ").append(det);
+        }
+        for (Object e : J.list(j, "erros")) {
+            sb.append(" | ").append(J.str(e, "code")).append(": ").append(J.str(e, "detail"));
+        }
+        for (Object e : J.list(j, "errors")) {
+            sb.append(" | ").append(J.str(e, "detail"));
+        }
+        return sb.toString();
+    }
+
     /** Converte o corpo JSON em Map/List/valores simples (null se vazio ou inválido). */
     public Object json(ApiResposta resposta) {
         if (resposta.corpo() == null || resposta.corpo().length == 0) {

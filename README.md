@@ -42,10 +42,14 @@ Todos os comandos: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`
 | `atualizar` | Força a atualização das calculadoras: git pull, banco novo, compilação e reinício |
 | `atualizar-hub` | Baixa a versão nova do Hub Fiscal desta branch, recompila e reinicia só o hub |
 | `testar` | Testa a classificação de cClassTrib numa cópia isolada do hub (porta 8091), conferindo na calculadora oficial. Não precisa de sudo |
+| `backup` | Copia `dados/` para `backups/` na hora (o automático roda todo dia às 02:30 e guarda as 14 últimas cópias) |
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs/atualizacao.log`.
 
-**Backup:** inclua a pasta `/opt/hub-fiscal/dados/` (usuários, senhas, empresas e logo). O resto se recria a partir dos repositórios.
+**Backup:** a pasta `/opt/hub-fiscal/dados/` (usuários, senhas, empresas e logo) é copiada todo dia às 02:30 para
+`/opt/hub-fiscal/backups/`; leve essa pasta para fora da VM de vez em quando. O resto se recria a partir dos repositórios.
+Os logs giram todo dia (30 dias, compactados) e o hub roda com até 2 GB de memória; lotes grandes esperam numa fila
+(2 por vez), e a tela mostra o andamento.
 Se perder o acesso de todos os administradores: `hub.sh parar`, renomeie esse arquivo, `hub.sh iniciar` e rode `hub.sh criar-admin`.
 
 ## Acesso (login e senha)

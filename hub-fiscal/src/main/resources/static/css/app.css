@@ -427,6 +427,10 @@ table.tab td { padding: 12px 14px; border-bottom: 1px solid #f0f0f0; vertical-al
 table.tab tbody tr:last-child td { border-bottom: 0; }
 table.tab tbody tr:hover:not(.detalhe) td { background: var(--superficie-2); }
 table.tab tr.clicavel { cursor: pointer; }
+/* foco pelo teclado (Tab) em cabeçalhos que ordenam e linhas que abrem detalhe */
+table.tab th.ord:focus-visible, table.tab tr.clicavel:focus-visible { outline: 2px solid var(--primaria); outline-offset: -2px; }
+table.tab th[aria-sort="ascending"]::after { content: " ▲"; font-size: 10px; }
+table.tab th[aria-sort="descending"]::after { content: " ▼"; font-size: 10px; }
 table.tab td.num, table.tab th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 table.tab td code { white-space: nowrap; color: var(--primaria-2); font-weight: 600; }
 table.tab tr.detalhe td { background: var(--superficie-2) !important; padding: 16px 18px 18px; border-bottom: 1px solid var(--borda); max-width: none; box-shadow: inset 3px 0 0 var(--primaria); }

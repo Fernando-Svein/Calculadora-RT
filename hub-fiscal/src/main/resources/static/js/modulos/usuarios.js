@@ -41,9 +41,9 @@
           ${lista.filter((f) => f.grupo === g).map((f) => `<label class="perm-item"><input type="checkbox" name="perm" value="${esc(f.id)}"
             data-g="${esc(g)}" ${marcadas.has(f.id) ? 'checked' : ''}>${Hub.iconeRota(f.id)}<span>${esc(f.titulo)}</span></label>`).join('')}
         </div>`).join('')}</div>
-      <p class="sutil" style="margin:8px 0 0;font-size:12px">Início, Situação do sistema e Guia rápido ficam sempre disponíveis.</p>
+      <p class="sutil u-m-8-0-0 u-fs-12">Início, Situação do sistema e Guia rápido ficam sempre disponíveis.</p>
     </fieldset>
-    <div class="info-caixa" data-perm-admin style="margin:0">Administradores acessam todas as ferramentas e gerenciam usuários.</div>`;
+    <div class="info-caixa u-m-0" data-perm-admin>Administradores acessam todas as ferramentas e gerenciam usuários.</div>`;
   }
 
   function ligarPermissoes(f) {
@@ -90,7 +90,7 @@
           <div class="campo"><label>Perfil</label><select name="perfil">
             <option value="USUARIO" ${u && u.perfil === 'USUARIO' ? 'selected' : ''}>Usuário – usa as ferramentas liberadas</option>
             <option value="ADMIN" ${u && u.perfil === 'ADMIN' ? 'selected' : ''}>Administrador – tudo, e gerencia usuários</option></select></div>
-          ${novo ? '' : `<div class="campo"><label>Situação</label><label class="check" style="height:40px"><input type="checkbox" name="ativo" ${u.ativo ? 'checked' : ''}> Acesso liberado</label></div>`}
+          ${novo ? '' : `<div class="campo"><label>Situação</label><label class="check u-h-40"><input type="checkbox" name="ativo" ${u.ativo ? 'checked' : ''}> Acesso liberado</label></div>`}
         </div>
         ${secaoPermissoes(lista, marcadas)}
         <div data-erro></div>
@@ -139,7 +139,7 @@
         const eu = Hub.usuario.id;
         const totalFerramentas = cat.length;
         const nomesFerramentas = (ids) => (ids.length ? cat.filter((f) => ids.includes(f.id)).map((f) => f.titulo).join('\n') : 'Nenhuma ferramenta');
-        lista.innerHTML = `<div class="tabela-wrap" style="max-height:none"><table class="tab tab-usuarios"><thead><tr>
+        lista.innerHTML = `<div class="tabela-wrap u-maxh-none"><table class="tab tab-usuarios"><thead><tr>
             <th>Nome</th><th class="col-sec">Usuário</th><th>Perfil</th><th class="col-sec">Acessos</th><th>Situação</th><th class="col-sec">Último acesso</th><th></th></tr></thead><tbody>
           ${r.data.map((u) => `<tr data-id="${u.id}">
             <td><strong>${esc(u.nome)}</strong>${u.id === eu ? ' <span class="etq etq-azul">você</span>' : ''}</td>

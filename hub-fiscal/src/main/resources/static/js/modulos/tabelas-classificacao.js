@@ -17,7 +17,7 @@
       el.innerHTML = comp.cabecalho('Tabela cClassTrib e CST',
         'Tabelas oficiais da calculadora, sempre pela vigência da data escolhida. Clique numa classificação para ver detalhes, documentos admitidos e o anexo de NCM/NBS.') +
         `<div class="card"><div class="linha">
-          <div class="campo" style="flex:0 0 190px"><label>Data de referência</label><input type="date" data-data value="${Hub.hoje()}"></div>
+          <div class="campo u-flex-0-0-190"><label>Data de referência</label><input type="date" data-data value="${Hub.hoje()}"></div>
           <span class="sutil">As tabelas são recarregadas ao mudar a data.</span></div></div>
         <div class="card" data-abas></div>`;
       const inpData = el.querySelector('[data-data]');
@@ -48,8 +48,8 @@
     const docs = new Map();
     lista.forEach((c) => (c.tiposDfeClassificacao || []).forEach((t) => docs.set(t.tipo, t.sigla)));
     const extras = Hub.el(`<span class="acoes">
-      <select data-f-cst style="width:auto" aria-label="Filtrar por CST"><option value="">Todos os CST</option>${csts.map((c) => `<option>${c}</option>`).join('')}</select>
-      <select data-f-doc style="width:auto" aria-label="Filtrar por documento fiscal"><option value="">Todos os documentos</option>${[...docs].sort((a, b) => a[0] - b[0]).map(([t, s]) => `<option value="${t}">${esc(s)} (${t})</option>`).join('')}</select>
+      <select class="u-w-auto" data-f-cst aria-label="Filtrar por CST"><option value="">Todos os CST</option>${csts.map((c) => `<option>${c}</option>`).join('')}</select>
+      <select class="u-w-auto" data-f-doc aria-label="Filtrar por documento fiscal"><option value="">Todos os documentos</option>${[...docs].sort((a, b) => a[0] - b[0]).map(([t, s]) => `<option value="${t}">${esc(s)} (${t})</option>`).join('')}</select>
       <label class="check"><input type="checkbox" data-f-red> Só com redução</label>
     </span>`);
     const tab = comp.tabela(d, {
@@ -117,10 +117,10 @@
       <div class="linha">
         <div class="campo"><label>Fornecedor</label><select data-forn><option value="">Qualquer</option>${opcoes}</select></div>
         <div class="campo"><label>Adquirente</label><select data-adq><option value="">Qualquer</option>${opcoes}</select></div>
-        <div class="campo" style="flex:0 0 160px"><label>Documento</label><select data-dfe><option value="">Todos</option>
+        <div class="campo u-flex-0-0-160"><label>Documento</label><select data-dfe><option value="">Todos</option>
           <option>NFE</option><option>NFCE</option><option>NFSE</option><option>CTE</option><option>CTEOS</option><option>BPE</option><option>NF3E</option><option>NFCOM</option></select></div>
         <button class="btn" data-filtrar>Filtrar</button>
-      </div><div data-res style="margin-top:14px"></div>`;
+      </div><div class="u-mt-14" data-res></div>`;
     d.querySelector('[data-filtrar]').onclick = async () => {
       const res = d.querySelector('[data-res]');
       const q = new URLSearchParams({ data });
@@ -159,7 +159,7 @@
         { titulo: 'Classificação', campo: 'descricaoClassificacaoTributaria', largura: 50 },
         { titulo: 'Base legal', campo: 'textoCurto' },
         { titulo: 'Dispositivo', campo: 'texto', largura: 40 },
-        { titulo: 'Referência normativa', render: (l) => `<details><summary>ver</summary><div style="white-space:pre-wrap;max-width:520px">${esc(String(l.referenciaNormativa || '').replace(/\\n/g, '\n'))}</div></details>`, exportar: (l) => String(l.referenciaNormativa || '').replace(/\\n/g, '\n'), largura: 80 },
+        { titulo: 'Referência normativa', render: (l) => `<details><summary>ver</summary><div class="u-ws-pre-wrap u-maxw-520">${esc(String(l.referenciaNormativa || '').replace(/\\n/g, '\n'))}</div></details>`, exportar: (l) => String(l.referenciaNormativa || '').replace(/\\n/g, '\n'), largura: 80 },
       ],
       linhas: r.data,
       porPagina: 200,

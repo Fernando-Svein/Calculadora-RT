@@ -38,6 +38,10 @@ hub:
   paralelismo: 8
   # Por quanto tempo (minutos) um resultado de processamento fica disponível para download
   retencao-resultados-minutos: 240
+  # Resultados guardados por usuário (na memória do hub): ao passar disso, o mais antigo é descartado
+  resultados-por-usuario: 5
+  # Processamentos em lote ao mesmo tempo (cada um lê os arquivos inteiros na memória); os demais esperam na fila
+  lotes-simultaneos: 2
   # Usuários e senhas do hub (senhas com BCrypt). Faça backup deste arquivo.
   banco-usuarios: ../dados/hub-usuarios.db
   # Empresas atendidas e suas particularidades (regime, município, alíquotas do Simples...). Cadastradas

@@ -405,7 +405,7 @@ window.Hub = (() => {
       return `<div class="erro-caixa"><strong>${esc(titulo || 'Não foi possível concluir')}</strong>
         <br>A calculadora oficial recusou os dados sem informar o motivo.
         ${dica ? `<br><strong>Causa provável:</strong> ${dica}` : '<br>Confira a combinação de documento, regime, data e classificação informada.'}
-        <div class="sutil" style="margin-top:6px">HTTP ${r.status}</div></div>`;
+        <div class="sutil u-mt-6">HTTP ${r.status}</div></div>`;
     }
     let html = `<div class="erro-caixa"><strong>${esc(titulo || (d && d.title) || 'Não foi possível concluir')}</strong>`;
     if (d && typeof d === 'object') {
@@ -427,7 +427,7 @@ window.Hub = (() => {
     } else if (d) {
       html += `<br>${esc(String(d).substring(0, 800))}`;
     }
-    if (r && r.status) html += `<div class="sutil" style="margin-top:6px">HTTP ${r.status}</div>`;
+    if (r && r.status) html += `<div class="sutil u-mt-6">HTTP ${r.status}</div>`;
     return html + '</div>';
   }
 
@@ -507,7 +507,7 @@ window.Hub = (() => {
 
   function trocarSenha() {
     const c = modal(`<h2>Trocar senha</h2>
-      <form data-f class="grade" style="gap:12px;max-width:380px">
+      <form data-f class="grade u-gap-12 u-maxw-380">
         <div class="campo"><label>Senha atual</label><input type="password" name="atual" autocomplete="current-password" required></div>
         <div class="campo"><label>Nova senha</label><input type="password" name="nova" autocomplete="new-password" required>
           <span class="ajuda">Mínimo de 8 caracteres, com letras e números.</span></div>

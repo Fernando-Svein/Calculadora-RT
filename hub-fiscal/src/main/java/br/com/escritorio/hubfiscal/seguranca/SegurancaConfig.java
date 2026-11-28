@@ -50,10 +50,11 @@ public class SegurancaConfig {
             "/auth/csrf", "/auth/estado", "/auth/login", "/auth/primeiro-acesso" };
 
     /**
-     * Content-Security-Policy. style-src aceita 'unsafe-inline' porque as telas usam atributos style;
-     * scripts e conexões ficam restritos ao próprio hub.
+     * Content-Security-Policy: scripts, estilos e conexões só do próprio hub. As telas não usam atributos style
+     * (usam as classes de css/utilitarios.css); estilos ajustados por script (ex.: largura da barra de progresso)
+     * passam pelo CSSOM, que a política permite.
      */
-    static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
+    static final String CSP = "default-src 'self'; script-src 'self'; style-src 'self'; "
             + "img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; object-src 'none'; "
             + "base-uri 'self'; form-action 'self'; frame-ancestors 'self'";
 

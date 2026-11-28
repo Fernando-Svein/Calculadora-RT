@@ -127,11 +127,19 @@ public class UsuarioRepositorio {
     }
 
     public long contar() {
-        return consultar("SELECT * FROM usuario").size();
+        return contarLinhas("SELECT COUNT(*) FROM usuario");
     }
 
     public long contarAdminsAtivos() {
-        return consultar("SELECT * FROM usuario WHERE perfil = 'ADMIN' AND ativo = 1").size();
+        return contarLinhas("SELECT COUNT(*) FROM usuario WHERE perfil = 'ADMIN' AND ativo = 1");
+    }
+
+    private long contarLinhas(String sql) {
+        try (Connection c = conectar(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            return rs.next() ? rs.getLong(1) : 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Erro no banco de usuários: " + e.getMessage(), e);
+        }
     }
 
     public List<Usuario> listar() {

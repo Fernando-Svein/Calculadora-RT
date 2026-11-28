@@ -18,9 +18,9 @@
         'Consulta as alíquotas cadastradas na base oficial. Hoje a base traz as alíquotas do ano de teste (2026); para 2027 em diante a consulta retorna "não encontrado" e as alíquotas devem ser informadas nos simuladores.') +
         `<div class="card"><div class="grade g3">
           <div class="campo"><label>Data</label><input type="date" data-data value="${Hub.hoje()}"></div>
-          <div data-loc style="grid-column: span 2"></div>
+          <div class="u-gc-span-2" data-loc></div>
         </div>
-        <div class="acoes" style="margin-top:12px"><button class="btn" data-consultar>Consultar</button></div></div>
+        <div class="acoes u-mt-12"><button class="btn" data-consultar>Consultar</button></div></div>
         <div data-res></div>`;
       const loc = comp.seletorMunicipio(el.querySelector('[data-loc]'), { uf: 'SP', obrigatorio: false });
       const res = el.querySelector('[data-res]');

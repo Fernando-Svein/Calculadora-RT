@@ -1,0 +1,30 @@
+# Compila o hub e roda os testes unitários (src/test) a cada push e pull request.
+# Os testes que precisam das calculadoras da Receita no ar (testes\ no Windows, hub.sh testar no Linux) rodam
+# na máquina do hub; aqui fica o que não depende delas.
+name: CI
+
+on:
+  push:
+    branches: [main, ubuntu-server]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hub:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Compilar e testar
+        working-directory: hub-fiscal
+        run: sh ./mvnw --batch-mode --no-transfer-progress verify
+      - name: Sintaxe dos scripts de Linux
+        run: |
+          for f in scripts/linux/*.sh; do bash -n "$f"; done
+          python3 -m py_compile scripts/linux/testes/teste-classificacao.py

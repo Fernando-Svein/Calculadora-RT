@@ -23,3 +23,6 @@ target/
 *.iml
 Thumbs.db
 desktop.ini
+
+# Backups diários de dados/ (scripts/linux/hub.sh backup)
+/backups/

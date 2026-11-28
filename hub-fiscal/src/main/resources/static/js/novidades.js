@@ -122,7 +122,7 @@
       <ul>${DECISOES.map((d) => `<li>${d}</li>`).join('')}</ul>
       <h4>Arquivos criados</h4>${lista(ARQUIVOS.criados)}
       <h4>Arquivos alterados</h4>${lista(ARQUIVOS.alterados)}
-      <p class="sutil" style="margin:12px 0 0">Caminhos Java abreviados: <code>...</code> = <code>src/main/java/br/com/escritorio/hubfiscal</code>; <code>static</code> = <code>hub-fiscal/src/main/resources/static</code>.</p>
+      <p class="sutil u-m-12-0-0">Caminhos Java abreviados: <code>...</code> = <code>src/main/java/br/com/escritorio/hubfiscal</code>; <code>static</code> = <code>hub-fiscal/src/main/resources/static</code>.</p>
     </details>`;
   }
 

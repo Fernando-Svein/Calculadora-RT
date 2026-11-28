@@ -48,14 +48,14 @@
             ${comp.campo('Documento', `<select name="tpDoc"><option value="">Não informar</option>${DOCS.map(([v, t]) => `<option value="${v}" ${v === '55' ? 'selected' : ''}>${t}</option>`).join('')}</select>`)}
             ${comp.campo('Modo de cálculo', `<select name="modo"><option value="obs">Calcular todos e mostrar o erro de cada item</option><option value="estrito">Parar no primeiro item com erro</option></select>`)}
           </div>
-          <div data-loc style="margin-top:12px"></div>
-          <details style="margin-top:8px"><summary>Venda para órgão público (compra governamental)</summary>
-            <div class="grade g4" style="margin-top:8px">
+          <div class="u-mt-12" data-loc></div>
+          <details class="u-mt-8"><summary>Venda para órgão público (compra governamental)</summary>
+            <div class="grade g4 u-mt-8">
               ${comp.campo('Órgão comprador', `<select name="tpEnteGov"><option value="">Não é compra governamental</option>
                 <option value="1">1 – União</option><option value="2">2 – Estado</option><option value="3">3 – Distrito Federal</option><option value="4">4 – Município</option></select>`)}
               ${comp.campo('Momento do pagamento', '<select name="tpOperGov"><option value="">Não informar</option><option value="1">Fornecimento com pagamento posterior</option><option value="2">Recebimento do pagamento com fornecimento já realizado</option><option value="3">Fornecimento com pagamento já realizado</option><option value="4">Recebimento do pagamento com fornecimento posterior</option><option value="5">Fornecimento e pagamento ao mesmo tempo</option></select>')}
             </div></details>
-          <fieldset data-aliq style="margin-top:12px"><legend>Alíquotas nominais (obrigatórias a partir de 2027)</legend>
+          <fieldset class="u-mt-12" data-aliq><legend>Alíquotas nominais (obrigatórias a partir de 2027)</legend>
             <div class="grade g4">
               ${comp.campo('CBS %', '<input name="aCbs" value="8,8" data-num>')}
               ${comp.campo('IBS estadual %', '<input name="aIbsUf" value="0,05" data-num>')}
@@ -67,7 +67,7 @@
         <div class="card"><div class="card-cab"><h3>Itens</h3><button class="btn btn-sec btn-peq" data-add>+ Adicionar item</button></div>
           <div data-importado></div>
           <div class="itens-lista" data-itens></div></div>
-        <div class="acoes" style="margin-bottom:16px"><button class="btn" data-calc>Calcular</button>
+        <div class="acoes u-mb-16"><button class="btn" data-calc>Calcular</button>
           <button class="btn btn-sec" data-limpar>Limpar</button></div>
         <div data-res></div>`;
 
@@ -131,14 +131,14 @@
             ${comp.campo('Quantidade', '<input name="quantidade" data-num>')}
             ${comp.campo('Unidade', '<input name="unidade" placeholder="UN, KG, LT...">')}
           </div>
-          <div class="acoes" style="margin:6px 0"><button class="btn-link" data-sug>Sugerir cClassTrib pelo NCM/NBS</button><span class="sutil" data-sug-info></span></div>
-          <div class="grade g4" style="margin-top:4px">
+          <div class="acoes u-m-6-0"><button class="btn-link" data-sug>Sugerir cClassTrib pelo NCM/NBS</button><span class="sutil" data-sug-info></span></div>
+          <div class="grade g4 u-mt-4">
             ${comp.campo('Base de cálculo', '<select name="modoBase"><option value="base">Informar a base</option><option value="comp">Calcular pelos componentes (NF-e)</option></select>')}
             ${comp.campo('Base de cálculo (R$)', '<input name="baseCalculo" data-num placeholder="0,00">')}
           </div>
-          <div class="grade g6" data-comp hidden style="margin-top:8px">${COMPONENTES.map(([k, t]) => comp.campo(t, `<input name="c_${k}" data-num placeholder="0,00">`)).join('')}</div>
-          <details style="margin-top:8px"><summary>Imposto Seletivo do item</summary>
-            <div class="grade g6" style="margin-top:8px">
+          <div class="grade g6 u-mt-8" data-comp hidden>${COMPONENTES.map(([k, t]) => comp.campo(t, `<input name="c_${k}" data-num placeholder="0,00">`)).join('')}</div>
+          <details class="u-mt-8"><summary>Imposto Seletivo do item</summary>
+            <div class="grade g6 u-mt-8">
               ${comp.campo('CST do Imposto Seletivo', '<input name="is_cst" placeholder="000">')}
               ${comp.campo('Classificação do Imposto Seletivo', '<input name="is_cClassTrib" placeholder="000001">')}
               ${comp.campo('Base do Imposto Seletivo (R$)', '<input name="is_base" data-num>')}
@@ -148,8 +148,8 @@
               ${comp.campo('Alíquota sobre o valor (%) – a partir de 2027', '<input name="is_adv" data-num>')}
               ${comp.campo('Valor fixo por unidade (R$) – a partir de 2027', '<input name="is_adr" data-num>')}
             </div></details>
-          <details data-tr style="margin-top:6px"><summary>Tributação regular (suspensão, diferimento, ZFM/ALC)</summary>
-            <p class="sutil" style="margin:8px 0">Obrigatória quando a classificação suspende ou desonera a operação (ex.: CST 550, cClassTrib 200022/200024):
+          <details class="u-mt-6" data-tr><summary>Tributação regular (suspensão, diferimento, ZFM/ALC)</summary>
+            <p class="sutil u-m-8-0">Obrigatória quando a classificação suspende ou desonera a operação (ex.: CST 550, cClassTrib 200022/200024):
               informe o tratamento que valeria sem o benefício. A calculadora mostra o tributo que deixou de ser cobrado (coluna "Diferido / suspenso").</p>
             <div class="grade g6">
               ${comp.campo('CST regular', '<input name="tr_cst" placeholder="000">')}
@@ -332,7 +332,7 @@
         });
         const estados = { CALCULADO: 'etq-verde', CALCULO_SIMULADO: 'etq-azul', INCONSISTENCIA_ENTRADA: 'etq-vermelho', NAO_IMPLEMENTADO: 'etq-amarelo', FALHA_TECNICA: 'etq-vermelho' };
         res.innerHTML = `<div class="card"><div class="card-cab"><h2>Resultado</h2><div class="acoes">
-            <select data-xml-tipo style="width:auto" aria-label="Tipo de documento do XML"><option value="nfe">XML NF-e</option><option value="nfce">XML NFC-e</option>
+            <select class="u-w-auto" data-xml-tipo aria-label="Tipo de documento do XML"><option value="nfe">XML NF-e</option><option value="nfce">XML NFC-e</option>
               <option value="cte">XML CT-e</option><option value="bpe">XML BP-e</option><option value="nf3e">XML NF3e</option></select>
             <button class="btn btn-sec btn-peq" data-xml>Gerar XML do grupo IBS/CBS</button>
             ${Hub.relatorio.botoes()}
@@ -417,7 +417,7 @@
         const xml = r2.texto;
         const c = Hub.modal(`<h2>XML do grupo de tributação (${esc(tipo.toUpperCase())})</h2>
           ${Hub.cenarioCbs.ativo() ? '<p class="sutil">O XML usa sempre a alíquota oficial da calculadora: o cenário de CBS vale só para simulação.</p>' : ''}
-          <div class="acoes" style="margin-bottom:8px"><button class="btn btn-sec btn-peq" data-val>Validar no leiaute oficial</button>
+          <div class="acoes u-mb-8"><button class="btn btn-sec btn-peq" data-val>Validar no leiaute oficial</button>
           <button class="btn btn-sec btn-peq" data-copy>Copiar</button><button class="btn btn-sec btn-peq" data-down>Baixar</button><span data-st></span></div>
           <pre class="json">${esc(xml)}</pre>`);
         c.querySelector('[data-copy]').onclick = () => { navigator.clipboard.writeText(xml); Hub.toast('Copiado.'); };
@@ -462,7 +462,7 @@
         // vários documentos: cada um é uma operação (data e local próprios); o usuário escolhe qual simular
         const c = Hub.modal(`<h2>Escolha o documento para simular</h2>
           <p class="sutil">Foram lidos ${ops.length} documentos. Cada um tem data, local e itens próprios: escolha qual carregar no simulador.</p>
-          <div class="tabela-wrap" style="max-height:60vh"><table class="tab"><thead><tr><th>Documento</th><th>Emissão</th><th>Emitente</th>
+          <div class="tabela-wrap u-maxh-60vh"><table class="tab"><thead><tr><th>Documento</th><th>Emissão</th><th>Emitente</th>
             <th class="num">Itens</th><th class="num">Sugeridos</th><th></th></tr></thead><tbody>
           ${ops.map((o, i) => `<tr><td>${esc(o.origem)}${o.numero ? ' nº ' + esc(o.numero) : ''}<div class="sutil">${esc(o.arquivo)}</div></td>
             <td>${esc(fmt.data(o.dataHora))}</td><td>${esc(o.emitenteNome || '')}<div class="sutil">${esc(fmt.cnpj(o.emitenteCnpj))}</div></td>

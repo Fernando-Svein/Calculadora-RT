@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe"><NFe><infNFe Id="NFe35260312345678000199550010000000071000000071" versao="4.00">
+<ide><mod>55</mod><serie>1</serie><nNF>7</nNF><dhEmi>2026-03-10T10:00:00-03:00</dhEmi><tpNF>1</tpNF><cMunFG>3550308</cMunFG></ide>
+<emit><CNPJ>12345678000199</CNPJ><xNome>EMPRESA TESTE LTDA</xNome><enderEmit><cMun>3550308</cMun><UF>SP</UF></enderEmit><CRT>3</CRT></emit>
+<det nItem="1"><prod><cProd>C1</cProd><xProd>ARROZ CESTA BASICA CORRETO</xProd><NCM>10063021</NCM><CFOP>5102</CFOP><uCom>KG</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>200</CST><cClassTrib>200003</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="2"><prod><cProd>C2</cProd><xProd>PARAFUSO COM CESTA BASICA</xProd><NCM>73181500</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>200</CST><cClassTrib>200003</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="3"><prod><cProd>C3</cProd><xProd>ARROZ COM CST ERRADO</xProd><NCM>10063021</NCM><CFOP>5102</CFOP><uCom>KG</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>200003</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="4"><prod><cProd>C4</cProd><xProd>PARAFUSO CCLASSTRIB INEXISTENTE</xProd><NCM>73181500</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>999999</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="5"><prod><cProd>C5</cProd><xProd>PARAFUSO CCLASSTRIB SO NFSE</xProd><NCM>73181500</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>000006</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="6"><prod><cProd>C6</cProd><xProd>ARROZ SEM O BENEFICIO</xProd><NCM>10063021</NCM><CFOP>5102</CFOP><uCom>KG</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+<det nItem="7"><prod><cProd>C7</cProd><xProd>PARAFUSO INTEGRAL CORRETO</xProd><NCM>73181500</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10</qCom><vProd>100.00</vProd></prod>
+<imposto><IBSCBS><CST>000</CST><cClassTrib>000001</cClassTrib><gIBSCBS><vBC>100.00</vBC></gIBSCBS></IBSCBS></imposto></det>
+</infNFe></NFe></nfeProc>

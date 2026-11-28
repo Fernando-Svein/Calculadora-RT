@@ -25,16 +25,16 @@
       const bloco = (titulo, x, cor) => {
         const det = x.online && x.detalhes && typeof x.detalhes === 'object' ? x.detalhes : null;
         return `<div class="card servico"><div class="servico-cab"><span class="tile tile-${cor}">${Hub.icone('calculadora')}</span>
-            <div style="flex:1;min-width:0"><h3>${titulo}</h3><span class="sutil">${esc(x.url)}</span></div>
+            <div class="u-flex-1 u-minw-0"><h3>${titulo}</h3><span class="sutil">${esc(x.url)}</span></div>
             ${x.online ? '<span class="etq st-OK">Em funcionamento</span>' : '<span class="etq st-DIVERGENTE">Fora do ar</span>'}</div>
           ${det ? `<dl class="dl">${Object.entries(det).map(([k, v]) => `<dt>${esc(ROTULOS[k] || k)}</dt><dd>${esc(/data/i.test(k) ? fmt.data(v) : v)}</dd>`).join('')}</dl>`
-            : `<div class="erro-caixa" style="margin:0">${esc(typeof x.detalhes === 'string' ? x.detalhes : JSON.stringify(x.detalhes))}
+            : `<div class="erro-caixa u-m-0">${esc(typeof x.detalhes === 'string' ? x.detalhes : JSON.stringify(x.detalhes))}
               <br>${s.servidorLinux ? 'No servidor, rode <code>sudo bash /opt/hub-fiscal/scripts/linux/hub.sh iniciar</code>.' : 'Inicie as calculadoras com o arquivo <code>iniciar-hub.bat</code> na pasta do projeto.'}</div>`}</div>`;
       };
       const b = s.bancoOficial || {};
       res.innerHTML = `<div class="grade g2">${bloco('Calculadora – Regime Normal (Regime Regular)', s.regimeGeral, 'indigo')}${bloco('Calculadora – Simples Nacional', s.simplesNacional, 'verde')}</div>
-        <div class="card servico" style="margin-top:18px"><div class="servico-cab"><span class="tile tile-azul">${Hub.icone('banco')}</span>
-          <div style="flex:1"><h3>Banco de dados oficial</h3><span class="sutil">SQLite somente leitura</span></div>
+        <div class="card servico u-mt-18"><div class="servico-cab"><span class="tile tile-azul">${Hub.icone('banco')}</span>
+          <div class="u-flex-1"><h3>Banco de dados oficial</h3><span class="sutil">SQLite somente leitura</span></div>
           ${b.versao ? `<span class="etq etq-azul">${esc(b.versao)}</span>` : ''}</div>
           ${b.erro ? `<div class="erro-caixa">${esc(b.erro)}</div>` : ''}
           <dl class="dl"><dt>Versão</dt><dd>${esc(b.versao || '–')}</dd><dt>Data</dt><dd>${fmt.data(b.data)}</dd>
@@ -59,24 +59,24 @@
     const linux = s.servidorLinux;
     const desenhar = (m, foraDoAr) => {
       if (foraDoAr) {
-        area.innerHTML = `<div class="aviso" style="margin:0">${Hub.icone('relogio')} O hub está reiniciando para aplicar a versão nova das calculadoras.
+        area.innerHTML = `<div class="aviso u-m-0">${Hub.icone('relogio')} O hub está reiniciando para aplicar a versão nova das calculadoras.
           Esta tela volta sozinha quando ele estiver no ar (se pedir login, entre de novo).</div>`;
         return;
       }
       if (m.emAndamentoDesde) {
-        area.innerHTML = `<div class="info-caixa" style="margin:0"><strong>Atualização em andamento</strong> desde ${esc(hora(m.emAndamentoDesde))}:
+        area.innerHTML = `<div class="info-caixa u-m-0"><strong>Atualização em andamento</strong> desde ${esc(hora(m.emAndamentoDesde))}:
           consultando o GitHub da Receita. Se houver versão nova, as calculadoras e o hub ficam fora do ar por alguns minutos (base nova e compilação).</div>`;
         return;
       }
       if (m.pedidoEm) {
         const minutos = (Date.now() - new Date(m.pedidoEm).getTime()) / 60000;
-        area.innerHTML = `<div class="info-caixa" style="margin:0"><strong>Atualização solicitada</strong> às ${esc(hora(m.pedidoEm))}: aguardando o servidor iniciar.
+        area.innerHTML = `<div class="info-caixa u-m-0"><strong>Atualização solicitada</strong> às ${esc(hora(m.pedidoEm))}: aguardando o servidor iniciar.
           ${minutos > 2 ? `<br><span class="sutil">Está demorando? ${linux
             ? 'No servidor, rode uma vez <code>sudo bash /opt/hub-fiscal/scripts/linux/hub.sh atualizar-hub</code> (instala o gatilho do botão).'
             : 'Veja <code>logs\\atualizacao-manual.log</code> no servidor.'}</span>` : ''}</div>`;
         return;
       }
-      area.innerHTML = `<div class="acoes" style="margin:0"><button class="btn" type="button" data-atualizar>${Hub.icone('nuvem')} Atualizar agora</button>
+      area.innerHTML = `<div class="acoes u-m-0"><button class="btn" type="button" data-atualizar>${Hub.icone('nuvem')} Atualizar agora</button>
         <span class="sutil">Consulta o GitHub da Receita agora, sem esperar a verificação diária. Sem versão nova, nada muda.</span></div>`;
       area.querySelector('[data-atualizar]').onclick = async (e) => {
         if (!confirm('Consultar agora o GitHub da Receita e atualizar as calculadoras?\n\n' +
@@ -136,15 +136,15 @@
     const [cls, txt] = a ? (ROT[a.resultado] || ['st-REVISAR', a.resultado]) : ['st-REVISAR', 'Não configurada'];
     const quando = a && a.data ? new Date(a.data).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '–';
     const repos = a && Array.isArray(a.repos) ? a.repos : [];
-    return `<div class="card servico" style="margin-top:18px"><div class="servico-cab"><span class="tile tile-ambar">${Hub.icone('nuvem')}</span>
-        <div style="flex:1"><h3>Atualização automática</h3><span class="sutil">GitHub da Receita Federal</span></div>
+    return `<div class="card servico u-mt-18"><div class="servico-cab"><span class="tile tile-ambar">${Hub.icone('nuvem')}</span>
+        <div class="u-flex-1"><h3>Atualização automática</h3><span class="sutil">GitHub da Receita Federal</span></div>
         <span class="etq ${cls}">${esc(txt)}</span></div>
       ${datas}
       ${a ? `<dl class="dl"><dt>Última verificação</dt><dd>${esc(quando)}</dd><dt>Resultado</dt><dd>${esc(a.mensagem || '–')}</dd>
         ${repos.map((r) => `<dt>${esc(r.repo)}</dt><dd><code>${esc(String(r.novo || '').slice(0, 10))}</code>${r.commitsNovos ? ` · ${esc(r.commitsNovos)} commit(s) novo(s)` : ''}</dd>`).join('')}</dl>`
-        : `<p class="sutil" style="margin:0 0 12px">Nenhuma verificação automática registrada neste servidor.</p>`}
-      ${Hub.usuario && Hub.usuario.perfil === 'ADMIN' ? '<div data-atualizar-agora style="margin:4px 0 14px"></div>' : ''}
-      <div class="info-caixa" style="margin-bottom:0">${dica}</div></div>`;
+        : `<p class="sutil u-m-0-0-12">Nenhuma verificação automática registrada neste servidor.</p>`}
+      ${Hub.usuario && Hub.usuario.perfil === 'ADMIN' ? '<div class="u-m-4-0-14" data-atualizar-agora></div>' : ''}
+      <div class="info-caixa u-mb-0">${dica}</div></div>`;
   }
 
   Hub.registrar({

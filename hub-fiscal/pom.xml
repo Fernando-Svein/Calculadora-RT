@@ -16,6 +16,8 @@
 		<java.version>25</java.version>
 		<poi.version>5.4.1</poi.version>
 		<pdfbox.version>3.0.8</pdfbox.version>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+		<hub.versao.recursos>${maven.build.timestamp}</hub.versao.recursos>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -41,9 +43,35 @@
 			<artifactId>pdfbox</artifactId>
 			<version>${pdfbox.version}</version>
 		</dependency>
+		<!-- testes unitários (src/test): leitores de arquivo, regras e infraestrutura, sem as calculadoras no ar -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	<build>
 		<finalName>${project.name}</finalName>
+		<!-- index.html e login.html recebem a data da compilação nos endereços dos scripts e estilos (?v=...): cada
+		     versão nova do hub obriga o navegador a baixar os arquivos novos, sem trocar números à mão -->
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+				<includes>
+					<include>static/index.html</include>
+					<include>static/login.html</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+				<excludes>
+					<exclude>static/index.html</exclude>
+					<exclude>static/login.html</exclude>
+				</excludes>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

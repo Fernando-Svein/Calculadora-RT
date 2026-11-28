@@ -72,7 +72,7 @@ $Servicos = @(
         Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8080/api/calculadora/dados-abertos/versao'; Log = 'regime-geral' },
     @{ Nome = 'Calculadora Simples Nacional'; Pasta = 'calculadora-rtc-simples-nacional'; Jar = 'api-simples-nacional.jar';
         Args = @('-Dspring.profiles.active=offline', '-Dserver.address=127.0.0.1'); Url = 'http://127.0.0.1:8082/api/versao'; Log = 'simples-nacional' },
-    @{ Nome = 'Hub Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @(); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
+    @{ Nome = 'Hub Fiscal'; Pasta = 'hub-fiscal'; Jar = 'hub-fiscal.jar'; Args = @('-Xmx2g', '-XX:+ExitOnOutOfMemoryError'); Url = 'http://localhost:8090/hub/status'; Log = 'hub' }
 )
 
 function Get-ProcessoServico($s) {

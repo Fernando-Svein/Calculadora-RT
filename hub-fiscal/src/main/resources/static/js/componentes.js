@@ -38,14 +38,26 @@
     const pag = raiz.querySelector('.paginacao');
 
     const numCols = new Set(['moeda', 'num', 'pct']);
-    thead.innerHTML = '<tr>' + o.colunas.map((c, i) =>
-      `<th class="${numCols.has(c.tipo) ? 'num ' : ''}${c.ordenar === false ? '' : 'ord'}" data-i="${i}">${esc(c.titulo)}</th>`).join('') + '</tr>';
+    thead.innerHTML = '<tr>' + o.colunas.map((c, i) => (c.ordenar === false
+      ? `<th class="${numCols.has(c.tipo) ? 'num' : ''}" scope="col">${esc(c.titulo)}</th>`
+      : `<th class="${numCols.has(c.tipo) ? 'num ' : ''}ord" data-i="${i}" scope="col" tabindex="0" aria-sort="none"
+          title="Ordenar por ${esc(c.titulo)}">${esc(c.titulo)}</th>`)).join('') + '</tr>';
+    // Enter ou espaço também acionam (cabeçalhos e linhas clicáveis precisam funcionar pelo teclado)
+    const teclado = (elemento, acao) => {
+      elemento.addEventListener('keydown', (e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && e.target === elemento) { e.preventDefault(); acao(e); }
+      });
+    };
     thead.querySelectorAll('th.ord').forEach((th) => {
-      th.onclick = () => {
+      const ordenar = () => {
         const i = Number(th.dataset.i);
         ordem = ordem && ordem.i === i ? { i, dir: -ordem.dir } : { i, dir: 1 };
+        thead.querySelectorAll('th.ord').forEach((x) => x.setAttribute('aria-sort',
+          Number(x.dataset.i) === ordem.i ? (ordem.dir > 0 ? 'ascending' : 'descending') : 'none'));
         aplicar();
       };
+      th.onclick = ordenar;
+      teclado(th, ordenar);
     });
 
     function valorBruto(c, l) {
@@ -66,10 +78,21 @@
       }
     }
 
+    // texto de busca de cada linha, montado uma vez só: refazer a cada tecla (inclusive convertendo o HTML das
+    // colunas com render) travava a tela em lotes com milhares de itens
+    let textoBusca = new WeakMap();
+    function buscaDe(l) {
+      let s = textoBusca.get(l);
+      if (s === undefined) {
+        s = semAcento(o.colunas.map((c) => valorBruto(c, l)).join(' '));
+        textoBusca.set(l, s);
+      }
+      return s;
+    }
+
     function aplicar() {
       const t = semAcento(termo);
-      filtradas = linhas.filter((l) => (!filtroExtra || filtroExtra(l)) &&
-        (!t || semAcento(o.colunas.map((c) => valorBruto(c, l)).join(' ')).includes(t)));
+      filtradas = linhas.filter((l) => (!filtroExtra || filtroExtra(l)) && (!t || buscaDe(l).includes(t)));
       if (ordem) {
         const c = o.colunas[ordem.i];
         filtradas = filtradas.slice().sort((a, b) => {
@@ -96,15 +119,24 @@
         tbody.innerHTML = '';
         fatia.forEach((l) => {
           const tr = document.createElement('tr');
-          if (o.aoClicar || o.detalhe) tr.className = 'clicavel';
+          if (o.aoClicar || o.detalhe) {
+            tr.className = 'clicavel';
+            tr.tabIndex = 0;
+          }
           tr.innerHTML = o.colunas.map((c) => `<td class="${numCols.has(c.tipo) ? 'num' : ''}">${celula(c, l)}</td>`).join('');
           tbody.appendChild(tr);
-          if (o.aoClicar) tr.onclick = (e) => { if (!e.target.closest('a,button,input,select')) o.aoClicar(l, tr); };
-          else if (o.detalhe) {
-            tr.onclick = (e) => {
-              if (e.target.closest('a,button,input,select')) return;
+          if (o.aoClicar) {
+            tr.onclick = (e) => { if (!e.target.closest('a,button,input,select')) o.aoClicar(l, tr); };
+            teclado(tr, () => o.aoClicar(l, tr));
+          } else if (o.detalhe) {
+            tr.setAttribute('aria-expanded', 'false');
+            const alternar = () => {
               const prox = tr.nextElementSibling;
-              if (prox && prox.classList.contains('detalhe')) { prox.remove(); return; }
+              if (prox && prox.classList.contains('detalhe')) {
+                prox.remove();
+                tr.setAttribute('aria-expanded', 'false');
+                return;
+              }
               const d = document.createElement('tr');
               d.className = 'detalhe';
               d.innerHTML = `<td colspan="${o.colunas.length}"><div class="detalhe-corpo"></div></td>`;
@@ -112,7 +144,10 @@
               const corpo = d.querySelector('.detalhe-corpo');
               if (typeof conteudo === 'string') corpo.innerHTML = conteudo; else corpo.appendChild(conteudo);
               tr.after(d);
+              tr.setAttribute('aria-expanded', 'true');
             };
+            tr.onclick = (e) => { if (!e.target.closest('a,button,input,select')) alternar(); };
+            teclado(tr, alternar);
           }
         });
       }
@@ -155,7 +190,7 @@
     }
     aplicar();
     return {
-      atualizar(novas) { linhas = novas || []; aplicar(); },
+      atualizar(novas) { linhas = novas || []; textoBusca = new WeakMap(); aplicar(); },
       filtrar(fn) { filtroExtra = fn; aplicar(); },
       linhas: () => filtradas,
       exportacao,
@@ -346,7 +381,7 @@
   function verJson(obj, titulo = 'JSON') {
     const texto = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
     const c = Hub.modal(`<h2>${esc(titulo)}</h2>
-      <div class="acoes" style="margin-bottom:8px"><button class="btn btn-sec btn-peq" data-copiar>Copiar</button>
+      <div class="acoes u-mb-8"><button class="btn btn-sec btn-peq" data-copiar>Copiar</button>
       <button class="btn btn-sec btn-peq" data-baixar>Baixar</button></div>
       <pre class="json">${esc(texto)}</pre>`);
     c.querySelector('[data-copiar]').onclick = () => { navigator.clipboard.writeText(texto); Hub.toast('Copiado.'); };

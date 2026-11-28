@@ -18,6 +18,12 @@ HORARIO_ATUALIZACAO="03:00"
 # botão "Atualizar agora" do hub: o hub (sem privilégios) grava o pedido; a unidade .path do systemd inicia a verificação
 ARQUIVO_PEDIDO="$LOGS/pedido-atualizacao.json"
 ARQUIVO_EM_ANDAMENTO="$LOGS/atualizacao-em-andamento.json"
+# memória máxima do hub: lotes grandes (SPED de centenas de MB) cabem com folga; acima disso o Java encerra e o
+# systemd religa, em vez de ficar travado sem memória (as calculadoras usam o padrão do Java)
+MEMORIA_HUB="${MEMORIA_HUB:-2g}"
+BACKUPS="$RAIZ/backups"
+COPIAS_BACKUP=14
+HORARIO_BACKUP="02:30"
 
 # Repositórios oficiais da Receita: usados sem modificação (só clone e git pull)
 REPOS=(calculadora-rtc-regime-regular calculadora-rtc-simples-nacional)
@@ -81,6 +87,100 @@ WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
   systemctl enable --now hubfiscal-atualizacao.path --quiet
+}
+
+escrever_unidade() {  # nome descrição pasta argumentos-java jar log depende-de
+  local nome=$1 descricao=$2 pasta=$3 args=$4 jar=$5 log=$6 depende=$7
+  cat >"/etc/systemd/system/$nome.service" <<EOF
+[Unit]
+Description=$descricao
+After=network-online.target ${depende}
+Wants=network-online.target ${depende}
+
+[Service]
+User=$USUARIO_SERVICO
+Group=$USUARIO_SERVICO
+WorkingDirectory=$RAIZ/$pasta
+ExecStart=$JAVA_HOME_HUB/bin/java $args -jar target/$jar
+Restart=on-failure
+RestartSec=10
+# o Java encerra com 143 ao receber o pedido de parada: é um encerramento normal
+SuccessExitStatus=143
+StandardOutput=append:$LOGS/$log.log
+StandardError=append:$LOGS/$log.err
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+# Unidade do hub (também reescrita pelo atualizar-hub, para instalações antigas ganharem o limite de memória)
+escrever_unidade_hub() {
+  escrever_unidade hubfiscal "Hub Fiscal" hub-fiscal "-Xmx$MEMORIA_HUB -XX:+ExitOnOutOfMemoryError" hub-fiscal.jar hub \
+    "hubfiscal-calc-rg.service hubfiscal-calc-sn.service"
+}
+
+# Rotação dos logs (diária, 30 dias, compactados) e backup diário de dados/ (usuários, empresas e logo)
+configurar_logs_e_backup() {
+  cat >/etc/logrotate.d/hubfiscal <<EOF
+$LOGS/*.log $LOGS/*.err {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+    # os serviços escrevem com append: copia e esvazia sem precisar reiniciá-los
+    copytruncate
+    su $USUARIO_SERVICO $USUARIO_SERVICO
+}
+EOF
+  cat >/etc/systemd/system/hubfiscal-backup.service <<EOF
+[Unit]
+Description=Hub Fiscal - backup de dados/ (usuários, empresas e logo)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash $RAIZ/scripts/linux/hub.sh backup
+EOF
+  cat >/etc/systemd/system/hubfiscal-backup.timer <<EOF
+[Unit]
+Description=Hub Fiscal - backup diário de dados/ ($HORARIO_BACKUP)
+
+[Timer]
+OnCalendar=*-*-* $HORARIO_BACKUP:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+  systemctl daemon-reload
+  systemctl enable --now hubfiscal-backup.timer --quiet
+  ok "Logs com rotação diária (30 dias) e backup diário de dados/ às $HORARIO_BACKUP em $BACKUPS ($COPIAS_BACKUP cópias)"
+}
+
+# Cópia de dados/ em backups/dados-AAAAMMDD-HHMMSS.tar.gz; os bancos SQLite são copiados com o .backup do sqlite3
+# (cópia consistente mesmo com o hub gravando), e só as últimas $COPIAS_BACKUP cópias são mantidas
+fazer_backup() {
+  local tmp nome db
+  [[ -d "$RAIZ/dados" ]] || { aviso "Nada a copiar: $RAIZ/dados não existe"; return 0; }
+  mkdir -p "$BACKUPS" && chmod 750 "$BACKUPS"
+  tmp=$(mktemp -d)
+  cp -a "$RAIZ/dados" "$tmp/dados"
+  if command -v sqlite3 >/dev/null; then
+    for db in "$RAIZ"/dados/*.db; do
+      [[ -f "$db" ]] && sqlite3 "$db" ".backup '$tmp/dados/$(basename "$db")'"
+    done
+  fi
+  nome="$BACKUPS/dados-$(date +%Y%m%d-%H%M%S).tar.gz"
+  tar -czf "$nome" -C "$tmp" dados && chmod 640 "$nome"
+  rm -rf "$tmp"
+  ls -1t "$BACKUPS"/dados-*.tar.gz 2>/dev/null | tail -n +$((COPIAS_BACKUP + 1)) | xargs -r rm -f
+  ok "Backup gravado: $nome"
 }
 
 # Registra o horário do timer de atualização para o hub (só se o timer estiver habilitado)

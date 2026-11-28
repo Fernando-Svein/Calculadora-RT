@@ -28,12 +28,12 @@
   });
 
   function formLinha(campos) {
-    return `<div class="linha">${campos}<button class="btn" data-ok>Consultar</button></div><div data-res style="margin-top:14px"></div>`;
+    return `<div class="linha">${campos}<button class="btn" data-ok>Consultar</button></div><div class="u-mt-14" data-res></div>`;
   }
 
   function abaIndicador(d) {
     d.innerHTML = formLinha(`
-      <div class="campo" style="flex:0 0 180px"><label>Data do fato gerador</label><input type="date" name="data" value="${Hub.hoje()}"></div>
+      <div class="campo u-flex-0-0-180"><label>Data do fato gerador</label><input type="date" name="data" value="${Hub.hoje()}"></div>
       <div class="campo"><label>NBS (opcional)</label><input name="nbs" placeholder="Ex.: 115021000"></div>`);
     comp.autocompletarNomenclatura(d.querySelector('[name=nbs]'), 'nbs');
     const res = d.querySelector('[data-res]');
@@ -60,8 +60,8 @@
 
   function abaLocal(d) {
     d.innerHTML = formLinha(`
-      <div class="campo" style="flex:0 0 220px"><label>Indicador de operação (cIndOp)</label><input name="cIndOp" placeholder="Ex.: 100301"></div>
-      <div class="campo" style="flex:0 0 180px"><label>Data do fato gerador</label><input type="date" name="data" value="${Hub.hoje()}"></div>`);
+      <div class="campo u-flex-0-0-220"><label>Indicador de operação (cIndOp)</label><input name="cIndOp" placeholder="Ex.: 100301"></div>
+      <div class="campo u-flex-0-0-180"><label>Data do fato gerador</label><input type="date" name="data" value="${Hub.hoje()}"></div>`);
     const res = d.querySelector('[data-res]');
     d.querySelector('[data-ok]').onclick = async () => {
       const c = d.querySelector('[name=cIndOp]').value.trim();
@@ -81,7 +81,7 @@
   function abaNbs(d) {
     d.innerHTML = formLinha(`
       <div class="campo"><label>NBS</label><input name="nbs" placeholder="Código ou descrição do serviço"></div>
-      <div class="campo" style="flex:0 0 180px"><label>Data</label><input type="date" name="data" value="${Hub.hoje()}"></div>`);
+      <div class="campo u-flex-0-0-180"><label>Data</label><input type="date" name="data" value="${Hub.hoje()}"></div>`);
     const inp = d.querySelector('[name=nbs]');
     comp.autocompletarNomenclatura(inp, 'nbs');
     const res = d.querySelector('[data-res]');
@@ -116,8 +116,8 @@
         ${comp.campo('NBS *', '<input name="nbs" placeholder="Ex.: 115021000">')}
         ${comp.campo('Data do fato gerador *', `<input type="date" name="dataOcorrenciaFatoGerador" value="${Hub.hoje()}">`)}
       </div>
-      <div class="acoes" style="margin-top:12px"><button class="btn" data-ok>Validar</button></div>
-      <div data-res style="margin-top:14px"></div>`;
+      <div class="acoes u-mt-12"><button class="btn" data-ok>Validar</button></div>
+      <div class="u-mt-14" data-res></div>`;
     const res = d.querySelector('[data-res]');
     d.querySelector('[data-ok]').onclick = async () => {
       const corpo = comp.lerCampos(d);

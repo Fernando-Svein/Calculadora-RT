@@ -1,0 +1,51 @@
+/* Classes utilitárias geradas a partir dos antigos atributos style="..." das telas (a CSP não aceita estilo
+   inline). !important mantém a mesma prioridade que o estilo inline tinha sobre as demais regras. */
+.u-flex-0-0-150 { flex: 0 0 150px !important; }
+.u-flex-0-0-160 { flex: 0 0 160px !important; }
+.u-flex-0-0-170 { flex: 0 0 170px !important; }
+.u-flex-0-0-180 { flex: 0 0 180px !important; }
+.u-flex-0-0-190 { flex: 0 0 190px !important; }
+.u-flex-0-0-200 { flex: 0 0 200px !important; }
+.u-flex-0-0-220 { flex: 0 0 220px !important; }
+.u-flex-1 { flex: 1 !important; }
+.u-flex-2-1-300 { flex: 2 1 300px !important; }
+.u-flex-2-1-320 { flex: 2 1 320px !important; }
+.u-fs-11_5 { font-size: 11.5px !important; }
+.u-fs-12 { font-size: 12px !important; }
+.u-fs-12_5 { font-size: 12.5px !important; }
+.u-fwrap-wrap { flex-wrap: wrap !important; }
+.u-gap-12 { gap: 12px !important; }
+.u-gc-span-2 { grid-column: span 2 !important; }
+.u-h-40 { height: 40px !important; }
+.u-m-0 { margin: 0 !important; }
+.u-m-0-0-12 { margin: 0 0 12px !important; }
+.u-m-10-0 { margin: 10px 0 !important; }
+.u-m-10-0-0 { margin: 10px 0 0 !important; }
+.u-m-10-0-6 { margin: 10px 0 6px !important; }
+.u-m-12-0-0 { margin: 12px 0 0 !important; }
+.u-m-14-0-6 { margin: 14px 0 6px !important; }
+.u-m-4-0-14 { margin: 4px 0 14px !important; }
+.u-m-6-0 { margin: 6px 0 !important; }
+.u-m-8-0 { margin: 8px 0 !important; }
+.u-m-8-0-0 { margin: 8px 0 0 !important; }
+.u-maxh-45vh { max-height: 45vh !important; }
+.u-maxh-60vh { max-height: 60vh !important; }
+.u-maxh-none { max-height: none !important; }
+.u-maxw-380 { max-width: 380px !important; }
+.u-maxw-520 { max-width: 520px !important; }
+.u-mb-0 { margin-bottom: 0 !important; }
+.u-mb-10 { margin-bottom: 10px !important; }
+.u-mb-16 { margin-bottom: 16px !important; }
+.u-mb-8 { margin-bottom: 8px !important; }
+.u-minw-0 { min-width: 0 !important; }
+.u-mt-10 { margin-top: 10px !important; }
+.u-mt-12 { margin-top: 12px !important; }
+.u-mt-14 { margin-top: 14px !important; }
+.u-mt-18 { margin-top: 18px !important; }
+.u-mt-4 { margin-top: 4px !important; }
+.u-mt-6 { margin-top: 6px !important; }
+.u-mt-8 { margin-top: 8px !important; }
+.u-p-8-12 { padding: 8px 12px !important; }
+.u-w-auto { width: auto !important; }
+.u-wb-break-all { word-break: break-all !important; }
+.u-ws-pre-wrap { white-space: pre-wrap !important; }

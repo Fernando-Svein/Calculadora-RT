@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +28,7 @@ import br.com.escritorio.hubfiscal.classificacao.ResultadoClassificacao;
 import br.com.escritorio.hubfiscal.empresa.EmpresaService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService;
 import br.com.escritorio.hubfiscal.importacao.ImportacaoService.Importacao;
+import br.com.escritorio.hubfiscal.infra.FilaLotes;
 import br.com.escritorio.hubfiscal.infra.ResultadoStore;
 import br.com.escritorio.hubfiscal.seguranca.UsuarioSessao;
 import jakarta.servlet.http.HttpServletResponse;
@@ -46,9 +48,11 @@ public class LoteController {
     private final AuditoriaService auditoria;
     private final ResultadoStore store;
     private final EmpresaService empresas;
+    private final FilaLotes fila;
 
     public LoteController(ImportacaoService importacao, ClassificacaoService classificacao, AuditoriaService auditoria,
-            ResultadoStore store, EmpresaService empresas) {
+            ResultadoStore store, EmpresaService empresas, FilaLotes fila) {
+        this.fila = fila;
         this.importacao = importacao;
         this.classificacao = classificacao;
         this.auditoria = auditoria;
@@ -72,16 +76,36 @@ public class LoteController {
         }
     }
 
-    /** Classificação de cClassTrib a partir de SPED/XML. */
+    /**
+     * Classificação de cClassTrib a partir de SPED/XML. {@code tarefa} (opcional, gerado pela tela) permite acompanhar o
+     * andamento em {@code /hub/lote/andamento/{tarefa}} enquanto esta requisição não responde.
+     */
     @PostMapping("/classificacao")
     public ResultadoClassificacao classificar(@RequestParam("arquivos") List<MultipartFile> arquivos,
-            @RequestParam(required = false) LocalDate data, @AuthenticationPrincipal UsuarioSessao usuario,
-            HttpServletResponse resposta) {
-        Importacao imp = importacao.importar(arquivos);
-        separarEmpresas(imp, usuario, resposta);
-        ResultadoClassificacao r = classificacao.classificar(imp, data == null ? LocalDate.now() : data);
-        r.id = store.guardar(r, usuario.id());
-        return r;
+            @RequestParam(required = false) LocalDate data, @RequestParam(required = false) String tarefa,
+            @AuthenticationPrincipal UsuarioSessao usuario, HttpServletResponse resposta) {
+        return fila.executar(usuario.id(), tarefa, andamento -> {
+            andamento.etapa("Lendo os arquivos", 0);
+            Importacao imp = importacao.importar(arquivos);
+            separarEmpresas(imp, usuario, resposta);
+            ResultadoClassificacao r = classificacao.classificar(imp, data == null ? LocalDate.now() : data, andamento);
+            r.id = store.guardar(r, usuario.id());
+            return r;
+        });
+    }
+
+    /** Resultado já processado (a tela reabre o último lote sem reenviar os arquivos). */
+    @GetMapping("/classificacao/{id}")
+    public ResultadoClassificacao resultadoClassificacao(@PathVariable String id,
+            @AuthenticationPrincipal UsuarioSessao usuario) {
+        return store.obter(id, ResultadoClassificacao.class, usuario.id());
+    }
+
+    /** Andamento de um lote em processamento; 404 quando já terminou (ou não é do usuário). */
+    @GetMapping("/andamento/{tarefa}")
+    public ResponseEntity<Map<String, Object>> andamento(@PathVariable String tarefa,
+            @AuthenticationPrincipal UsuarioSessao usuario) {
+        return ResponseEntity.of(fila.andamento(usuario.id(), tarefa));
     }
 
     @GetMapping("/classificacao/{id}/excel")
@@ -93,12 +117,21 @@ public class LoteController {
     /** Auditoria do grupo IBS/CBS das notas (recalcula na calculadora oficial). */
     @PostMapping("/auditoria")
     public ResultadoAuditoria auditar(@RequestParam("arquivos") List<MultipartFile> arquivos,
-            @AuthenticationPrincipal UsuarioSessao usuario, HttpServletResponse resposta) {
-        Importacao imp = importacao.importar(arquivos);
-        separarEmpresas(imp, usuario, resposta);
-        ResultadoAuditoria r = auditoria.auditar(imp);
-        r.id = store.guardar(r, usuario.id());
-        return r;
+            @RequestParam(required = false) String tarefa, @AuthenticationPrincipal UsuarioSessao usuario,
+            HttpServletResponse resposta) {
+        return fila.executar(usuario.id(), tarefa, andamento -> {
+            andamento.etapa("Lendo os arquivos", 0);
+            Importacao imp = importacao.importar(arquivos);
+            separarEmpresas(imp, usuario, resposta);
+            ResultadoAuditoria r = auditoria.auditar(imp, andamento);
+            r.id = store.guardar(r, usuario.id());
+            return r;
+        });
+    }
+
+    @GetMapping("/auditoria/{id}")
+    public ResultadoAuditoria resultadoAuditoria(@PathVariable String id, @AuthenticationPrincipal UsuarioSessao usuario) {
+        return store.obter(id, ResultadoAuditoria.class, usuario.id());
     }
 
     @GetMapping("/auditoria/{id}/excel")

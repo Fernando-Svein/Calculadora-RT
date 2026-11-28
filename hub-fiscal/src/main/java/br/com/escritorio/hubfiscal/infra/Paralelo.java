@@ -27,6 +27,11 @@ public final class Paralelo {
      * @throws RuntimeException a exceção lançada pela função em algum item (relançada como está)
      */
     public static <T, R> List<R> mapear(Collection<T> itens, int limite, Function<T, R> funcao) {
+        return mapear(itens, limite, funcao, null);
+    }
+
+    /** Igual a {@link #mapear(Collection, int, Function)}, avisando {@code andamento} a cada item concluído. */
+    public static <T, R> List<R> mapear(Collection<T> itens, int limite, Function<T, R> funcao, Andamento andamento) {
         Semaphore vagas = new Semaphore(limite);
         try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
             List<Future<R>> tarefas = new ArrayList<>(itens.size());
@@ -37,6 +42,9 @@ public final class Paralelo {
                         return funcao.apply(item);
                     } finally {
                         vagas.release();
+                        if (andamento != null) {
+                            andamento.avancar();
+                        }
                     }
                 }));
             }

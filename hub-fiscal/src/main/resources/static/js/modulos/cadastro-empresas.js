@@ -131,12 +131,12 @@
         ${linha('Simples Nacional', esc(simples))}
         ${linha('Regime declarado', p.regimeTributario ? `${esc(p.regimeTributario.forma || '–')} <span class="sutil">(${esc(p.regimeTributario.ano)})</span>` : '')}
       </dl>
-      ${qsa.length ? `<h4 style="margin:14px 0 6px">Quadro societário (QSA)</h4>
-        <div class="tabela-wrap" style="max-height:none"><table class="tab"><thead><tr><th>Nome</th><th>Qualificação</th><th>Entrada</th><th>Faixa etária</th></tr></thead><tbody>
+      ${qsa.length ? `<h4 class="u-m-14-0-6">Quadro societário (QSA)</h4>
+        <div class="tabela-wrap u-maxh-none"><table class="tab"><thead><tr><th>Nome</th><th>Qualificação</th><th>Entrada</th><th>Faixa etária</th></tr></thead><tbody>
         ${qsa.map((s) => `<tr><td>${esc(s.nome)}${s.representanteLegal ? `<div class="sutil">Representante: ${esc(s.representanteLegal)}</div>` : ''}</td>
           <td>${esc(s.qualificacao || '–')}</td><td>${esc(fmt.data(s.dataEntrada))}</td><td>${esc(s.faixaEtaria || '–')}</td></tr>`).join('')}</tbody></table></div>`
         : '<p class="sutil">Quadro societário não informado pela base pública (comum em empresário individual e MEI).</p>'}
-      <p class="sutil" style="margin:10px 0 0">${esc(p.fonte || 'Base pública do CNPJ')} · consultado em ${esc(fmt.data(p.consultadoEm))} ${esc(String(p.consultadoEm || '').substring(11, 16))}.
+      <p class="sutil u-m-10-0-0">${esc(p.fonte || 'Base pública do CNPJ')} · consultado em ${esc(fmt.data(p.consultadoEm))} ${esc(String(p.consultadoEm || '').substring(11, 16))}.
         Os dados são gravados com o cadastro ao salvar.</p></div>`;
   }
 
@@ -165,11 +165,11 @@
           ${comp.campo('Razão social *', `<input name="razaoSocial" value="${v(e && e.razaoSocial)}" maxlength="150">`)}
           ${comp.campo('Nome fantasia', `<input name="nomeFantasia" value="${v(e && e.nomeFantasia)}" maxlength="150">`)}
         </div>
-        <div class="acoes" data-consulta-acoes hidden style="margin-top:8px">
+        <div class="acoes u-mt-8" data-consulta-acoes hidden>
           <button class="btn btn-sec btn-peq" type="button" data-consultar>${Hub.icone('busca')} Consultar CNPJ na base pública</button>
           <span class="sutil">Busca razão social, situação cadastral, CNAE, endereço, Simples/MEI e quadro societário.</span></div>
         <div data-consulta-st></div>
-        <div data-loc style="margin-top:12px"></div>
+        <div class="u-mt-12" data-loc></div>
         <span class="ajuda sutil">Município do estabelecimento: usado como local da operação nos simuladores do regime normal e no pedágio.</span>
       </div>
       <div data-publicos></div>
@@ -181,16 +181,16 @@
           <div data-apuracao>${comp.campo('Forma de apuração', `<select name="regimeApuracao"><option value="">Não informada</option>
             ${Object.entries(E().APURACOES).map(([k, t]) => `<option value="${k}" ${e && e.regimeApuracao === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>`)}</div>
         </div>
-        <div data-simples style="margin-top:12px">
-          <div class="acoes" style="margin-bottom:10px;flex-wrap:wrap">
+        <div class="u-mt-12" data-simples>
+          <div class="acoes u-mb-10 u-fwrap-wrap">
             <label class="check"><input type="checkbox" name="ibscbsForaSimples" ${e && e.ibscbsForaSimples ? 'checked' : ''}> Optou por recolher o IBS e a CBS pelo regime regular (fora do DAS)</label>
             <label class="check"><input type="checkbox" name="fatorR" ${e && e.fatorR ? 'checked' : ''}> Fator r igual ou maior que 28%</label>
             <label class="check"><input type="checkbox" name="sublimiteExcedido" ${e && e.sublimiteExcedido ? 'checked' : ''}> Ultrapassou o sublimite estadual</label>
           </div>
           <div class="grade g2">${comp.campo('Atividade principal no Simples', '<select name="atividadeSimples"><option value="">Carregando atividades...</option></select>',
             'Sugerida nos itens do Simulador do Simples e usada no Comparador.')}</div>
-          <h4 style="margin:14px 0 6px">Alíquotas efetivas do período (parcelas de CBS e IBS dentro do DAS, em %)</h4>
-          <div class="tabela-wrap" style="max-height:none"><table class="tab tab-aliq"><thead>
+          <h4 class="u-m-14-0-6">Alíquotas efetivas do período (parcelas de CBS e IBS dentro do DAS, em %)</h4>
+          <div class="tabela-wrap u-maxh-none"><table class="tab tab-aliq"><thead>
             <tr><th rowspan="2">Anexo</th><th colspan="2">Alíquota normal</th><th colspan="2">Quando o ISS não é recolhido no DAS</th></tr>
             <tr><th>CBS (%)</th><th>IBS (%)</th><th>CBS (%)</th><th>IBS (%)</th></tr></thead><tbody>
             ${ANEXOS.map((x) => {
@@ -201,7 +201,7 @@
                 <td>${COM_ISS.has(x) ? inp('ibsSemIss', 'IBS quando o ISS não é recolhido no DAS (%)') : '<span class="sutil">–</span>'}</td></tr>`;
             }).join('')}
           </tbody></table></div>
-          <p class="sutil" style="margin-top:8px">Valores da apuração do PGDAS-D do período, com todas as casas decimais. Os simuladores usam estes valores
+          <p class="sutil u-mt-8">Valores da apuração do PGDAS-D do período, com todas as casas decimais. Os simuladores usam estes valores
             enquanto a empresa estiver selecionada; atualize-os quando mudar o período de apuração.</p>
         </div>
       </div>
@@ -215,7 +215,7 @@
         ${comp.campo('Observações', `<textarea name="observacoes" rows="3" maxlength="2000">${v(e && e.observacoes)}</textarea>`)}
       </div>
       <div data-erro></div>
-      <div class="acoes" style="margin-bottom:16px">
+      <div class="acoes u-mb-16">
         <button class="btn" type="submit">${e ? 'Salvar alterações' : 'Cadastrar empresa'}</button>
         ${e ? '<button class="btn btn-sec" type="button" data-simular>Simular com esta empresa</button>' : ''}
         <a class="btn btn-sec" href="#/empresas">Voltar à lista</a>

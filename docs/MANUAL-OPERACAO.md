@@ -180,6 +180,7 @@ Todos com `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`:
 | `verificar` | atualiza as calculadoras **só se** a Receita publicou versão nova; se falhar, volta à anterior |
 | `atualizar` | força a atualização das calculadoras (git pull, base nova, compilação, reinício) |
 | `atualizar-hub` | baixa a versão nova do **Hub Fiscal** (branch `ubuntu-server`), recompila e reinicia só o hub |
+| `backup` | copia `dados/` para `backups/` agora (o automático roda todo dia às 02:30; ficam as 14 últimas cópias) |
 | `testar` | testa a classificação de cClassTrib numa cópia do hub na porta 8091 (usuários temporários; não toca no hub em uso): NF-e com um item por situação (correto, REG-011, REG-006, REG-005, REG-029, benefício não aplicado), conferência na calculadora oficial, planilha e vigência 2027. Não precisa de sudo. Arquivos em `scripts/linux/testes/` |
 
 Comandos do systemd úteis:
@@ -248,6 +249,13 @@ No computador de desenvolvimento (Windows, branch `main`):
 
 - **O que copiar:** a pasta `/opt/hub-fiscal/dados/` (usuários e senhas, empresas e suas particularidades, logo). O
   resto se recria a partir dos repositórios.
+- **Backup automático:** todo dia às 02:30 (`hubfiscal-backup.timer`) o hub grava
+  `/opt/hub-fiscal/backups/dados-AAAAMMDD-HHMMSS.tar.gz` (bancos copiados com o `.backup` do sqlite3) e mantém as 14
+  últimas cópias. Para fazer na hora: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh backup`. Copie essa pasta para
+  fora da VM de vez em quando (outro servidor, nuvem): se a VM se perder, os backups vão junto.
+- **Restaurar:** `hub.sh parar`, `sudo tar -xzf backups/dados-....tar.gz -C /opt/hub-fiscal`,
+  `sudo chown -R hubfiscal:hubfiscal /opt/hub-fiscal/dados` e `hub.sh iniciar`.
+- **Logs:** os arquivos de `logs/` giram todo dia (`/etc/logrotate.d/hubfiscal`), compactados, por 30 dias.
 - Alternativa: backup/ponto de verificação da VM inteira no Hyper-V.
 - Perdeu o acesso de todos os administradores: `hub.sh parar`, renomeie `dados/hub-usuarios.db`, `hub.sh iniciar` e
   rode `hub.sh criar-admin`.
@@ -266,6 +274,11 @@ No computador de desenvolvimento (Windows, branch `main`):
 | `cenario-cbs.aliquota` / `rotulo` | `11.3` / `Cenário TCU` | cenário de CBS das simulações; apagar `aliquota` tira o seletor |
 | `paralelismo` | 8 | chamadas simultâneas às calculadoras nos lotes |
 | `retencao-resultados-minutos` | 240 | quanto tempo um resultado de lote fica disponível para download |
+| `resultados-por-usuario` | 5 | resultados de lote guardados por usuário; o mais antigo sai antes da retenção |
+| `lotes-simultaneos` | 2 | lotes processados ao mesmo tempo; os demais esperam na fila (a tela mostra "Na fila") |
+
+O hub roda com no máximo 2 GB de memória (`MEMORIA_HUB` em `scripts/linux/comum.sh`). Se faltar, o Java encerra e o
+systemd religa em 10 segundos, em vez de ficar travado. Para mudar: ajuste a variável e rode `hub.sh atualizar-hub`.
 
 Depois de alterar: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh reiniciar`.
 
@@ -355,6 +368,13 @@ Destaques de uso:
 ---
 
 ## 12. Testes automatizados (computador de desenvolvimento)
+
+**Testes unitários (JUnit):** `cd hub-fiscal` e `mvnw test`. Leitores de SPED e XML (inclusive XML malicioso), regras
+de CFOP, agrupamento dos itens, fila de lotes, guarda de resultados e interpretação da resposta da calculadora
+oficial. Não precisam das calculadoras no ar e rodam no GitHub Actions a cada push nas duas branches.
+
+**No servidor Linux:** `bash /opt/hub-fiscal/scripts/linux/hub.sh testar` (classificação de cClassTrib contra a
+calculadora oficial que está no ar, numa cópia isolada do hub).
 
 `testar-hub.bat` sobe uma cópia isolada do hub (porta 8091, bancos temporários, API de CNPJ simulada) e roda 225 testes:
 

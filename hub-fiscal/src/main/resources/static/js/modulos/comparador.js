@@ -29,7 +29,7 @@
             ${comp.campo('Classificação tributária das vendas (cClassTrib)', '<input name="cClassTrib" value="000001">')}
             ${comp.campo('NCM/NBS principal', '<input name="nom" placeholder="opcional">')}
           </div>
-          <div data-loc style="margin-top:12px"></div>
+          <div class="u-mt-12" data-loc></div>
         </div>
         <div class="grade g2">
           <div class="card"><h3>Cenário A – IBS/CBS dentro do Simples</h3>
@@ -39,7 +39,7 @@
               ${comp.campo('Parcela da CBS na alíquota efetiva do DAS (%) *', '<input name="pCBSSN" placeholder="ex.: 1,1612">')}
               ${comp.campo('Parcela do IBS na alíquota efetiva do DAS (%) *', '<input name="pIBSSN" placeholder="ex.: 0,0129">')}
             </div>
-            <label class="check" style="margin-top:8px"><input type="checkbox" name="fatorR"> Fator r igual ou maior que 28%</label>
+            <label class="check u-mt-8"><input type="checkbox" name="fatorR"> Fator r igual ou maior que 28%</label>
           </div>
           <div class="card"><h3>Cenário B – IBS/CBS pelo regime regular</h3>
             <div class="grade g3">
@@ -47,10 +47,10 @@
               ${comp.campo('IBS estadual %', '<input name="aIbsUf" value="0,05">')}
               ${comp.campo('IBS municipal %', '<input name="aIbsMun" value="0,05">')}
             </div>
-            <p class="sutil" style="margin-top:8px">Alíquotas nominais estimadas para o ano; confira as vigentes. Em 2027–2028 o IBS ainda é de teste; a comparação fica mais relevante com as alíquotas cheias (2033).</p>
+            <p class="sutil u-mt-8">Alíquotas nominais estimadas para o ano; confira as vigentes. Em 2027–2028 o IBS ainda é de teste; a comparação fica mais relevante com as alíquotas cheias (2033).</p>
           </div>
         </div>
-        <div class="acoes" style="margin-bottom:16px"><button class="btn" data-calc>Comparar</button></div>
+        <div class="acoes u-mb-16"><button class="btn" data-calc>Comparar</button></div>
         <div data-res></div>`;
 
       const loc = comp.seletorMunicipio(el.querySelector('[data-loc]'), { uf: 'SP', municipio: 3550308 });
@@ -180,17 +180,17 @@
         const recolherB = Math.max(0, debB - credCompras);
         const credClientesA = totA * b2b;
         const credClientesB = debB * b2b;
-        const linha = (t, a, b, dica) => `<tr><td>${t}${dica ? `<div class="sutil" style="font-size:11.5px">${dica}</div>` : ''}</td><td class="num">${fmt.moeda(a)}</td><td class="num">${fmt.moeda(b)}</td></tr>`;
+        const linha = (t, a, b, dica) => `<tr><td>${t}${dica ? `<div class="sutil u-fs-11_5">${dica}</div>` : ''}</td><td class="num">${fmt.moeda(a)}</td><td class="num">${fmt.moeda(b)}</td></tr>`;
         res.innerHTML = `<div class="card"><div class="card-cab"><h2>Comparação</h2><div class="acoes">${Hub.relatorio.botoes()}</div></div>
           ${Hub.empresas.faixaResultado(ctx.empresa)}
           ${errA.length || errB.length ? `<div class="aviso">Há avisos/erros nos cálculos: ${[...errA, ...errB].map((e) => esc(e.code + ' ' + e.detail)).join(' | ')}</div>` : ''}
-          <div class="tabela-wrap" style="max-height:none"><table class="tab"><thead><tr><th></th><th class="num">A – dentro do Simples</th><th class="num">B – regime regular</th></tr></thead><tbody>
+          <div class="tabela-wrap u-maxh-none"><table class="tab"><thead><tr><th></th><th class="num">A – dentro do Simples</th><th class="num">B – regime regular</th></tr></thead><tbody>
             ${linha('IBS/CBS sobre o faturamento', totA, debB, `Alíquota efetiva A: ${fmt.pct((totA / fat) * 100)} · B: ${fmt.pct(aliqEfetB * 100)}`)}
             ${linha('(−) Créditos sobre compras', 0, credCompras, 'No Simples não há apropriação de créditos de IBS/CBS.')}
             ${linha('<strong>IBS/CBS a recolher</strong>', totA, recolherB)}
             ${linha('Crédito transferido aos clientes contribuintes', credClientesA, credClientesB, `Considerando ${fmt.num(b2b * 100)}% das vendas para contribuintes.`)}
           </tbody></table></div>
-          <div class="kpis" style="margin-top:14px">
+          <div class="kpis u-mt-14">
             <div class="kpi"><small>Diferença a recolher (B − A)</small><strong>${fmt.moeda(recolherB - totA)}</strong></div>
             <div class="kpi"><small>Crédito adicional aos clientes (B − A)</small><strong>${fmt.moeda(credClientesB - credClientesA)}</strong></div>
           </div>

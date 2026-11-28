@@ -118,3 +118,24 @@ $x = Invoke-Hub $adm 'GET' "/hub/lote/classificacao/$($c.id)/excel"
 $tmpV = Join-Path ([IO.Path]::GetTempPath()) "vendas-$PID.xlsx"; [IO.File]::WriteAllBytes($tmpV, $x.Content.ReadAsByteArrayAsync().Result)
 $z = [IO.Compression.ZipFile]::OpenRead($tmpV); $xmlV = ($z.Entries | Where-Object FullName -like 'xl/*.xml' | ForEach-Object { $sr = New-Object IO.StreamReader($_.Open()); $sr.ReadToEnd(); $sr.Dispose() }) -join "`n"; $z.Dispose(); Remove-Item $tmpV
 Add-Resultado $Suite 'vendas por NCM: aba na planilha com o total geral' ($xmlV -like '*Vendas por NCM*' -and $xmlV -like '*TOTAL GERAL*' -and $xmlV -like '*Total vendido (líquido)*') ''
+
+# ---------------------------------------------------------------- classificação conferida na calculadora oficial
+# um item por situação; os códigos de erro são os que a calculadora oficial devolve (REG-011, 006, 005, 029)
+$r = Send-Arquivos $adm '/hub/lote/classificacao?data=2026-03-10' @((Join-Path $Dados 'nfe-classificacao-conferencia.xml'))
+$cf = Get-Json $r; $li = @{}; $cf.linhas | ForEach-Object { $li[$_.codigo] = $_ }
+foreach ($caso in @(
+        @('C1', 'CONFERIDO', 'Aceita', 'cClassTrib correto'),
+        @('C2', 'DIVERGENTE', 'Rejeitada: REG-011', 'NCM fora do anexo'),
+        @('C3', 'DIVERGENTE', 'Rejeitada: REG-006', 'CST incompatível'),
+        @('C4', 'DIVERGENTE', 'Rejeitada: REG-005', 'cClassTrib inexistente'),
+        @('C5', 'DIVERGENTE', 'Rejeitada: REG-029', 'cClassTrib não admitido na NF-e'),
+        @('C6', 'REVISAR', 'Aceita', 'benefício não aplicado'),
+        @('C7', 'CONFERIDO', 'Aceita', 'tributação integral correta'))) {
+    $l = $li[$caso[0]]
+    Add-Resultado $Suite "conferência oficial: $($caso[3]) → $($caso[1]), calculadora '$($caso[2])'" ($l.status -eq $caso[1] -and "$($l.oficialAtual)".StartsWith($caso[2]) -and $l.oficialSugerido -eq 'Aceita' -and ([bool]$l.revisar -eq ($caso[1] -ne 'CONFERIDO'))) ($l | Select-Object status, oficialAtual, oficialSugerido, revisar | ConvertTo-Json -Compress)
+}
+Add-Resultado $Suite 'conferência oficial: resumo com aceitas e rejeitadas' ($cf.conferenciaOficial -like '*5 aceita(s), 4 rejeitada(s), 0 não conferida(s)*') $cf.conferenciaOficial
+$x = Invoke-Hub $adm 'GET' "/hub/lote/classificacao/$($cf.id)/excel"
+$tmpC = Join-Path ([IO.Path]::GetTempPath()) "conferencia-$PID.xlsx"; [IO.File]::WriteAllBytes($tmpC, $x.Content.ReadAsByteArrayAsync().Result)
+$z = [IO.Compression.ZipFile]::OpenRead($tmpC); $xmlC = ($z.Entries | Where-Object FullName -like 'xl/*.xml' | ForEach-Object { $sr = New-Object IO.StreamReader($_.Open()); $sr.ReadToEnd(); $sr.Dispose() }) -join "`n"; $z.Dispose(); Remove-Item $tmpC
+Add-Resultado $Suite 'conferência oficial: planilha com "O que revisar" e "Calculadora oficial", sem as colunas a preencher' ($xmlC -like '*O que revisar*' -and $xmlC -like '*Calculadora oficial (atual)*' -and $xmlC -like '*REG-011*' -and $xmlC -notlike '*(preencher)*' -and $xmlC -notlike '*Ocorrências*') ''

@@ -1,6 +1,11 @@
 # Linux: scripts e o wrapper do Maven com fim de linha LF
 mvnw    text eol=lf
 *.sh    text eol=lf
+*.py    text eol=lf
 *.jar   binary
 *.xlsx  binary
 *.pdf   binary
+
+# arquivos do teste de classificação (scripts/linux/testar-classificacao.sh): bytes exatos
+scripts/linux/testes/*.xml -text
+scripts/linux/testes/*.txt -text

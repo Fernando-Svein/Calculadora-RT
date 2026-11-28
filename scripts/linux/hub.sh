@@ -13,6 +13,7 @@
 #   verificar      só atualiza se a Receita publicou versão nova; se falhar, volta à versão anterior
 #                  (é o que o agendamento das 03:00 executa; resultado na tela "Situação do sistema")
 #   atualizar-hub  baixa a versão nova do próprio Hub Fiscal (do seu GitHub), recompila e religa o hub
+#   testar         testa a classificação de cClassTrib numa cópia isolada do hub (não precisa de sudo)
 set -uo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/comum.sh"
 
@@ -29,8 +30,9 @@ principal() {
     verificar) exigir_root "$@"; gravar_agendamento; verificar 2>&1 | tee -a "$LOGS/atualizacao.log" ;;
     atualizar-hub) exigir_root "$@"; atualizar_hub ;;
     depois-de-atualizar-hub) exigir_root "$@"; depois_atualizar_hub ;;
-    ajuda | -h | --help) sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
-    *) falha "Comando desconhecido: $comando"; sed -n '6,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
+    testar) bash "$RAIZ/scripts/linux/testar-classificacao.sh" ;;
+    ajuda | -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' ;;
+    *) falha "Comando desconhecido: $comando"; sed -n '6,18p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'; exit 1 ;;
   esac
 }
 

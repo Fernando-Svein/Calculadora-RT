@@ -13,6 +13,7 @@ cada um) e os bugs corrigidos ao longo do projeto.
 > | Ver se está tudo no ar | `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh status` |
 > | Ver o log do hub | `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh logs hub` (Ctrl+C sai) |
 > | Reiniciar tudo | `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh reiniciar` |
+> | Testar a classificação de cClassTrib (cópia isolada, ~15 s) | `bash /opt/hub-fiscal/scripts/linux/hub.sh testar` |
 > | Endereço para os usuários | `http://hubfiscal:8090` |
 
 ---
@@ -179,6 +180,7 @@ Todos com `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`:
 | `verificar` | atualiza as calculadoras **só se** a Receita publicou versão nova; se falhar, volta à anterior |
 | `atualizar` | força a atualização das calculadoras (git pull, base nova, compilação, reinício) |
 | `atualizar-hub` | baixa a versão nova do **Hub Fiscal** (branch `ubuntu-server`), recompila e reinicia só o hub |
+| `testar` | testa a classificação de cClassTrib numa cópia do hub na porta 8091 (usuários temporários; não toca no hub em uso): NF-e com um item por situação (correto, REG-011, REG-006, REG-005, REG-029, benefício não aplicado), conferência na calculadora oficial, planilha e vigência 2027. Não precisa de sudo. Arquivos em `scripts/linux/testes/` |
 
 Comandos do systemd úteis:
 

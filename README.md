@@ -41,6 +41,7 @@ Todos os comandos: `sudo bash /opt/hub-fiscal/scripts/linux/hub.sh <comando>`
 | `verificar` | Atualiza as calculadoras só se houver versão nova; se falhar, volta à anterior (é o que roda às 03:00) |
 | `atualizar` | Força a atualização das calculadoras: git pull, banco novo, compilação e reinício |
 | `atualizar-hub` | Baixa a versão nova do Hub Fiscal desta branch, recompila e reinicia só o hub |
+| `testar` | Testa a classificação de cClassTrib numa cópia isolada do hub (porta 8091), conferindo na calculadora oficial. Não precisa de sudo |
 
 O resultado de cada verificação aparece em **Sistema → Situação do sistema** e em `logs/atualizacao.log`.
 
